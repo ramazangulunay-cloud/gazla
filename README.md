@@ -1,4 +1,4 @@
-# GAZLA! — Kendi sitende yayınla (Cloudflare)
+# RAPID55 — Kendi sitende yayınla (Cloudflare)
 
 Bu klasör oyunu **tek bir linkten** oynanır hale getirir: siteyi açan kişi takma adını yazar,
 **HEMEN OYNA**'ya basar ve açık bir odaya düşer. 2+ kişi olunca 12 sn içinde yarış başlar
