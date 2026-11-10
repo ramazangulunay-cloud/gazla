@@ -1,0 +1,17 @@
+name = "gazla"
+main = "src/worker.js"
+compatibility_date = "2025-10-01"
+
+# Oyun dosyaları (index.html) buradan sunulur
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+# Her oda = bir Durable Object (WebSocket sunucusu)
+[[durable_objects.bindings]]
+name = "ROOMS"
+class_name = "Room"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Room"]
