@@ -15,3 +15,7 @@ class_name = "Room"
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["Room"]
+
+# Kayıtlar (hata ayıklama için) — Cloudflare panelinde Observability sekmesinde görünür
+[observability]
+enabled = true

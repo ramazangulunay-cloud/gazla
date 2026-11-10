@@ -16,7 +16,8 @@ export default {
       const room = (url.searchParams.get('room') || '').toLowerCase();
       if (!/^[a-z0-9-]{1,40}$/.test(room)) return new Response('Geçersiz oda', { status: 400 });
       const stub = env.ROOMS.get(env.ROOMS.idFromName(room));
-      return stub.fetch(req);
+      try { return await stub.fetch(req); }
+      catch (e) { console.error('ws hata', room, e && e.stack || e); return new Response('Oda hatası: ' + (e && e.message), { status: 500 }); }
     }
     if (url.pathname === '/health') return new Response('ok');
     return env.ASSETS.fetch(req);
@@ -37,6 +38,11 @@ export class Room extends DurableObject {
   }
 
   async fetch(req) {
+    try { return this.handle(req); }
+    catch (e) { console.error('DO hata', e && e.stack || e); throw e; }
+  }
+
+  handle(req) {
     const url = new URL(req.url);
     const quick = url.searchParams.get('quick') === '1';
     let id = (url.searchParams.get('id') || '').replace(/[^a-z0-9]/gi, '').slice(0, 16);
