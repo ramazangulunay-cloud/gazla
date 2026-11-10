@@ -5029,6 +5029,8 @@ window.addEventListener('resize', onResize);
 // ════════════════════════════════════════════════════════════════════
 // ── Kendi sunucun (Cloudflare Worker + Durable Object) için WebSocket odası ──
 // claude.ai "room" arayüzünün aynısını taklit eder: presence / peers / onPeers / onConnection / leave.
+// WebSocket bir kez başarısız olursa bu sayfada hep HTTP kullan
+const USE_HTTP = { on: false };
 function makeWSRoomAPI() {
   let myId = null;
   try { myId = sessionStorage.getItem('gazla-id'); } catch (e) { }
@@ -5056,9 +5058,62 @@ function makeWSRoomAPI() {
         const base = (window.GAZLA_WS || (proto + '//' + location.host)) + '/ws';
         return base + '?room=' + encodeURIComponent(name) + '&id=' + myId + (opts.quick ? '&quick=1' : '');
       };
+      // ── HTTP yedek yolu: WebSocket'i engelleyen ağlarda düzenli POST istekleriyle senkron
+      let httpMode = !!USE_HTTP.on, httpFails = 0, lastPeerJson = new Map();
+      const httpUrl = (extra) => {
+        const base = (window.GAZLA_WS ? window.GAZLA_WS.replace(/^ws/, 'http') : location.origin) + '/sync';
+        return base + '?room=' + encodeURIComponent(name) + '&id=' + myId + (opts.quick ? '&quick=1' : '') + (extra || '');
+      };
+      const httpLoop = async () => {
+        while (!closed) {
+          const t0 = performance.now();
+          try {
+            const r = await fetch(httpUrl(), { method: 'POST', body: JSON.stringify({ p: myPres }), cache: 'no-store' });
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            const m = await r.json();
+            httpFails = 0;
+            if (m.t === 'full') {
+              const err = { code: m.busy ? 'busy' : 'full', message: m.busy ? 'Oda şu an yarışta' : 'Oda dolu (12 kişi)' };
+              closed = true;
+              if (!settled) fail(err); else errL.forEach(fn => { try { fn(err); } catch (e) { } });
+              return;
+            }
+            if (m.t === 'sync') {
+              const now = Date.now(), seen = new Set();
+              let ch = false;
+              for (const q of m.peers || []) {
+                seen.add(q.id);
+                const js = JSON.stringify(q.p || {});
+                if (lastPeerJson.get(q.id) !== js || !others.has(q.id)) {
+                  lastPeerJson.set(q.id, js);
+                  others.set(q.id, { peer: q.id, presence: Object.freeze({ ...(q.p || {}) }), updatedAt: now - (q.a || 0) });
+                  ch = true;
+                }
+              }
+              for (const k of [...others.keys()]) if (!seen.has(k)) { others.delete(k); lastPeerJson.delete(k); ch = true; }
+              setConn(true);
+              if (ch) notify();
+              if (!settled) { settled = true; notify(); resolve(room); }
+            }
+          } catch (e) {
+            httpFails++;
+            if (!settled && httpFails >= 3) { fail({ code: 'conn', message: 'Sunucuya bağlanılamadı' }); return; }
+            if (httpFails >= 3) setConn(false);
+          }
+          const racing = typeof NET !== 'undefined' && NET.state === 'racing';
+          const wait = (racing ? 100 : 450) - (performance.now() - t0);
+          await new Promise(r => setTimeout(r, Math.max(15, wait)));
+        }
+      };
+      const startHttp = () => { httpMode = true; USE_HTTP.on = true; lastErr = null; httpLoop(); };
       const connect = () => {
         if (closed) return;
-        try { ws = new WebSocket(url()); } catch (e) { fail(e); return; }
+        if (httpMode) { startHttp(); return; }
+        try { ws = new WebSocket(url()); } catch (e) { startHttp(); return; }
+        let opened = false;
+        const myWs = ws;
+        // açılmayan WebSocket'i 4 sn sonra bırak ve HTTP'ye geç
+        setTimeout(() => { if (!opened && !closed && ws === myWs && !httpMode) { myWs.onclose = null; try { myWs.close(); } catch (e) { } startHttp(); } }, 4000);
         ws.onmessage = (ev) => {
           if (ev.data === 'pong') return;
           let m; try { m = JSON.parse(ev.data); } catch (e) { return; }
@@ -5084,11 +5139,16 @@ function makeWSRoomAPI() {
             others.set(m.id, o); notify();
           } else if (m.t === 'leave') { others.delete(m.id); notify(); }
         };
-        ws.onopen = () => { clearInterval(pingT); pingT = setInterval(() => { try { if (ws.readyState === 1) ws.send('ping'); } catch (e) { } }, 20000); };
+        ws.onopen = () => { opened = true; clearInterval(pingT); pingT = setInterval(() => { try { if (ws.readyState === 1) ws.send('ping'); } catch (e) { } }, 20000); };
         ws.onclose = () => {
           clearInterval(pingT); setConn(false);
           if (closed) return;
-          if (!settled) { fail(lastErr || { code: 'conn', message: 'Sunucuya bağlanılamadı' }); return; }
+          if (!settled) {
+            if (lastErr) { fail(lastErr); return; }
+            // WebSocket hiç açılamadı → HTTP yedek yoluna geç
+            if (!opened) { startHttp(); return; }
+            fail({ code: 'conn', message: 'Sunucuya bağlanılamadı' }); return;
+          }
           if (lastErr && lastErr.code !== 'conn') { closed = true; others.clear(); notify(); errL.forEach(fn => { try { fn(lastErr); } catch (e) { } }); return; }
           others.clear(); notify();
           retry++;
@@ -5110,11 +5170,16 @@ function makeWSRoomAPI() {
         onPeers: (fn, onErr) => { peerL.add(fn); if (onErr) errL.add(onErr); queueMicrotask(() => fn({ peers: snap, joined: snap, left: [], updated: [] })); return () => { peerL.delete(fn); if (onErr) errL.delete(onErr); }; },
         connected: () => conn,
         onConnection: (fn) => { connL.add(fn); queueMicrotask(() => fn(conn)); return () => connL.delete(fn); },
-        leave: async () => { closed = true; clearInterval(pingT); try { ws && ws.close(1000, 'bye'); } catch (e) { } setConn(false); },
+        leave: async () => {
+          closed = true; clearInterval(pingT);
+          try { ws && ws.close(1000, 'bye'); } catch (e) { }
+          if (httpMode) { try { navigator.sendBeacon ? navigator.sendBeacon(httpUrl('&bye=1'), '{}') : fetch(httpUrl('&bye=1'), { method: 'POST', body: '{}', keepalive: true }); } catch (e) { } }
+          setConn(false);
+        },
       };
       rebuild();
       connect();
-      setTimeout(() => { if (!settled) { closed = true; try { ws && ws.close(); } catch (e) { } fail({ code: 'timeout', message: 'Sunucu yanıt vermedi' }); } }, 9000);
+      setTimeout(() => { if (!settled) { closed = true; try { ws && ws.close(); } catch (e) { } fail({ code: 'timeout', message: 'Sunucu yanıt vermedi' }); } }, 15000);
     });
   }
   return { join };
