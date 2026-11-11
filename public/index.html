@@ -181,7 +181,8 @@ table.res tr.me{background:rgba(255,58,40,.12)}
 .hud .lapbox i{font-style:normal;font-family:var(--num);color:rgba(255,255,255,.6);font-size:14px;grid-column:2;margin-top:-20px;margin-left:16px}
 .hud .lapbox>div:first-child{grid-template-columns:62px auto auto;justify-content:start}
 .hud .lapbox>div:first-child i{grid-column:auto;margin:0 0 0 2px}
-.hud .mm{position:absolute;right:clamp(10px,1.6vw,22px);top:clamp(10px,1.8vh,20px);width:clamp(130px,14vw,190px);height:clamp(92px,10vw,134px);background:rgba(8,9,12,.55);clip-path:polygon(0 0,100% 0,100% 100%,14px 100%,0 calc(100% - 14px))}
+.hud .mmw{position:absolute;left:clamp(6px,1.2vw,18px);bottom:clamp(0px,0.6vh,8px);width:clamp(190px,19vw,280px);height:clamp(190px,19vw,280px);perspective:520px;perspective-origin:50% 0%}
+.hud .mm{width:100%;height:100%;display:block;transform:rotateX(50deg);transform-origin:50% 100%;-webkit-mask-image:radial-gradient(ellipse 50% 50% at 50% 55%,#000 62%,transparent 100%);mask-image:radial-gradient(ellipse 50% 50% at 50% 55%,#000 62%,transparent 100%);background:radial-gradient(ellipse at 50% 60%,rgba(10,12,16,.62),rgba(10,12,16,.28) 70%)}
 .hud .msg{position:absolute;left:0;right:0;top:24%;display:flex;justify-content:center;opacity:0;transition:opacity .2s}
 .hud .msg span{--c:#fff;--bg:rgba(8,9,12,.8);font-weight:700;font-style:italic;font-size:clamp(20px,2.8vw,36px);letter-spacing:.04em;background:linear-gradient(90deg,var(--c) 0 20px,var(--bg) 20px);padding:8px 36px 8px 40px;clip-path:polygon(14px 0,100% 0,calc(100% - 14px) 100%,0 100%);animation:msgIn .28s cubic-bezier(.2,.9,.3,1.2)}
 .hud .msg.show{opacity:1}
@@ -219,8 +220,8 @@ table.res tr.me{background:rgba(255,58,40,.12)}
 .hud .gear b{font-family:var(--num);font-weight:800;font-size:22px}
 .hud .gauge.red .gear{border-color:var(--acc);color:var(--acc)}
 .hud .ntl{position:absolute;left:0;right:0;bottom:-4px;text-align:center;font-size:9px;letter-spacing:.32em;color:#8fcfff}
-.hud .nm{position:absolute;left:clamp(10px,1.6vw,22px);bottom:clamp(10px,1.8vh,20px)}
-.hud.small .gauge{width:clamp(130px,12vw,170px)}.hud.small .pos{font-size:clamp(30px,3.2vw,44px)}.hud.small .mm{width:clamp(96px,9vw,130px);height:clamp(68px,6.4vw,92px)}
+.hud .nm{position:absolute;left:clamp(10px,1.6vw,22px);top:calc(clamp(10px,1.8vh,20px) + clamp(62px,7.4vw,92px))}
+.hud.small .gauge{width:clamp(130px,12vw,170px)}.hud.small .pos{font-size:clamp(30px,3.2vw,44px)}.hud.small .mmw{width:clamp(120px,11vw,170px);height:clamp(120px,11vw,170px)}
 .hud.small .lapbox b{font-size:15px}.hud.small .msg span{font-size:clamp(15px,2vw,24px)}
 .hud.narrow .lapbox>div:not(:first-child){display:none}
 #count{position:fixed;inset:0;display:grid;place-items:center;z-index:15;pointer-events:none;font-family:var(--num);font-weight:800;font-style:italic;font-size:clamp(90px,17vw,220px);color:#fff;text-shadow:0 10px 40px rgba(0,0,0,.6);animation:cnt .6s cubic-bezier(.2,.9,.3,1.25)}
@@ -245,7 +246,7 @@ body.touch.racing #touch{display:block}
 #touch [data-t=item]{right:calc(3% + 200px);bottom:7%;width:70px;height:70px;color:var(--acc2)}
 #touch [data-t=pause]{left:12px;top:112px;width:54px;height:36px}
 body.touch.racing .hud .gauge{bottom:auto;top:8px;right:8px;width:112px}
-body.touch.racing .hud .mm,body.touch.racing .hud .nm{display:none}
+body.touch.racing .hud .mmw,body.touch.racing .hud .nm{display:none}
 body.touch.racing .hud .spd b{font-size:30px}
 body.touch.racing .hud .gear{width:24px;height:24px}body.touch.racing .hud .gear b{font-size:15px}
 
@@ -1526,30 +1527,63 @@ class View {
 // ════════════════════════════════════════════════════════════════════
 const TEX = {};
 function buildTextures() {
-  // Asfalt: 16 m genişlik (u) × 8 m uzunluk (v)
-  TEX.road = canvasTex(512, 1024, (g, w, h) => {
-    noiseFill(g, w, h, '#4a4c50', 22, 11, 1);
-    const ra = rng(77);
-    for (let i = 0; i < 9000; i++) { const v = ra.int(30, 120); g.fillStyle = `rgba(${v},${v},${v + 4},${ra.range(0.25, 0.6)})`; g.fillRect(ra.range(0, w), ra.range(0, h), ra.range(1, 3), ra.range(1, 3)); }
-    const r = rng(3);
-    // yama ve çatlaklar
-    for (let i = 0; i < 6; i++) { g.fillStyle = `rgba(20,20,22,${r.range(0.08, 0.22)})`; g.fillRect(r.range(10, 200), r.range(0, 460), r.range(20, 60), r.range(20, 70)); }
-    g.strokeStyle = 'rgba(15,15,15,.35)'; g.lineWidth = 1.2;
-    for (let i = 0; i < 8; i++) { g.beginPath(); let x = r.range(0, w), y = r.range(0, h); g.moveTo(x, y); for (let k = 0; k < 6; k++) { x += r.range(-10, 10); y += r.range(4, 14); g.lineTo(x, y); } g.stroke(); }
-    // tekerlek izi koyulukları
-    const grd = g.createLinearGradient(0, 0, w, 0);
-    grd.addColorStop(0.0, 'rgba(0,0,0,0)'); grd.addColorStop(0.3, 'rgba(0,0,0,.10)'); grd.addColorStop(0.36, 'rgba(0,0,0,0)');
-    grd.addColorStop(0.64, 'rgba(0,0,0,0)'); grd.addColorStop(0.7, 'rgba(0,0,0,.10)'); grd.addColorStop(1, 'rgba(0,0,0,0)');
-    g.fillStyle = grd; g.fillRect(0, 0, w, h);
-    // kenar çizgileri ve orta kesikli çizgi
-    g.fillStyle = 'rgba(238,236,228,.92)';
-    g.fillRect(14, 0, 10, h); g.fillRect(w - 24, 0, 10, h);
-    g.fillRect(w / 2 - 10, 0, 6, h); g.fillRect(w / 2 + 4, 0, 6, h);
-    g.fillRect(w * 0.25 - 4, 0, 8, h * 0.36); g.fillRect(w * 0.75 - 4, 0, 8, h * 0.36);
-    // çizgilerde aşınma
-    const rw = rng(81); g.fillStyle = 'rgba(70,72,76,.55)';
-    for (let i = 0; i < 260; i++) g.fillRect(rw.range(0, w), rw.range(0, h), rw.range(2, 7), rw.range(2, 9));
-  }, { repeat: true });
+  // Asfalt: 16 m genişlik (u) × 8 m uzunluk (v). Renk + aynı hizada pürüzlülük haritası
+  {
+    const W0 = 1024, H0 = 2048, fr = rng(4040);
+    // ortak özellik listeleri (renk ve pürüzlülük aynı yerlere çizilsin)
+    const blot = [], seams = [], patches = [], oil = [];
+    for (let i = 0; i < 70; i++) blot.push([fr() , fr(), fr.range(0.04, 0.16), fr.range(-1, 1)]);
+    for (let i = 0; i < 9; i++) { const pts = []; let x = fr(), y = fr(); const len = fr.int(6, 18), dir = fr() < 0.6 ? 1 : 0; pts.push([x, y]); for (let k = 0; k < len; k++) { if (dir) { x += fr.range(-0.012, 0.012); y += fr.range(0.012, 0.03); } else { x += fr.range(0.01, 0.03); y += fr.range(-0.012, 0.012); } pts.push([x, y]); } seams.push({ pts, w: fr.range(2.5, 5) }); }
+    for (let i = 0; i < 3; i++) patches.push([fr.range(0.06, 0.7), fr.range(0, 0.85), fr.range(0.08, 0.22), fr.range(0.05, 0.14), fr.range(-0.1, 0.1)]);
+    for (const lc of [0.125, 0.375, 0.625, 0.875]) for (let i = 0; i < 5; i++) oil.push([lc + fr.range(-0.02, 0.02), fr(), fr.range(0.006, 0.016), fr.range(0.02, 0.06)]);
+    const wheel = [0.08, 0.17, 0.33, 0.42, 0.58, 0.67, 0.83, 0.92];
+    const drawSeams = (g, w, h, col) => { g.strokeStyle = col; g.lineCap = 'round'; g.lineJoin = 'round'; for (const sm of seams) { g.lineWidth = sm.w * w / 1024; for (const ox of [-w, 0, w]) for (const oy of [-h, 0, h]) { g.beginPath(); sm.pts.forEach(([x, y], k) => (k ? g.lineTo : g.moveTo).call(g, x * w + ox, y * h + oy)); g.stroke(); } } };
+    const drawLines = (g, w, h, col, jit) => {
+      const rr = rng(88); g.fillStyle = col;
+      const strip = (x0, wd, y0, y1) => { for (let y = y0; y < y1; y += 4) { const j = rr.range(-jit, jit); g.fillRect(x0 + j, y, wd + rr.range(-jit, jit), 4.5); } };
+      const S = w / 512;
+      strip(14 * S, 10 * S, 0, h); strip(w - 24 * S, 10 * S, 0, h);
+      strip(w / 2 - 10 * S, 6 * S, 0, h); strip(w / 2 + 4 * S, 6 * S, 0, h);
+      strip(w * 0.25 - 4 * S, 8 * S, 0, h * 0.36); strip(w * 0.75 - 4 * S, 8 * S, 0, h * 0.36);
+    };
+    TEX.road = canvasTex(W0, H0, (g, w, h) => {
+      noiseFill(g, w, h, '#45474b', 20, 11, 1);
+      // geniş tonlama lekeleri
+      for (const [x, y, r0, k] of blot) for (const ox of [-w, 0, w]) for (const oy of [-h, 0, h]) {
+        const R = r0 * w, gr = g.createRadialGradient(x * w + ox, y * h + oy, 0, x * w + ox, y * h + oy, R);
+        const c = k > 0 ? `rgba(120,120,118,${0.07 * k})` : `rgba(10,10,12,${-0.1 * k})`; gr.addColorStop(0, c); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(x * w + ox - R, y * h + oy - R, R * 2, R * 2);
+      }
+      // agrega: koyu taneler, açık kuvars noktaları
+      const ra = rng(77);
+      for (let i = 0; i < 52000; i++) { const v = ra.int(26, 110), sz = ra.range(1, 3.4); g.fillStyle = `rgba(${v},${v},${v + 3},${ra.range(0.25, 0.7)})`; g.fillRect(ra.range(0, w), ra.range(0, h), sz, sz * ra.range(0.6, 1.3)); }
+      for (let i = 0; i < 7000; i++) { const v = ra.int(150, 215); g.fillStyle = `rgba(${v},${v - 4},${v - 10},${ra.range(0.25, 0.6)})`; g.fillRect(ra.range(0, w), ra.range(0, h), ra.range(1, 2.2), ra.range(1, 2.2)); }
+      // yamalar
+      for (const [x, y, pw, ph, t] of patches) { g.fillStyle = t > 0 ? `rgba(85,86,88,${0.3 + t})` : `rgba(18,18,20,${0.35 - t})`; g.fillRect(x * w, y * h, pw * w, ph * h); g.strokeStyle = 'rgba(14,14,16,.6)'; g.lineWidth = 3; g.strokeRect(x * w, y * h, pw * w, ph * h); }
+      // ince kılcal çatlaklar
+      const r = rng(3); g.strokeStyle = 'rgba(14,14,15,.42)'; g.lineWidth = 1.3;
+      for (let i = 0; i < 26; i++) { g.beginPath(); let x = r.range(0, w), y = r.range(0, h); g.moveTo(x, y); for (let k = 0; k < 9; k++) { x += r.range(-14, 14); y += r.range(-6, 18); g.lineTo(x, y); } g.stroke(); }
+      // zift dolgulu derzler (parlak siyah yılanlar)
+      drawSeams(g, w, h, 'rgba(10,10,12,.78)');
+      // tekerlek izlerinde cilalanmış koyu şeritler
+      for (let i = 0; i < wheel.length; i++) { const cx = wheel[i] * w, hw = w * 0.026, gr = g.createLinearGradient(cx - hw, 0, cx + hw, 0); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(0.5, 'rgba(8,8,10,.16)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(cx - hw, 0, hw * 2, h); }
+      // şerit ortasında yağ damlaları
+      for (const [x, y, rx, ry] of oil) for (const oy of [-h, 0, h]) { const gr = g.createRadialGradient(x * w, y * h + oy, 0, x * w, y * h + oy, ry * h); gr.addColorStop(0, 'rgba(6,6,8,.32)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.save(); g.translate(x * w, y * h + oy); g.scale(rx * w / (ry * h), 1); g.translate(-x * w, -(y * h + oy)); g.fillStyle = gr; g.beginPath(); g.arc(x * w, y * h + oy, ry * h, 0, 7); g.fill(); g.restore(); }
+      // boya çizgileri (kenarları pürüzlü) + aşınma
+      drawLines(g, w, h, 'rgba(236,234,226,.93)', 0.9);
+      const rw = rng(81);
+      for (let i = 0; i < 1400; i++) { g.fillStyle = `rgba(${rw.int(55, 80)},${rw.int(55, 80)},${rw.int(58, 84)},${rw.range(0.35, 0.7)})`; g.fillRect(rw.range(0, w), rw.range(0, h), rw.range(2, 8), rw.range(2, 10)); }
+      // boyada cam boncuk parıltısı
+      for (let i = 0; i < 2200; i++) { g.fillStyle = 'rgba(255,255,250,.5)'; g.fillRect(rw.range(0, w), rw.range(0, h), 1, 1); }
+    }, { repeat: true });
+    TEX.roadR = canvasTex(256, 512, (g, w, h) => {
+      noiseFill(g, w, h, '#d6d6d6', 34, 12, 1);
+      for (const [x, y, pw, ph] of patches) { g.fillStyle = 'rgba(235,235,235,.6)'; g.fillRect(x * w, y * h, pw * w, ph * h); }
+      for (let i = 0; i < wheel.length; i++) { const cx = wheel[i] * w, hw = w * 0.03, gr = g.createLinearGradient(cx - hw, 0, cx + hw, 0); gr.addColorStop(0, 'rgba(150,150,150,0)'); gr.addColorStop(0.5, 'rgba(150,150,150,.75)'); gr.addColorStop(1, 'rgba(150,150,150,0)'); g.fillStyle = gr; g.fillRect(cx - hw, 0, hw * 2, h); }
+      for (const [x, y, rx, ry] of oil) for (const oy of [-h, 0, h]) { g.save(); g.translate(x * w, y * h + oy); g.scale(rx * w / (ry * h), 1); g.fillStyle = 'rgba(70,70,70,.5)'; g.beginPath(); g.arc(0, 0, ry * h * 0.8, 0, 7); g.fill(); g.restore(); }
+      drawSeams(g, w, h, 'rgba(60,60,60,.95)');
+      drawLines(g, w, h, 'rgba(165,165,165,.9)', 0.3);
+    }, { repeat: true, linear: true });
+  }
   TEX.roadN = canvasTex(256, 256, (g, w, h) => {
     const r = rng(5), hgt = new Float32Array(w * h);
     for (let i = 0; i < 2600; i++) { const cx = r() * w, cy = r() * h, rad = r.range(0.8, 2.6), hh = r.range(0.4, 1); for (let y = -3; y <= 3; y++) for (let x = -3; x <= 3; x++) { const d = Math.hypot(x, y); if (d < rad) { const k = (((Math.floor(cy) + y) % h + h) % h) * w + (((Math.floor(cx) + x) % w + w) % w); hgt[k] = Math.max(hgt[k], hh * (1 - d / rad)); } } }
@@ -1592,13 +1626,41 @@ function buildTextures() {
     g.fillStyle = 'rgba(0,0,0,.25)'; for (let i = 0; i < 4; i++) g.fillRect(i * w / 4, 0, 2, h);
     g.fillStyle = 'rgba(0,0,0,.2)'; g.fillRect(0, h - 8, w, 8);
   }, { repeat: true });
-  // Zemin: tozlu toprak/kuru çim
-  TEX.ground = canvasTex(512, 512, (g, w, h) => {
-    noiseFill(g, w, h, '#c8c2b0', 34, 31, 2);
+  // Zemin: tozlu toprak/kuru çim (çakıl, kuru ot öbekleri, ince çatlaklar)
+  TEX.ground = canvasTex(1024, 1024, (g, w, h) => {
+    noiseFill(g, w, h, '#c6bfac', 30, 31, 2);
     const r = rng(13);
-    for (let i = 0; i < 900; i++) { const v = r.int(-40, 30); g.fillStyle = `rgba(${150 + v},${150 + v},${130 + v},${r.range(0.15, 0.4)})`; g.beginPath(); g.arc(r.range(0, w), r.range(0, h), r.range(1, 5), 0, 7); g.fill(); }
-    for (let i = 0; i < 500; i++) { g.strokeStyle = `rgba(80,110,50,${r.range(0.2, 0.5)})`; g.lineWidth = 1; const x = r.range(0, w), y = r.range(0, h); g.beginPath(); g.moveTo(x, y); g.lineTo(x + r.range(-3, 3), y - r.range(3, 8)); g.stroke(); }
+    for (let i = 0; i < 90; i++) { const x = r() * w, y = r() * h, R = r.range(30, 120), k = r.range(-1, 1); for (const ox of [-w, 0, w]) for (const oy of [-h, 0, h]) { const gr = g.createRadialGradient(x + ox, y + oy, 0, x + ox, y + oy, R); gr.addColorStop(0, k > 0 ? `rgba(110,128,70,${0.18 * k})` : `rgba(120,100,70,${-0.16 * k})`); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(x + ox - R, y + oy - R, R * 2, R * 2); } }
+    for (let i = 0; i < 3600; i++) { const v = r.int(-45, 30); g.fillStyle = `rgba(${152 + v},${148 + v},${128 + v},${r.range(0.2, 0.55)})`; g.beginPath(); g.ellipse(r.range(0, w), r.range(0, h), r.range(1, 4.5), r.range(0.8, 3.5), r() * 3, 0, 7); g.fill(); }
+    // çakıl gölgeleri
+    for (let i = 0; i < 1600; i++) { const x = r.range(0, w), y = r.range(0, h), s2 = r.range(1.2, 3.2); g.fillStyle = 'rgba(60,50,40,.35)'; g.fillRect(x + 1, y + 1, s2, s2 * 0.7); g.fillStyle = `rgba(${r.int(170, 215)},${r.int(165, 205)},${r.int(150, 190)},.85)`; g.fillRect(x, y, s2, s2 * 0.7); }
+    // kuru çatlaklar
+    g.strokeStyle = 'rgba(90,75,60,.28)'; g.lineWidth = 1;
+    for (let i = 0; i < 40; i++) { g.beginPath(); let x = r.range(0, w), y = r.range(0, h); g.moveTo(x, y); for (let k = 0; k < 7; k++) { x += r.range(-12, 12); y += r.range(-12, 12); g.lineTo(x, y); } g.stroke(); }
+    // ot öbekleri
+    for (let i = 0; i < 260; i++) { const cx = r.range(0, w), cy = r.range(0, h), n = r.int(5, 14), gg = r.int(90, 130); for (let k = 0; k < n; k++) { g.strokeStyle = `rgba(${gg - 20},${gg},${r.int(40, 60)},${r.range(0.35, 0.7)})`; g.lineWidth = r.range(0.8, 1.6); g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + r.range(-6, 6), cy - r.range(4, 12)); g.stroke(); } }
+    for (let i = 0; i < 900; i++) { g.strokeStyle = `rgba(120,110,70,${r.range(0.2, 0.45)})`; g.lineWidth = 1; const x = r.range(0, w), y = r.range(0, h); g.beginPath(); g.moveTo(x, y); g.lineTo(x + r.range(-3, 3), y - r.range(3, 8)); g.stroke(); }
   }, { repeat: true });
+  // duman topağı: gürültülü, yumuşak kenarlı (R kanalı yoğunluk ayrıntısı)
+  TEX.puff = canvasTex(128, 128, (g, w, h) => {
+    const img = g.createImageData(w, h), d = img.data, r = rng(71);
+    const grid = []; for (let i = 0; i < 16 * 16; i++) grid.push(r());
+    const vn = (x, y) => { const xi = Math.floor(x), yi = Math.floor(y), fx = x - xi, fy = y - yi; const G = (a, b) => grid[((b & 15) * 16) + (a & 15)]; const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy); return (G(xi, yi) * (1 - sx) + G(xi + 1, yi) * sx) * (1 - sy) + (G(xi, yi + 1) * (1 - sx) + G(xi + 1, yi + 1) * sx) * sy; };
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const u = x / w - 0.5, v = y / h - 0.5, rr = Math.sqrt(u * u + v * v) * 2;
+      const n = vn(x / 16, y / 16) * 0.55 + vn(x / 8, y / 8) * 0.3 + vn(x / 4, y / 4) * 0.15;
+      const a = Math.max(0, 1 - rr * (0.85 + (1 - n) * 0.5)); const al = Math.pow(a, 1.3) * (0.55 + n * 0.6);
+      const i = (y * w + x) * 4; d[i] = d[i + 1] = d[i + 2] = Math.round(120 + n * 135); d[i + 3] = Math.round(Math.min(1, al) * 255);
+    }
+    g.putImageData(img, 0, 0);
+  });
+  // su damlası/sis: parlak çekirdek + yumuşak hale
+  TEX.drop = canvasTex(64, 64, (g, w, h) => {
+    g.clearRect(0, 0, w, h);
+    const gr = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
+    gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.25, 'rgba(255,255,255,.75)'); gr.addColorStop(0.6, 'rgba(255,255,255,.22)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, w, h);
+  });
   TEX.aoRect = canvasTex(128, 128, (g, w, h) => {
     g.clearRect(0, 0, w, h);
     for (let i = 0; i < 24; i++) { const k = i / 24; g.fillStyle = `rgba(0,0,0,${0.06})`; const m = 4 + k * 26; g.beginPath(); g.roundRect ? g.roundRect(m, m, w - m * 2, h - m * 2, 20) : g.rect(m, m, w - m * 2, h - m * 2); g.fill(); }
@@ -2205,7 +2267,7 @@ async function buildWorld(progress) {
 
   // ZEMİN: uzak düzlük + pist çevresinde yükseklik ızgarası (tepeler, setler)
   const groundMat = new THREE.MeshStandardMaterial({ map: TEX.ground, roughness: 0.95, vertexColors: true });
-  TEX.ground.repeat.set(330, 168);
+  TEX.ground.repeat.set(220, 112);
   const nz = rng(99), grid = [];
   for (let i = 0; i < 64 * 64; i++) grid.push(nz());
   const vn = (x, y) => { const xi = Math.floor(x), yi = Math.floor(y), fx = x - xi, fy = y - yi; const g2 = (a, b2) => grid[((b2 % 64 + 64) % 64) * 64 + ((a % 64 + 64) % 64)]; const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy); return lerp(lerp(g2(xi, yi), g2(xi + 1, yi), sx), lerp(g2(xi, yi + 1), g2(xi + 1, yi + 1), sx), sy); };
@@ -2251,7 +2313,7 @@ async function buildWorld(progress) {
 
   // YOL
   TEX.roadN.repeat.set(4, 2);
-  const roadMat = new THREE.MeshStandardMaterial({ map: TEX.road, normalMap: TEX.roadN, normalScale: new THREE.Vector2(0.55, 0.55), roughness: 0.8, metalness: 0 });
+  const roadMat = new THREE.MeshStandardMaterial({ map: TEX.road, roughnessMap: TEX.roadR, normalMap: TEX.roadN, normalScale: new THREE.Vector2(0.6, 0.6), roughness: 1, metalness: 0, envMapIntensity: 0.9 });
   addMesh(ribbonGeo(T, -T.half, T.half, 0.02, 0.02, 8), roadMat);
   const kerbMat = new THREE.MeshStandardMaterial({ map: TEX.kerb, roughness: 0.7 });
   addMesh(ribbonGeo(T, -T.half - T.kerb, -T.half, 0.05, 0.05, 3), kerbMat);
@@ -2637,25 +2699,52 @@ async function buildWorld(progress) {
   b.free();
   // gecekondu tepesi + dağlar
   {
+    // yumuşak gürültülü tepe ve arka plandaki dağ sırası (piramit yerine)
+    const nz2 = rng(4242), ng = []; for (let i = 0; i < 256; i++) ng.push(nz2());
+    const vn1 = (x) => { const i = Math.floor(x), f = x - i, s2 = f * f * (3 - 2 * f); return ng[(i & 255)] * (1 - s2) + ng[((i + 1) & 255)] * s2; };
+    const vn2 = (x, y) => vn1(x + Math.floor(y) * 57.3) * (1 - (y - Math.floor(y))) + vn1(x + (Math.floor(y) + 1) * 57.3) * (y - Math.floor(y));
+    const fbm = (x, y) => vn2(x, y) * 0.55 + vn2(x * 2.1, y * 2.1) * 0.28 + vn2(x * 4.3, y * 4.3) * 0.17;
+    const lowC = new THREE.Color('#7f9455'), midC = new THREE.Color('#6d7653'), hiC = new THREE.Color('#9a958a'), tc = new THREE.Color();
     const hill = { x: 120, z: -820, rad: 360, h: 95 };
-    const hm = new THREE.Mesh(new THREE.ConeGeometry(hill.rad, hill.h, 40, 6), new THREE.MeshStandardMaterial({ color: 0x8c9a5c, roughness: 1, flatShading: true }));
-    hm.position.set(hill.x, hill.h / 2 - 1, hill.z); scene.add(hm);
-    for (let i = 0; i < 170; i++) {
-      const a = r.range(Math.PI * 0.15, Math.PI * 0.85), d = r.range(40, hill.rad - 20);
+    {
+            const segA = 96, segR = 18, pos = [], col = [], idx = [];
+      for (let ir = 0; ir <= segR; ir++) for (let ia = 0; ia <= segA; ia++) {
+        const rr = ir / segR, a = ia / segA * Math.PI * 2;
+        const x = Math.cos(a) * rr * hill.rad, z = Math.sin(a) * rr * hill.rad;
+        const n = fbm(x / 90 + 3, z / 90 + 7);
+        const y = hill.h * Math.pow(1 - rr, 1.6) * (0.75 + n * 0.5) - 1.5 * rr;
+        pos.push(hill.x + x, y, hill.z + z);
+        tc.copy(lowC).lerp(midC, clamp(y / hill.h, 0, 1)); const v = 0.9 + n * 0.2; col.push(tc.r * v, tc.g * v, tc.b * v);
+      }
+      for (let ir = 0; ir < segR; ir++) for (let ia = 0; ia < segA; ia++) { const a0 = ir * (segA + 1) + ia, b0 = a0 + 1, c0 = a0 + segA + 1, d0 = c0 + 1; idx.push(a0, b0, c0, b0, d0, c0); }
+      const hg = new THREE.BufferGeometry(); hg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); hg.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); hg.setIndex(idx); hg.computeVertexNormals();
+      const hm = new THREE.Mesh(hg, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 })); hm.receiveShadow = true; scene.add(hm);
+      hill.yAt = (x, z) => { const dx = x - hill.x, dz = z - hill.z, rr = Math.hypot(dx, dz) / hill.rad; return rr >= 1 ? 0 : hill.h * Math.pow(1 - rr, 1.6) * (0.75 + fbm(dx / 90 + 3, dz / 90 + 7) * 0.5) - 1.5 * rr; };
+    }
+    for (let i = 0; i < 220; i++) {
+      const a = r.range(Math.PI * 0.15, Math.PI * 0.85), d = r.range(40, hill.rad - 30);
       const x = hill.x + Math.cos(a) * d, z = hill.z + Math.sin(a) * d;
-      const y = hill.h * (1 - d / hill.rad) - 1.2;
-      const hh = r.range(7, 14);
-      b.add(G.cone, M(x, y - 0.5, z, r() * 6, r.range(2.2, 3.4), hh, r.range(2.2, 3.4)), r.pick(['#2f4a2c', '#3a5534', '#28402a']), 'flat');
+      const y = hill.yAt(x, z);
+      const hh = r.range(7, 15);
+      b.add(G.cone, M(x, y - 0.6, z, r() * 6, r.range(2.2, 3.6), hh, r.range(2.2, 3.6)), r.pick(['#2f4a2c', '#3a5534', '#28402a', '#34502f']), 'flat');
     }
-    const mm = new THREE.MeshStandardMaterial({ color: 0x7d8a6a, roughness: 1, flatShading: true });
-    const mg = [];
-    for (let i = 0; i < 36; i++) {
-      const a = (i / 36) * Math.PI * 2 + r.range(-0.05, 0.05);
-      if (Math.sin(a) > 0.25) continue; // deniz tarafı açık
-      const d = r.range(1250, 1700), rad = r.range(220, 420), h = r.range(120, 300);
-      const c = new THREE.ConeGeometry(rad, h, 7, 3); c.translate(Math.cos(a) * d, h / 2 - 2, Math.sin(a) * d); mg.push(c.toNonIndexed());
+    {
+      // kara tarafında halka biçimli dağ sırası
+      const segA = 220, segR = 14, R0 = 1050, R1 = 2100, pos = [], col = [], idx = [];
+      for (let ir = 0; ir <= segR; ir++) for (let ia = 0; ia <= segA; ia++) {
+        const t = ir / segR, u = ia / segA, a = Math.PI * 0.9 + u * Math.PI * 1.2;
+        const rad = R0 + (R1 - R0) * t;
+        const ridge = Math.sin(t * Math.PI) ** 1.4 * smoothstep(0, 0.12, u) * smoothstep(1, 0.88, u);
+        const n = fbm(a * 6, t * 3), n2 = fbm(a * 17 + 5, t * 7 + 3);
+        const y = ridge * (90 + n * 260 + n2 * 70) - 6;
+        pos.push(Math.cos(a) * rad, y, Math.sin(a) * rad);
+        const hk = clamp(y / 300, 0, 1);
+        tc.copy(lowC).lerp(midC, clamp(hk * 2, 0, 1)).lerp(hiC, clamp(hk * 1.6 - 0.5, 0, 1)); const v = 0.88 + n2 * 0.25; col.push(tc.r * v, tc.g * v, tc.b * v);
+      }
+      for (let ir = 0; ir < segR; ir++) for (let ia = 0; ia < segA; ia++) { const a0 = ir * (segA + 1) + ia, b0 = a0 + 1, c0 = a0 + segA + 1, d0 = c0 + 1; idx.push(a0, b0, c0, b0, d0, c0); }
+      const mg = new THREE.BufferGeometry(); mg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); mg.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); mg.setIndex(idx); mg.computeVertexNormals();
+      const mtn = new THREE.Mesh(mg, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 })); scene.add(mtn);
     }
-    const mtn = new THREE.Mesh(mergeGeometries(mg), mm); scene.add(mtn);
   }
   await progress(0.88, 'Arka plan');
 
@@ -2803,49 +2892,58 @@ function updateWorld(dt, t) {
 //  top/bot: orta hattın üst ve alt çizgisi [z, y]; cab: kabin
 // ════════════════════════════════════════════════════════════════════
 const CAR_SPECS = {
+  // 80'ler Türk sedanı: kama burun, siyah plastik sarmal tamponlar, geniş siyah yan bant, büyük dikdörtgen farlar
   sahin: {
     W: 1.66, zf: 2.16, zr: -2.16,
     wheel: { r: 0.295, w: 0.19, fz: 1.25, rz: -1.22, x: 0.69, style: 'celik' },
-    top: [[-2.16, 0.78], [-2.08, 0.92], [-1.9, 0.955], [-1.36, 0.965], [0.86, 0.95], [1.05, 0.925], [1.9, 0.86], [2.1, 0.82], [2.16, 0.74]],
+    top: [[-2.16, 0.8], [-2.09, 0.93], [-1.9, 0.965], [-1.36, 0.97], [0.86, 0.95], [1.05, 0.925], [1.85, 0.86], [2.08, 0.81], [2.16, 0.74]],
     bot: [[-2.16, 0.42], [-2.0, 0.31], [1.95, 0.31], [2.16, 0.44]],
-    plan: { front: 0.26, rear: 0.22, endK: 0.88 }, shoulder: 0.11, tumble: 0.03, crown: 0.022, flare: 0,
-    cab: { belt: 0.955, base: 0.92, sill: 1.0, roof: 1.42, rr: 0.07, glassTop: 0.025, zB: 0.84, zA: -1.34, zWf: 0.2, zWr: -0.98, hwB: 0.7, hwR: 0.6, rc: 0.1, bow: 0.05, side: [[0.03, 0.46], [0.52, 0.97]], cornerGlass: 0.42 },
-    head: { type: 'rect', w: 0.36, h: 0.16, x: 0.55, y: 0.67 }, grille: { w: 0.66, h: 0.15, y: 0.67, bars: 3 },
-    tail: { type: 'wide', w: 0.5, h: 0.17, x: 0.5, y: 0.74 }, bumper: { mat: 'chrome', y: 0.44, h: 0.13 },
-    strip: { y: 0.6 }, doors: [0.83, -0.36, -1.32], handleY: 0.84, shelf: true, spoiler: { z: -1.95, y: 0.955 }, antenna: true,
+    plan: { front: 0.22, rear: 0.2, endK: 0.9 }, shoulder: 0.09, tumble: 0.035, crown: 0.02, flare: 0,
+    cab: { belt: 0.955, base: 0.92, sill: 1.0, roof: 1.41, rr: 0.06, glassTop: 0.025, zB: 0.86, zA: -1.32, zWf: 0.16, zWr: -0.94, hwB: 0.7, hwR: 0.6, rc: 0.08, bow: 0.05, side: [[0.03, 0.47], [0.53, 0.97]], cornerGlass: 0.42, pillarTrim: true },
+    head: { type: 'rect', w: 0.37, h: 0.17, x: 0.52, y: 0.665 }, grille: { w: 0.6, h: 0.16, y: 0.665, bars: 5, barMat: 'black' },
+    tail: { type: 'wide', w: 0.52, h: 0.18, x: 0.5, y: 0.75 }, bumper: { mat: 'black', y: 0.43, h: 0.17, wrap: 0.42 },
+    cladding: { y: 0.5, h: 0.09 }, strip: null, doors: [0.83, -0.36, -1.32], handleY: 0.84, shelf: true, spoiler: { z: -1.95, y: 0.965 }, antenna: true,
+    hood: { z0: 2.02, z1: 0.92 }, trunk: { z0: -1.38, z1: -2.06 }, mirror: 'black',
   },
+  // 70'ler/90'lar Fransız kökenli station wagon: uzun tavan, dik bagaj kapağı, çift yuvarlak far, siyah ön bant, tavan barı
   toros: {
     W: 1.64, zf: 2.2, zr: -2.18,
     wheel: { r: 0.29, w: 0.18, fz: 1.3, rz: -1.24, x: 0.68, style: 'kapak' },
-    top: [[-2.18, 0.8], [-2.13, 0.95], [-2.0, 0.975], [0.8, 0.94], [1.0, 0.92], [1.95, 0.85], [2.14, 0.8], [2.2, 0.72]],
+    top: [[-2.18, 0.86], [-2.14, 0.96], [-2.0, 0.975], [0.8, 0.94], [1.0, 0.92], [1.95, 0.85], [2.14, 0.8], [2.2, 0.72]],
     bot: [[-2.18, 0.42], [-2.02, 0.31], [1.98, 0.31], [2.2, 0.44]],
-    plan: { front: 0.24, rear: 0.2, endK: 0.9 }, shoulder: 0.1, tumble: 0.03, crown: 0.02, flare: 0,
-    cab: { belt: 0.965, base: 0.93, sill: 1.01, roof: 1.43, rr: 0.065, glassTop: 0.025, zB: 0.79, zA: -2.08, zWf: 0.2, zWr: -1.98, hwB: 0.69, hwR: 0.61, rc: 0.09, bow: 0.04, side: [[0.03, 0.33], [0.38, 0.62], [0.67, 0.97]], cornerGlass: 0.4 },
-    head: { type: 'rect', w: 0.32, h: 0.18, x: 0.56, y: 0.66 }, grille: { w: 0.7, h: 0.17, y: 0.66, bars: 4 },
-    tail: { type: 'tall', w: 0.16, h: 0.32, x: 0.66, y: 0.76 }, bumper: { mat: 'chrome', y: 0.44, h: 0.12 },
-    strip: { y: 0.62 }, doors: [0.78, -0.42, -1.4], handleY: 0.84, shelf: false, rack: true, spoiler: null, rearSeatZ: -0.95,
+    plan: { front: 0.2, rear: 0.12, endK: 0.92 }, shoulder: 0.08, tumble: 0.03, crown: 0.018, flare: 0,
+    cab: { belt: 0.965, base: 0.93, sill: 1.01, roof: 1.44, rr: 0.06, glassTop: 0.025, zB: 0.79, zA: -2.12, zWf: 0.18, zWr: -2.06, hwB: 0.69, hwR: 0.62, rc: 0.07, bow: 0.04, side: [[0.03, 0.33], [0.37, 0.64], [0.68, 0.97]], cornerGlass: 0.4, pillarTrim: true },
+    head: { type: 'quad', r: 0.083, xs: [0.5, 0.67], y: 0.665 }, front: { w: 1.5, h: 0.24, y: 0.665 }, grille: { w: 0.62, h: 0.17, y: 0.665, bars: 6, barMat: 'black' },
+    tail: { type: 'tall', w: 0.16, h: 0.32, x: 0.66, y: 0.76 }, bumper: { mat: 'black', y: 0.44, h: 0.14, wrap: 0.36 },
+    strip: { y: 0.6, mat: 'trim' }, doors: [0.78, -0.42, -1.4], handleY: 0.84, shelf: false, rack: true, spoiler: null, rearSeatZ: -0.95,
+    hood: { z0: 2.08, z1: 0.88 }, mirror: 'black',
   },
+  // kısa, uzun boylu 3 kapı 4x4: tam genişlik ızgara paneli, yuvarlak farlar, üst köşede sinyal, siyah çamurluk dudakları
   niva: {
     W: 1.68, zf: 1.88, zr: -1.88,
-    wheel: { r: 0.365, w: 0.23, fz: 1.12, rz: -1.1, x: 0.71, style: 'yildiz' },
-    top: [[-1.88, 0.98], [-1.82, 1.12], [-1.7, 1.15], [0.55, 1.12], [0.75, 1.1], [1.7, 1.06], [1.84, 1.0], [1.88, 0.92]],
-    bot: [[-1.88, 0.5], [-1.72, 0.4], [1.72, 0.4], [1.88, 0.52]],
-    plan: { front: 0.2, rear: 0.16, endK: 0.92 }, shoulder: 0.08, tumble: 0.02, crown: 0.012, flare: 0.035,
-    cab: { belt: 1.14, base: 1.1, sill: 1.18, roof: 1.7, rr: 0.06, glassTop: 0.02, zB: 0.53, zA: -1.8, zWf: 0.15, zWr: -1.74, hwB: 0.72, hwR: 0.66, rc: 0.08, bow: 0.02, side: [[0.03, 0.5], [0.56, 0.97]], cornerGlass: 0.35 },
-    head: { type: 'round', r: 0.12, x: 0.6, y: 0.88 }, grille: { w: 0.72, h: 0.2, y: 0.88, bars: 5 },
-    tail: { type: 'tall', w: 0.2, h: 0.24, x: 0.66, y: 0.88 }, bumper: { mat: 'black', y: 0.56, h: 0.16 },
-    strip: null, doors: [0.5, -0.62], handleY: 1.02, shelf: false, rack: true, spoiler: null, spare: true,
+    wheel: { r: 0.365, w: 0.23, fz: 1.12, rz: -1.1, x: 0.71, style: 'celik' },
+    top: [[-1.88, 0.98], [-1.83, 1.12], [-1.7, 1.15], [0.55, 1.12], [0.75, 1.1], [1.72, 1.07], [1.85, 1.02], [1.88, 0.94]],
+    bot: [[-1.88, 0.52], [-1.72, 0.42], [1.72, 0.42], [1.88, 0.54]],
+    plan: { front: 0.14, rear: 0.12, endK: 0.94 }, shoulder: 0.07, tumble: 0.02, crown: 0.012, flare: 0.04,
+    cab: { belt: 1.14, base: 1.1, sill: 1.18, roof: 1.72, rr: 0.05, glassTop: 0.02, zB: 0.52, zA: -1.8, zWf: 0.12, zWr: -1.74, hwB: 0.72, hwR: 0.68, rc: 0.06, bow: 0.02, side: [[0.03, 0.52], [0.57, 0.97]], cornerGlass: 0.3 },
+    head: { type: 'round', r: 0.115, x: 0.57, y: 0.88 }, front: { w: 1.42, h: 0.3, y: 0.88 }, grille: { w: 0.78, h: 0.26, y: 0.88, bars: 5, barMat: 'chrome' },
+    indicTop: { x: 0.69, y: 1.03 },
+    tail: { type: 'tall', w: 0.2, h: 0.24, x: 0.66, y: 0.88 }, bumper: { mat: 'chrome', y: 0.58, h: 0.11, wrap: 0.22 },
+    archTrim: true, strip: null, doors: [0.5, -0.62], handleY: 1.02, shelf: false, rack: false, spoiler: null, spare: true,
+    hood: { z0: 1.8, z1: 0.6 }, mirror: 'black',
   },
+  // 80'ler Alman spor coupe (DTM tarzı): köşeli kabarık çamurluklar, gövde renkli tampon + siyah dudak, dörtlü yuvarlak far, büyük arka kanat
   e30: {
-    W: 1.65, zf: 2.18, zr: -2.16,
-    wheel: { r: 0.3, w: 0.21, fz: 1.28, rz: -1.29, x: 0.7, style: 'bbs' },
-    top: [[-2.16, 0.74], [-2.1, 0.87], [-1.95, 0.9], [-1.32, 0.91], [0.76, 0.89], [0.95, 0.87], [1.95, 0.8], [2.12, 0.79], [2.18, 0.7]],
-    bot: [[-2.16, 0.38], [-2.0, 0.27], [1.98, 0.27], [2.18, 0.36]],
-    plan: { front: 0.18, rear: 0.2, endK: 0.9 }, shoulder: 0.09, tumble: 0.025, crown: 0.015, flare: 0.02,
-    cab: { belt: 0.9, base: 0.86, sill: 0.94, roof: 1.34, rr: 0.06, glassTop: 0.02, zB: 0.74, zA: -1.33, zWf: 0.16, zWr: -0.96, hwB: 0.69, hwR: 0.59, rc: 0.09, bow: 0.04, side: [[0.03, 0.55], [0.6, 0.95]], cornerGlass: 0.4 },
-    head: { type: 'quad', r: 0.085, xs: [0.42, 0.63], y: 0.66 }, grille: { w: 0.3, h: 0.13, y: 0.66, bars: 0, kidney: false },
-    tail: { type: 'wide', w: 0.52, h: 0.15, x: 0.5, y: 0.74 }, bumper: { mat: 'black', y: 0.42, h: 0.15 },
-    strip: { y: 0.55 }, doors: [0.72, -0.34], handleY: 0.8, shelf: true, spoiler: { z: -1.95, y: 0.9 },
+    W: 1.68, zf: 2.18, zr: -2.16,
+    wheel: { r: 0.31, w: 0.22, fz: 1.28, rz: -1.29, x: 0.72, style: 'bbs' },
+    top: [[-2.16, 0.78], [-2.1, 0.9], [-1.95, 0.93], [-1.32, 0.925], [0.76, 0.89], [0.95, 0.87], [1.95, 0.8], [2.12, 0.79], [2.18, 0.7]],
+    bot: [[-2.16, 0.34], [-2.0, 0.25], [1.98, 0.25], [2.18, 0.32]],
+    plan: { front: 0.16, rear: 0.18, endK: 0.92 }, shoulder: 0.08, tumble: 0.03, crown: 0.014, flare: 0.06, flareBox: true,
+    cab: { belt: 0.905, base: 0.87, sill: 0.945, roof: 1.34, rr: 0.055, glassTop: 0.02, zB: 0.74, zA: -1.33, zWf: 0.16, zWr: -0.98, hwB: 0.69, hwR: 0.59, rc: 0.08, bow: 0.04, side: [[0.03, 0.56], [0.61, 0.95]], cornerGlass: 0.4, pillarTrim: true },
+    head: { type: 'quad', r: 0.08, xs: [0.42, 0.6], y: 0.665 }, front: { w: 1.38, h: 0.2, y: 0.665 }, grille: { w: 0.22, h: 0.15, y: 0.665, bars: 0, center: true },
+    tail: { type: 'wide', w: 0.55, h: 0.16, x: 0.5, y: 0.76 }, bumper: { mat: 'paint', y: 0.4, h: 0.17, wrap: 0.4, lip: 0.06 },
+    skirt: true, strip: null, doors: [0.72, -0.34], handleY: 0.8, shelf: true, wing: { z: -1.98, y: 0.93, w: 1.42 },
+    hood: { z0: 2.06, z1: 0.82 }, trunk: { z0: -1.36, z1: -2.08 }, mirror: 'paint',
   },
 };
 // ---- src/29_loft.js
@@ -2877,7 +2975,12 @@ function bodyFns(S) {
     if (df > 0) k = Math.min(k, 1 - (1 - P.endK) * (1 - Math.sqrt(Math.max(0, 1 - (df / P.front) ** 2))));
     if (dr > 0) k = Math.min(k, 1 - (1 - P.endK) * (1 - Math.sqrt(Math.max(0, 1 - (dr / P.rear) ** 2))));
     let flare = 0;
-    if (S.flare) for (const zc of [S.wheel.fz, S.wheel.rz]) { const d = Math.abs(z - zc) / (R + 0.2); if (d < 1) flare = Math.max(flare, S.flare * (0.5 + 0.5 * Math.cos(d * Math.PI))); }
+    if (S.flare) for (const zc of [S.wheel.fz, S.wheel.rz]) {
+      const d = Math.abs(z - zc) / (R + 0.2);
+      // 'box': köşeli dolgun çamurluk (80'ler ralli/DTM), yoksa yumuşak kabarık
+      const f = S.flareBox ? 1 - smoothstep(0.62, 1, d) : (d < 1 ? 0.5 + 0.5 * Math.cos(d * Math.PI) : 0);
+      flare = Math.max(flare, S.flare * f);
+    }
     return hw * k + flare;
   };
   return {
@@ -3000,7 +3103,7 @@ function loftCabin(C) {
   for (let k = 1; k <= 3; k++) { const th = k / 3 * Math.PI / 2; levels.push({ y: yTop - C.rr + Math.sin(th) * C.rr, inset: C.rr * (1 - Math.cos(th)), glass: false }); }
   for (const L of levels) { const a = at(L.y); const ins = L.inset || 0; rows.push(cabinRing(C, a.zF - ins * 0.6, a.zR + ins * 0.6, a.hw - ins, L.y)); }
   const n = rows[0].length;
-  const P = { paint: { pos: [], idx: [] }, glass: { pos: [], idx: [] }, rear: { pos: [], idx: [], uv: [] } };
+  const P = { paint: { pos: [], idx: [] }, glass: { pos: [], idx: [] }, trim: { pos: [], idx: [] }, rear: { pos: [], idx: [], uv: [] } };
   const isGlass = (p, q) => {
     const both = (s) => (p.seg === s || q.seg === s);
     if (p.seg === 'S' && q.seg === 'S') return C.side.some(([a, b]) => p.p >= a - 1e-6 && p.p <= b + 1e-6 && q.p >= a - 1e-6 && q.p <= b + 1e-6) ? 'side' : null;
@@ -3021,6 +3124,8 @@ function loftCabin(C) {
     const a = rows[k][j], b = rows[k][(j + 1) % n], c = rows[k + 1][j], d = rows[k + 1][(j + 1) % n];
     const g = levels[k].glass ? isGlass(a, b) : null;
     if (g) { quad(P.glass, a, b, c, d); if (g === 'rw') { quad(P.rear, a, b, c, d); for (const v of [a, b, c, d]) { rx0 = Math.min(rx0, v.x); rx1 = Math.max(rx1, v.x); ry0 = Math.min(ry0, v.y); ry1 = Math.max(ry1, v.y); } } }
+    // camlar arasındaki dikmeler (B/C) siyah: "shadowline" görünüm
+    else if (C.pillarTrim && levels[k].glass && a.seg === 'S' && b.seg === 'S') quad(P.trim, a, b, c, d);
     else quad(P.paint, a, b, c, d);
   }
   // arka cam yazısı için UV
@@ -3120,6 +3225,7 @@ function vehicleMats(custom, lite) {
   m.tail = new THREE.MeshStandardMaterial({ color: 0x5c0505, emissive: 0xff1006, emissiveIntensity: 0.55, roughness: 0.15 });
   m.amber = new THREE.MeshStandardMaterial({ color: 0xff9a1a, emissive: 0xff7a00, emissiveIntensity: 0.25, roughness: 0.2 });
   m.revlight = new THREE.MeshStandardMaterial({ color: 0xf2f2f2, emissive: 0xffffff, emissiveIntensity: 0.1, roughness: 0.2 });
+  m.fog = new THREE.MeshStandardMaterial({ color: 0xffd23a, emissive: 0xffc21a, emissiveIntensity: 0.9, roughness: 0.12 });
   m.interior = new THREE.MeshStandardMaterial({ color: 0x24211e, roughness: 0.9 });
   m.seat = new THREE.MeshStandardMaterial({ color: 0x4d3627, roughness: 0.8 });
   m.coat = new THREE.MeshPhysicalMaterial({ color: rim.c, roughness: 0.55, sheen: 0.6, sheenRoughness: 0.5, sheenColor: new THREE.Color(rim.c).lerp(new THREE.Color(1, 1, 1), 0.4) });
@@ -3131,6 +3237,29 @@ function vehicleMats(custom, lite) {
   m.nazar = new THREE.MeshPhysicalMaterial({ map: TEX.nazar, roughness: 0.08, clearcoat: 1 });
   for (const k of ['paint', 'chrome', 'black', 'trim', 'rubber', 'tire', 'coat', 'leather', 'cloth', 'seat']) m[k].userData.cast = true;
   return m;
+}
+// alt neon için yumuşak kenarlı yuvarlatılmış dikdörtgen ışık (araç boyuna göre)
+const _neonTex = new Map();
+function neonGlowTex(w, l) {
+  const key = w.toFixed(1) + 'x' + l.toFixed(1);
+  if (_neonTex.has(key)) return _neonTex.get(key);
+  const t = canvasTex(128, Math.round(128 * l / w), (g, cw, ch) => {
+    g.clearRect(0, 0, cw, ch);
+    const pad = cw * 0.2, r = cw * 0.18;
+    for (let k = 0; k < 6; k++) {
+      g.save(); g.filter = `blur(${4 + k * 4}px)`; g.globalAlpha = 0.28;
+      g.fillStyle = '#fff'; g.beginPath();
+      const p = pad + k * 1.5;
+      g.roundRect ? g.roundRect(p, p * 0.9, cw - 2 * p, ch - 1.8 * p, r) : g.rect(p, p, cw - 2 * p, ch - 2 * p);
+      g.fill(); g.restore();
+    }
+    // merkez biraz daha parlak, kenarlarda sönümlü
+    const gr = g.createRadialGradient(cw / 2, ch / 2, 0, cw / 2, ch / 2, ch * 0.55);
+    gr.addColorStop(0, 'rgba(255,255,255,.35)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, cw, ch);
+  });
+  _neonTex.set(key, t);
+  return t;
 }
 function plateTex(text) {
   return canvasTex(256, 64, (g, w, h) => {
@@ -3282,6 +3411,7 @@ function buildCar(spec, ctx) {
   // kabin (boya + cam)
   const K = loftCabin(C);
   part(body, arraysGeo(K.paint.pos, K.paint.idx), mats.paint);
+  if (K.trim.idx.length) part(body, arraysGeo(K.trim.pos, K.trim.idx), mats.trim);
   const glass = part(body, arraysGeo(K.glass.pos, K.glass.idx), mats.glass);
   glass.renderOrder = 3; glass.castShadow = false; glass.userData.keep = true;
   // arka cam yazısı
@@ -3301,11 +3431,20 @@ function buildCar(spec, ctx) {
   }
   const zf = S.zf, zr = S.zr;
   const frontY = (y) => y; // ön yüz düz
+  // ön bant (farları ve ızgarayı çevreleyen siyah panel)
+  if (S.front) part(body, rbox(S.front.w, S.front.h, 0.06, 0.025), mats.trim, 0, S.front.y, zf - 0.008);
   // ızgara
   const Gr = S.grille;
-  part(body, rbox(Gr.w, Gr.h, 0.06, 0.02), mats.trim, 0, Gr.y, zf - 0.005);
-  for (let i = 0; i < (Gr.bars || 0); i++) part(body, rbox(Gr.w - 0.02, 0.014, 0.03, 0.006), mats.chrome, 0, Gr.y - Gr.h / 2 + (i + 0.5) * Gr.h / Gr.bars, zf + 0.025);
-  if (!Gr.bars) for (let i = 0; i < 6; i++) part(body, rbox(0.012, Gr.h - 0.02, 0.03, 0.005), mats.black, -Gr.w / 2 + (i + 0.5) * Gr.w / 6, Gr.y, zf + 0.02);
+  const barM = Gr.barMat === 'black' ? mats.black : mats.chrome;
+  if (Gr.center) {
+    // küçük merkez ızgara: krom çerçeve + dikey çubuklar
+    part(body, rbox(Gr.w + 0.03, Gr.h + 0.03, 0.05, 0.02), mats.chrome, 0, Gr.y, zf + 0.012);
+    part(body, rbox(Gr.w, Gr.h, 0.05, 0.015), mats.black, 0, Gr.y, zf + 0.02);
+    for (let i = 0; i < 7; i++) part(body, rbox(0.01, Gr.h - 0.02, 0.03, 0.004), mats.trim, -Gr.w / 2 + (i + 0.5) * Gr.w / 7, Gr.y, zf + 0.04);
+  } else {
+    part(body, rbox(Gr.w, Gr.h, 0.06, 0.02), mats.black, 0, Gr.y, zf - 0.002);
+    for (let i = 0; i < (Gr.bars || 0); i++) part(body, rbox(Gr.w - 0.03, 0.012, 0.03, 0.005), barM, 0, Gr.y - Gr.h / 2 + (i + 0.5) * Gr.h / Gr.bars, zf + 0.028);
+  }
   // farlar
   const H = S.head;
   const lamp = (x, y, w, h) => {
@@ -3320,11 +3459,16 @@ function buildCar(spec, ctx) {
   };
   if (H.type === 'rect') for (const sx of [-1, 1]) lamp(sx * H.x, H.y, H.w, H.h);
   else if (H.type === 'round') for (const sx of [-1, 1]) roundLamp(sx * H.x, H.y, H.r);
-  else if (H.type === 'quad') { for (const sx of [-1, 1]) { part(body, rbox(0.46, 0.2, 0.05, 0.03), mats.trim, sx * 0.53, H.y, zf - 0.005); for (const xx of H.xs) roundLamp(sx * xx, H.y, H.r); } }
+  else if (H.type === 'quad') { for (const sx of [-1, 1]) { if (!S.front) part(body, rbox(0.46, 0.2, 0.05, 0.03), mats.trim, sx * 0.53, H.y, zf - 0.005); for (const xx of H.xs) roundLamp(sx * xx, H.y, H.r); } }
+  if (S.indicTop) for (const sx of [-1, 1]) part(body, rbox(0.12, 0.06, 0.08, 0.018), mats.amber, sx * S.indicTop.x, S.indicTop.y, zf - 0.04);
   // sinyaller
   const hx = H.type === 'quad' ? 0.78 : H.x + (H.w || H.r * 2 || 0.25) / 2 + 0.07;
   for (const sx of [-1, 1]) part(body, rbox(0.1, 0.07, 0.04, 0.015), mats.amber, sx * Math.min(hx, W / 2 - 0.08), S.bumper.y + S.bumper.h / 2 + 0.06, zf + 0.01);
-  if (has('sis')) for (const sx of [-1, 1]) { part(body, new THREE.CylinderGeometry(0.06, 0.06, 0.05, 16), mats.head, sx * 0.48, S.bumper.y - 0.02, zf + 0.12, Math.PI / 2); }
+  if (has('sis')) for (const sx of [-1, 1]) {
+    // sarı camlı sis farları (tamponun içinde)
+    part(body, rbox(0.22, 0.09, 0.05, 0.015), mats.black, sx * 0.5, S.bumper.y - 0.01, zf + 0.1);
+    part(body, rbox(0.19, 0.07, 0.03, 0.012), mats.fog, sx * 0.5, S.bumper.y - 0.01, zf + 0.125);
+  }
   // stoplar
   const T = S.tail;
   const brakeMats = [mats.tail];
@@ -3340,13 +3484,20 @@ function buildCar(spec, ctx) {
       part(body, rbox(T.w, T.h * 0.36, 0.04, 0.012), mats.amber, sx * T.x, T.y - T.h * 0.3, zr - 0.012);
     }
   }
-  // tamponlar
-  const bm = S.bumper.mat === 'chrome' ? mats.chrome : mats.black;
-  const bw = W + 0.03, bh = S.bumper.h;
-  part(body, rbox(bw, bh, 0.16, 0.06), bm, 0, S.bumper.y, zf + 0.03);
-  part(body, rbox(bw, bh, 0.16, 0.06), bm, 0, S.bumper.y, zr - 0.03);
-  for (const sx of [-1, 1]) for (const [zz, dz] of [[zf - 0.18, 1], [zr + 0.18, -1]]) part(body, rbox(0.12, bh, 0.36, 0.05), bm, sx * (W / 2 - 0.02), S.bumper.y, zz);
-  if (S.bumper.mat === 'chrome') { part(body, rbox(bw - 0.1, 0.035, 0.05, 0.015), mats.rubber, 0, S.bumper.y, zf + 0.115); part(body, rbox(bw - 0.1, 0.035, 0.05, 0.015), mats.rubber, 0, S.bumper.y, zr - 0.115); }
+  // tamponlar (sarmal uçlar, isteğe bağlı siyah alt dudak)
+  const bm = S.bumper.mat === 'chrome' ? mats.chrome : S.bumper.mat === 'paint' ? mats.paint : mats.black;
+  const bh = S.bumper.h, wrap = S.bumper.wrap || 0.36;
+  const bwF = Math.min(W + 0.03, 2 * F.hw(zf - 0.08) + 0.07), bwR = Math.min(W + 0.03, 2 * F.hw(zr + 0.08) + 0.07), bw = Math.max(bwF, bwR);
+  part(body, rbox(bwF, bh, 0.18, 0.06), bm, 0, S.bumper.y, zf + 0.03);
+  part(body, rbox(bwR, bh, 0.18, 0.06), bm, 0, S.bumper.y, zr - 0.03);
+  for (const sx of [-1, 1]) for (const zz of [zf - wrap / 2, zr + wrap / 2]) part(body, rbox(0.12, bh, wrap, 0.05), bm, sx * Math.min(W / 2 - 0.02, F.hw(zz) + 0.015), S.bumper.y, zz);
+  if (S.bumper.mat === 'black') { part(body, rbox(bwF - 0.12, 0.018, 0.02, 0.006), mats.trim, 0, S.bumper.y + bh * 0.22, zf + 0.12); part(body, rbox(bwR - 0.12, 0.018, 0.02, 0.006), mats.trim, 0, S.bumper.y + bh * 0.22, zr - 0.12); }
+  if (S.bumper.lip) {
+    // ön spoiler dudağı
+    part(body, rbox(bwF - 0.08, S.bumper.lip, 0.26, 0.02), mats.black, 0, S.bumper.y - bh / 2 - S.bumper.lip / 2 + 0.01, zf + 0.02);
+    for (const sx of [-1, 1]) part(body, rbox(0.16, 0.08, 0.05, 0.02), mats.black, sx * 0.55, S.bumper.y - 0.02, zf + 0.12);
+  }
+  if (S.bumper.mat === 'chrome') { part(body, rbox(bwF - 0.1, 0.035, 0.05, 0.015), mats.rubber, 0, S.bumper.y, zf + 0.115); part(body, rbox(bwR - 0.1, 0.035, 0.05, 0.015), mats.rubber, 0, S.bumper.y, zr - 0.115); }
   // plakalar
   if (!lite) {
     const pm = new THREE.MeshStandardMaterial({ map: plateTex(custom.plate || '34 GZL 34'), roughness: 0.45 });
@@ -3358,25 +3509,44 @@ function buildCar(spec, ctx) {
   for (const sx of [-1, 1]) {
     // ayna
     const mz = C.zB - 0.12, my = C.belt + 0.1, mx = sx * (C.hwB + 0.05);
+    const mm = S.mirror === 'black' ? mats.trim : S.mirror === 'paint' ? mats.paint : mats.chrome;
     part(body, rbox(0.06, 0.03, 0.08, 0.012), mats.trim, sx * (C.hwB - 0.01), my - 0.04, mz);
-    part(body, rbox(0.07, 0.1, 0.15, 0.03), S.bumper.mat === 'chrome' ? mats.chrome : mats.paint, mx + sx * 0.04, my, mz - 0.02);
+    part(body, rbox(0.07, 0.1, 0.15, 0.03), mm, mx + sx * 0.04, my, mz - 0.02);
+    part(body, rbox(0.012, 0.075, 0.12, 0.004), mats.reflector, mx + sx * 0.003, my, mz + 0.055 - 0.02);
     // kapı çizgileri ve kollar
     for (const dz of S.doors) {
       const x = bodySideX(S, F, dz, (C.belt + F.bot(dz)) / 2);
       part(body, new THREE.BoxGeometry(0.004, C.belt - F.bot(dz) - 0.12, 0.006), mats.trim, sx * (x + 0.002), (C.belt + F.bot(dz)) / 2, dz);
     }
     for (let k = 0; k < S.doors.length - 1; k++) {
-      const hz = S.doors[k] - 0.12;
+      const hz = S.doors[k + 1] + 0.16;
       const x = bodySideX(S, F, hz, S.handleY);
       part(body, rbox(0.03, 0.03, 0.13, 0.012), mats.chrome, sx * (x + 0.008), S.handleY, hz);
     }
     if (S.strip) {
       const z0 = S.wheel.rz + F.R + 0.08, z1 = S.wheel.fz - F.R - 0.08;
       const x = bodySideX(S, F, midZ, S.strip.y);
-      part(body, rbox(0.02, 0.045, z1 - z0, 0.01), S.bumper.mat === 'chrome' ? mats.chrome : mats.trim, sx * (x + 0.006), S.strip.y, (z0 + z1) / 2);
+      part(body, rbox(0.02, 0.035, z1 - z0, 0.01), S.strip.mat === 'trim' ? mats.trim : S.bumper.mat === 'chrome' ? mats.chrome : mats.trim, sx * (x + 0.006), S.strip.y, (z0 + z1) / 2);
     }
-    // marşpiye (eşik) koyu şerit
-    part(body, rbox(0.04, 0.07, (S.wheel.fz - S.wheel.rz) - 2 * F.R - 0.12, 0.02), mats.black, sx * (bodySideX(S, F, midZ, S.bot[1][1] + 0.05) - 0.005), S.bot[1][1] + 0.04, midZ);
+    // geniş siyah yan bant (kapılar boyunca, çamurluklarda kesilir)
+    if (S.cladding) {
+      const segs = [[S.wheel.rz + F.R + 0.04, S.wheel.fz - F.R - 0.04], [S.wheel.fz + F.R + 0.04, zf - (S.bumper.wrap || 0.36) + 0.02], [zr + (S.bumper.wrap || 0.36) - 0.02, S.wheel.rz - F.R - 0.04]];
+      for (const [a, b] of segs) if (b - a > 0.05) {
+        const zm = (a + b) / 2, x = bodySideX(S, F, zm, S.cladding.y);
+        part(body, rbox(0.035, S.cladding.h, b - a, 0.012), mats.black, sx * (x + 0.01), S.cladding.y, zm);
+      }
+    }
+    // marşpiye: gövde renkli etek ya da koyu eşik
+    const sillX = bodySideX(S, F, midZ, S.bot[1][1] + 0.05);
+    if (S.skirt) part(body, rbox(0.08, 0.13, (S.wheel.fz - S.wheel.rz) - 2 * F.R - 0.06, 0.03), mats.paint, sx * (sillX + 0.015), S.bot[1][1] + 0.065, midZ);
+    else part(body, rbox(0.04, 0.07, (S.wheel.fz - S.wheel.rz) - 2 * F.R - 0.12, 0.02), mats.black, sx * (sillX - 0.005), S.bot[1][1] + 0.04, midZ);
+    // siyah çamurluk dudakları (arazi aracı)
+    if (S.archTrim) for (const zc of [S.wheel.fz, S.wheel.rz]) {
+      const ax = F.hw(zc) + 0.012;
+      const ring = new THREE.TorusGeometry(F.R + 0.02, 0.04, 6, 20, Math.PI);
+      ring.scale(1, 1, 0.6); ring.rotateY(Math.PI / 2);
+      part(body, ring, mats.black, sx * ax, F.cy, zc);
+    }
     // çamurluk tozluğu
     if (has('tozluk')) for (const zc of [S.wheel.fz, S.wheel.rz]) {
       const tz = zc - F.R - 0.03;
@@ -3404,6 +3574,25 @@ function buildCar(spec, ctx) {
     part(body, rbox(W * 0.9, 0.05, 0.3, 0.02), mats.paint, 0, S.spoiler.y + 0.22, S.spoiler.z - 0.04, 0.1);
     for (const sx of [-1, 1]) part(body, rbox(0.02, 0.12, 0.3, 0.008), mats.black, sx * W * 0.45, S.spoiler.y + 0.25, S.spoiler.z - 0.04);
   }
+  // kaput/bagaj ek yerleri (ince koyu çizgi)
+  const seam = (z, wfrac = 0.86) => { const y = F.top(z) + S.crown * 0.6 + 0.003; part(body, new THREE.BoxGeometry(W * wfrac, 0.006, 0.008), mats.trim, 0, y, z); };
+  if (S.hood) {
+    seam(S.hood.z1);
+    for (const sx of [-1, 1]) for (let z = S.hood.z1; z < S.hood.z0 - 0.05; z += 0.12) {
+      const z2 = Math.min(S.hood.z0, z + 0.12), y1 = F.top(z) + 0.004, y2 = F.top(z2) + 0.004;
+      const xs = F.hw((z + z2) / 2) - S.shoulder - S.tumble - 0.02;
+      part(body, new THREE.BoxGeometry(0.008, 0.006, Math.hypot(z2 - z, y2 - y1)), mats.trim, sx * xs, (y1 + y2) / 2, (z + z2) / 2, Math.atan2(y1 - y2, z2 - z));
+    }
+  }
+  if (S.trunk) seam(S.trunk.z0, 0.84);
+  // büyük arka kanat (ayaklı)
+  if (S.wing && has('spoiler')) {
+    const Wg = S.wing, wy = Wg.y + 0.12;
+    for (const sx of [-1, 1]) part(body, rbox(0.035, 0.13, 0.1, 0.012), mats.black, sx * Wg.w * 0.34, Wg.y + 0.055, Wg.z + 0.03);
+    part(body, rbox(Wg.w, 0.03, 0.28, 0.014), mats.paint, 0, wy, Wg.z - 0.01, 0.07);
+    part(body, rbox(Wg.w - 0.02, 0.04, 0.018, 0.006), mats.black, 0, wy + 0.025, Wg.z - 0.15);
+    for (const sx of [-1, 1]) part(body, rbox(0.01, 0.09, 0.3, 0.005), mats.black, sx * Wg.w / 2, wy + 0.01, Wg.z - 0.01);
+  }
   if (S.rack || has('tavan')) {
     const ry = C.roof + 0.04;
     const z0 = C.zWr + 0.12, z1 = C.zWf - 0.12;
@@ -3414,22 +3603,27 @@ function buildCar(spec, ctx) {
   // iç mekân + sürücü
   if (!lite) {
     const fz = C.zB, rz = C.zA, belt = C.belt;
+    // ön camın verilen yükseklikteki z'si (loftCabin ile aynı eğri)
+    const zWs = (y) => lerp(C.zB, C.zWf, Math.pow(clamp((y - belt) / (C.roof - belt), 0, 1), 0.92));
     const inner = new THREE.Group(); body.add(inner);
-    part(inner, rbox(C.hwB * 2 - 0.1, 0.24, 0.42, 0.06), mats.interior, 0, belt - 0.02, fz - 0.15);
+    part(inner, rbox(C.hwB * 2 - 0.12, 0.22, 0.4, 0.06), mats.interior, 0, belt - 0.04, zWs(belt + 0.07) - 0.24);
     part(inner, new THREE.BoxGeometry(C.hwB * 2 - 0.15, 0.06, fz - rz), mats.interior, 0, belt - 0.3, (fz + rz) / 2);
-    const seatZ = fz - 0.95;
+    const swZ = Math.min(fz - 0.42, zWs(belt + 0.33) - 0.1);
+    const seatZ = Math.min(fz - 0.95, swZ - 0.58);
+    const backTop = Math.min(belt + 0.35, C.roof - 0.2), rest = Math.min(belt + 0.4, C.roof - 0.17);
     for (const sx of [-0.36, 0.36]) {
-      part(inner, rbox(0.46, 0.6, 0.12, 0.05), mats.seat, sx, belt + 0.05, seatZ, -0.15);
-      part(inner, rbox(0.24, 0.14, 0.1, 0.04), mats.seat, sx, belt + 0.4, seatZ - 0.03, -0.1);
+      part(inner, rbox(0.46, backTop - belt + 0.25, 0.12, 0.05), mats.seat, sx, (backTop + belt - 0.25) / 2, seatZ, -0.15);
+      part(inner, rbox(0.24, 0.14, 0.1, 0.04), mats.seat, sx, rest, seatZ - 0.03, -0.1);
     }
     part(inner, rbox(C.hwB * 2 - 0.22, 0.52, 0.12, 0.05), mats.seat, 0, belt + 0.02, S.rearSeatZ ?? (rz + 0.42), -0.12);
     if (S.shelf) part(inner, new THREE.BoxGeometry(C.hwB * 2 - 0.15, 0.03, 0.42), mats.interior, 0, belt + 0.03, rz + 0.2);
     // direksiyon (döner)
-    const sw = new THREE.Group(); sw.position.set(0.36, belt + 0.16, fz - 0.42); sw.rotation.x = -0.4; sw.userData.keep = true; body.add(sw);
+    const sw = new THREE.Group(); sw.position.set(0.36, belt + 0.16, swZ); sw.rotation.x = -0.4; sw.userData.keep = true; body.add(sw);
     part(sw, new THREE.TorusGeometry(0.16, 0.02, 8, 24), mats.trim); part(sw, new THREE.BoxGeometry(0.3, 0.025, 0.02), mats.trim);
     body.userData.steeringWheel = sw;
     // sürücü (kasketli)
-    const dr = new THREE.Group(); dr.position.set(0.36, belt + 0.05, seatZ + 0.12); inner.add(dr);
+    // sürücü kabinin içinde: kafa tavanın altında kalır
+    const dr = new THREE.Group(); dr.position.set(0.36, Math.min(belt - 0.22, C.roof - 0.86), seatZ + 0.12); inner.add(dr);
     part(dr, rbox(0.38, 0.5, 0.24, 0.08), mats.shirt, 0, 0.28, 0);
     part(dr, new THREE.SphereGeometry(0.11, 14, 10), mats.skin, 0, 0.64, 0.02);
     part(dr, new THREE.CylinderGeometry(0.12, 0.12, 0.05, 14), mats.cap, 0, 0.73, 0.02);
@@ -3668,14 +3862,17 @@ function buildVehicle(custom, opts = {}) {
     blob.rotation.x = -Math.PI / 2; blob.position.y = 0.045; blob.renderOrder = 1; v.root.add(blob); v.blob = blob;
     const ne = findBy(NEONS, custom.neon);
     if (ne.c) {
+      // alt neon: aracın altında yuvarlatılmış dikdörtgen ışık havuzu + eşik altında parlayan tüpler
       const col = new THREE.Color(ne.c[0], ne.c[1], ne.c[2]);
-      const nm = new THREE.Mesh(new THREE.PlaneGeometry(v.wid * 2.4, v.len * 1.5), new THREE.MeshBasicMaterial({ color: col.clone().multiplyScalar(2.2), map: TEX.dot, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
-      nm.rotation.x = -Math.PI / 2; nm.position.y = 0.07; nm.renderOrder = 2; v.root.add(nm);
-      if (def.kind === 'car') {
-        const strip = new THREE.MeshBasicMaterial({ color: col.clone().multiplyScalar(3) });
-        for (const sx of [-1, 1]) { const s = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.03, v.len * 0.55), strip); s.position.set(sx * (v.wid / 2 - 0.15), def.spec.bot[1][1] - 0.02, 0); v.root.add(s); }
-      }
-      v.neon = nm;
+      const gw = v.wid + 1.1, gl = v.len + 1.0;
+      const nm = new THREE.Mesh(new THREE.PlaneGeometry(gw, gl), new THREE.MeshBasicMaterial({ color: col.clone().multiplyScalar(1.15), map: neonGlowTex(gw, gl), transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
+      nm.rotation.x = -Math.PI / 2; nm.position.y = 0.06; nm.renderOrder = 2; v.root.add(nm);
+      const tube = new THREE.MeshBasicMaterial({ color: col.clone().multiplyScalar(2.6), toneMapped: false });
+      const ty = def.kind === 'car' ? def.spec.bot[1][1] - 0.03 : 0.22;
+      const tl = v.len * (def.kind === 'car' ? 0.62 : 0.5), tx = v.wid / 2 - (def.kind === 'car' ? 0.2 : 0.12);
+      for (const sx of [-1, 1]) { const t = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, tl, 8), tube); t.rotation.x = Math.PI / 2; t.position.set(sx * tx, ty, 0); t.userData.keep = true; (v.lean || v.body).add(t); }
+      if (def.kind === 'car') for (const zz of [def.spec.wheel.fz + 0.45, def.spec.wheel.rz - 0.45]) { const t = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, v.wid - 0.5, 8), tube); t.rotation.z = Math.PI / 2; t.position.set(0, ty, zz); t.userData.keep = true; v.body.add(t); }
+      v.neon = nm; v.neonBase = 0.9;
     }
     v.flames = [];
     const fo = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.5, 1.4, 4.0), transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false });
@@ -3757,7 +3954,14 @@ function updateVehicleVisual(v, ph, dt) {
     f.visible = !!ph.nitroOn;
     if (f.visible) { const s = 0.8 + Math.random() * 0.5; f.scale.set(s, s, 0.7 + Math.random() * 0.8); }
   }
-  if (v.neon) v.neon.material.opacity = 0.75 + Math.sin(S.t * 6) * 0.15;
+  if (v.neon) {
+    // yerden yükseldikçe ışık havuzu söner ve dağılır
+    const hgt = Math.max(0, py - (ph.gy ?? py));
+    const k = clamp(1 - hgt / 1.6, 0, 1);
+    v.neon.material.opacity = v.neonBase * k * (0.92 + Math.sin(S.t * 5.3) * 0.05 + Math.sin(S.t * 17) * 0.03);
+    v.neon.position.y = 0.06 - hgt; v.neon.scale.setScalar(1 + hgt * 0.35);
+    v.neon.visible = k > 0.01;
+  }
 }
 function disposeVehicle(v) {
   const shared = new Set(Object.values(RBOX));
@@ -3771,32 +3975,43 @@ function disposeVehicle(v) {
 //  EFEKTLER: duman, kıvılcım, su sıçraması, nitro, fren izleri
 // ════════════════════════════════════════════════════════════════════
 class ParticlePool {
-  constructor(max, additive) {
-    this.max = max; this.n = 0;
+  // kind: 'smoke' (dokulu, dönen, üstten aydınlık) | 'water' | 'add' (ışıltı)
+  constructor(max, additive, kind = 'smoke') {
+    this.max = max; this.n = 0; this.kind = kind;
     const g = new THREE.BufferGeometry();
-    this.pos = new Float32Array(max * 3); this.size = new Float32Array(max); this.alpha = new Float32Array(max); this.col = new Float32Array(max * 3);
+    this.pos = new Float32Array(max * 3); this.size = new Float32Array(max); this.alpha = new Float32Array(max); this.col = new Float32Array(max * 3); this.rot = new Float32Array(max);
     g.setAttribute('position', new THREE.BufferAttribute(this.pos, 3).setUsage(THREE.DynamicDrawUsage));
     g.setAttribute('aSize', new THREE.BufferAttribute(this.size, 1).setUsage(THREE.DynamicDrawUsage));
     g.setAttribute('aAlpha', new THREE.BufferAttribute(this.alpha, 1).setUsage(THREE.DynamicDrawUsage));
     g.setAttribute('aColor', new THREE.BufferAttribute(this.col, 3).setUsage(THREE.DynamicDrawUsage));
+    g.setAttribute('aRot', new THREE.BufferAttribute(this.rot, 1).setUsage(THREE.DynamicDrawUsage));
     g.setDrawRange(0, 0);
-    this.uni = { map: { value: TEX.dot }, uScale: { value: 500 } };
+    const map = kind === 'smoke' ? TEX.puff : kind === 'water' ? TEX.drop : TEX.dot;
+    this.uni = { map: { value: map }, uScale: { value: 500 }, uSun: { value: new THREE.Color(1.0, 0.95, 0.86) }, uShade: { value: new THREE.Color(0.62, 0.66, 0.74) } };
+    const lit = kind !== 'add';
     const m = new THREE.ShaderMaterial({
       uniforms: this.uni, transparent: true, depthWrite: false,
       blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending,
-      vertexShader: `attribute float aSize; attribute float aAlpha; attribute vec3 aColor; uniform float uScale; varying float vA; varying vec3 vC;
-        void main(){ vA = aAlpha; vC = aColor; vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * mv; gl_PointSize = min(512.0, aSize * uScale / max(0.2, -mv.z)); }`,
-      fragmentShader: `uniform sampler2D map; varying float vA; varying vec3 vC;
-        void main(){ float a = texture2D(map, gl_PointCoord).a * vA; if (a < 0.004) discard; gl_FragColor = vec4(vC, a);
-        #include <tonemapping_fragment>
-        #include <colorspace_fragment>
+      vertexShader: `attribute float aSize; attribute float aAlpha; attribute vec3 aColor; attribute float aRot; uniform float uScale; varying float vA; varying vec3 vC; varying float vR;
+        void main(){ vA = aAlpha; vC = aColor; vR = aRot; vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * mv; gl_PointSize = min(640.0, aSize * uScale / max(0.2, -mv.z)); }`,
+      fragmentShader: `uniform sampler2D map; uniform vec3 uSun; uniform vec3 uShade; varying float vA; varying vec3 vC; varying float vR;
+        void main(){
+          vec2 c = gl_PointCoord - 0.5; float cs = cos(vR), sn = sin(vR);
+          vec2 uv = vec2(cs * c.x - sn * c.y, sn * c.x + cs * c.y) + 0.5;
+          vec4 t = texture2D(map, uv);
+          float a = t.a * vA; if (a < 0.004) discard;
+          vec3 col = vC;
+          ${lit ? 'float up = clamp(0.5 - c.y * 1.6, 0.0, 1.0); col *= mix(uShade, uSun, up) * (0.82 + t.r * 0.3);' : ''}
+          gl_FragColor = vec4(col, a);
+          #include <tonemapping_fragment>
+          #include <colorspace_fragment>
         }`,
     });
     this.points = new THREE.Points(g, m); this.points.frustumCulled = false; this.points.renderOrder = additive ? 6 : 5;
     scene.add(this.points);
-    // simülasyon dizileri
     const F = (k) => new Float32Array(max * k);
     this.p = F(3); this.v = F(3); this.life = F(1); this.lmax = F(1); this.s0 = F(1); this.s1 = F(1); this.a0 = F(1); this.c = F(3); this.drag = F(1); this.grav = F(1);
+    this.r0 = F(1); this.spin = F(1); this.floor = F(1);
   }
   spawn(x, y, z, vx, vy, vz, life, s0, s1, a0, r, g, b, drag = 1, grav = 0) {
     if (this.n >= this.max) return;
@@ -3805,32 +4020,83 @@ class ParticlePool {
     this.v[i * 3] = vx; this.v[i * 3 + 1] = vy; this.v[i * 3 + 2] = vz;
     this.life[i] = 0; this.lmax[i] = life; this.s0[i] = s0; this.s1[i] = s1; this.a0[i] = a0;
     this.c[i * 3] = r; this.c[i * 3 + 1] = g; this.c[i * 3 + 2] = b; this.drag[i] = drag; this.grav[i] = grav;
+    this.r0[i] = Math.random() * 6.283; this.spin[i] = (Math.random() - 0.5) * 1.6;
+    // zemin: yokuşta ve rampada parçacıklar yolun içinden geçmesin
+    this.floor[i] = Math.min(y - 0.05, groundH(x, z)) + 0.03;
   }
   update(dt) {
     let j = 0;
     for (let i = 0; i < this.n; i++) {
       const l = this.life[i] + dt;
       if (l >= this.lmax[i]) continue;
-      if (j !== i) { // sıkıştır
+      if (j !== i) {
         for (let k = 0; k < 3; k++) { this.p[j * 3 + k] = this.p[i * 3 + k]; this.v[j * 3 + k] = this.v[i * 3 + k]; this.c[j * 3 + k] = this.c[i * 3 + k]; }
         this.lmax[j] = this.lmax[i]; this.s0[j] = this.s0[i]; this.s1[j] = this.s1[i]; this.a0[j] = this.a0[i]; this.drag[j] = this.drag[i]; this.grav[j] = this.grav[i];
+        this.r0[j] = this.r0[i]; this.spin[j] = this.spin[i]; this.floor[j] = this.floor[i];
       }
       this.life[j] = l;
       const dr = Math.exp(-this.drag[j] * dt);
       this.v[j * 3] *= dr; this.v[j * 3 + 1] = this.v[j * 3 + 1] * dr - this.grav[j] * dt; this.v[j * 3 + 2] *= dr;
+      // hafif rüzgar
+      if (this.kind === 'smoke') { this.v[j * 3] += 0.35 * dt; this.v[j * 3 + 2] += 0.15 * dt; }
       this.p[j * 3] += this.v[j * 3] * dt; this.p[j * 3 + 1] += this.v[j * 3 + 1] * dt; this.p[j * 3 + 2] += this.v[j * 3 + 2] * dt;
-      if (this.p[j * 3 + 1] < 0.03) { this.p[j * 3 + 1] = 0.03; this.v[j * 3 + 1] *= -0.2; }
+      if (this.p[j * 3 + 1] < this.floor[j]) { this.p[j * 3 + 1] = this.floor[j]; this.v[j * 3 + 1] *= -0.2; this.v[j * 3] *= 0.7; this.v[j * 3 + 2] *= 0.7; }
       const t = l / this.lmax[j];
       this.pos[j * 3] = this.p[j * 3]; this.pos[j * 3 + 1] = this.p[j * 3 + 1]; this.pos[j * 3 + 2] = this.p[j * 3 + 2];
-      this.size[j] = this.s0[j] + (this.s1[j] - this.s0[j]) * t;
-      this.alpha[j] = this.a0[j] * (t < 0.15 ? t / 0.15 : 1 - (t - 0.15) / 0.85);
-      this.col[j * 3] = this.c[j * 3]; this.col[j * 3 + 1] = this.c[j * 3 + 1]; this.col[j * 3 + 2] = this.c[j * 3 + 2];
+      // boyut: duman hızla açılıp yavaşlar
+      const ts = this.kind === 'smoke' ? 1 - (1 - t) * (1 - t) : t;
+      this.size[j] = this.s0[j] + (this.s1[j] - this.s0[j]) * ts;
+      this.alpha[j] = this.a0[j] * (t < 0.12 ? t / 0.12 : Math.pow(1 - (t - 0.12) / 0.88, this.kind === 'smoke' ? 1.4 : 1));
+      this.rot[j] = this.r0[j] + this.spin[j] * l;
+      const fade = this.kind === 'add' ? 1 - t * 0.6 : 1; // ışıltılar soğurken kızarır
+      this.col[j * 3] = this.c[j * 3]; this.col[j * 3 + 1] = this.c[j * 3 + 1] * fade; this.col[j * 3 + 2] = this.c[j * 3 + 2] * fade * fade;
       j++;
     }
     this.n = j;
     const g = this.points.geometry;
     g.setDrawRange(0, j);
-    for (const k of ['position', 'aSize', 'aAlpha', 'aColor']) g.attributes[k].needsUpdate = true;
+    for (const k of ['position', 'aSize', 'aAlpha', 'aColor', 'aRot']) g.attributes[k].needsUpdate = true;
+  }
+}
+
+// Kıvılcım çizgileri: hız yönünde uzayan parlak izler (yere çarpınca seker)
+class SparkLines {
+  constructor(max = 700) {
+    this.max = max; this.n = 0;
+    const g = new THREE.BufferGeometry();
+    this.pos = new Float32Array(max * 6); this.col = new Float32Array(max * 6);
+    g.setAttribute('position', new THREE.BufferAttribute(this.pos, 3).setUsage(THREE.DynamicDrawUsage));
+    g.setAttribute('color', new THREE.BufferAttribute(this.col, 3).setUsage(THREE.DynamicDrawUsage));
+    g.setDrawRange(0, 0);
+    this.mesh = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
+    this.mesh.frustumCulled = false; this.mesh.renderOrder = 7; scene.add(this.mesh);
+    this.p = new Float32Array(max * 3); this.v = new Float32Array(max * 3); this.life = new Float32Array(max); this.lmax = new Float32Array(max); this.floor = new Float32Array(max); this.k = new Float32Array(max);
+  }
+  spawn(x, y, z, vx, vy, vz, life, k = 1) {
+    if (this.n >= this.max) return;
+    const i = this.n++;
+    this.p[i * 3] = x; this.p[i * 3 + 1] = y; this.p[i * 3 + 2] = z; this.v[i * 3] = vx; this.v[i * 3 + 1] = vy; this.v[i * 3 + 2] = vz;
+    this.life[i] = 0; this.lmax[i] = life; this.k[i] = k; this.floor[i] = Math.min(y - 0.05, groundH(x, z)) + 0.02;
+  }
+  update(dt) {
+    let j = 0;
+    for (let i = 0; i < this.n; i++) {
+      const l = this.life[i] + dt; if (l >= this.lmax[i]) continue;
+      if (j !== i) { for (let q = 0; q < 3; q++) { this.p[j * 3 + q] = this.p[i * 3 + q]; this.v[j * 3 + q] = this.v[i * 3 + q]; } this.lmax[j] = this.lmax[i]; this.floor[j] = this.floor[i]; this.k[j] = this.k[i]; }
+      this.life[j] = l;
+      const P = this.p, V = this.v, o = j * 3;
+      V[o + 1] -= 11 * dt; const dr = Math.exp(-1.2 * dt); V[o] *= dr; V[o + 2] *= dr;
+      P[o] += V[o] * dt; P[o + 1] += V[o + 1] * dt; P[o + 2] += V[o + 2] * dt;
+      if (P[o + 1] < this.floor[j]) { P[o + 1] = this.floor[j]; V[o + 1] = Math.abs(V[o + 1]) * 0.35; V[o] *= 0.6; V[o + 2] *= 0.6; }
+      const t = l / this.lmax[j], br = (1 - t) * this.k[j];
+      const tl = 0.028 + 0.01 * this.k[j];
+      this.pos.set([P[o], P[o + 1], P[o + 2], P[o] - V[o] * tl, P[o + 1] - V[o + 1] * tl, P[o + 2] - V[o + 2] * tl], j * 6);
+      this.col.set([3.2 * br, 2.1 * br * (1 - t * 0.5), 0.7 * br * (1 - t), 1.2 * br, 0.4 * br, 0.05 * br], j * 6);
+      j++;
+    }
+    this.n = j;
+    const g = this.mesh.geometry; g.setDrawRange(0, j * 2);
+    g.attributes.position.needsUpdate = true; g.attributes.color.needsUpdate = true;
   }
 }
 
@@ -3870,11 +4136,12 @@ class SkidMarks {
 }
 
 const PARTICLES = {
-  smoke: null, add: null, water: null, skids: null,
+  smoke: null, add: null, water: null, skids: null, lines: null,
   init() {
-    this.smoke = new ParticlePool(1800, false);
-    this.water = new ParticlePool(1400, false);
-    this.add = new ParticlePool(1000, true);
+    this.smoke = new ParticlePool(2200, false, 'smoke');
+    this.water = new ParticlePool(1600, false, 'water');
+    this.add = new ParticlePool(1200, true, 'add');
+    this.lines = new SparkLines(700);
     this.skids = new SkidMarks(2400);
   },
   setViewport(hPx, cam) {
@@ -3882,12 +4149,18 @@ const PARTICLES = {
     const s = (hPx * renderer.getPixelRatio()) / (2 * Math.tan(THREE.MathUtils.degToRad(cam.fov) / 2));
     this.smoke.uni.uScale.value = s; this.water.uni.uScale.value = s; this.add.uni.uScale.value = s;
   },
-  update(dt) { this.smoke.update(dt); this.water.update(dt); this.add.update(dt); this.skids.update(); },
+  update(dt) { this.smoke.update(dt); this.water.update(dt); this.add.update(dt); this.lines.update(dt); this.skids.update(); },
   sparks(x, y, z, n, power = 1) {
-    for (let i = 0; i < n; i++) this.add.spawn(x, y, z, (Math.random() - 0.5) * 9 * power, Math.random() * 5 * power + 1, (Math.random() - 0.5) * 9 * power, 0.25 + Math.random() * 0.35, 0.12, 0.03, 1, 3.2, 1.7, 0.5, 2, 12);
+    for (let i = 0; i < n; i++) this.lines.spawn(x, y, z, (Math.random() - 0.5) * 12 * power, Math.random() * 6 * power + 1, (Math.random() - 0.5) * 12 * power, 0.35 + Math.random() * 0.5, 0.7 + Math.random() * 0.5);
+    for (let i = 0; i < n * 0.3; i++) this.add.spawn(x, y, z, (Math.random() - 0.5) * 4, Math.random() * 2, (Math.random() - 0.5) * 4, 0.15, 0.6, 0.1, 0.8, 3.2, 1.8, 0.6, 3, 0);
   },
   burst(x, y, z, r, g, b, n = 30) {
     for (let i = 0; i < n; i++) { const a = Math.random() * 6.283, s = 2 + Math.random() * 5; this.add.spawn(x, y, z, Math.cos(a) * s, Math.random() * 4 + 1, Math.sin(a) * s, 0.5 + Math.random() * 0.4, 0.5, 0.05, 1, r, g, b, 2.5, 4); }
+  },
+  // vites geçişinde egzozdan alev patlaması
+  backfire(x, y, z, dx, dz, k = 1) {
+    for (let i = 0; i < 6 * k; i++) this.add.spawn(x, y, z, dx * (3 + Math.random() * 4) + (Math.random() - 0.5), (Math.random() - 0.3) * 0.8, dz * (3 + Math.random() * 4) + (Math.random() - 0.5), 0.08 + Math.random() * 0.08, 0.35, 0.12, 1, 3.4, 1.4, 0.35, 4, 0);
+    this.add.spawn(x, y, z, dx * 2, 0, dz * 2, 0.07, 0.9, 0.3, 0.9, 3.5, 2.4, 1.2, 2, 0);
   },
 };
 
@@ -5026,7 +5299,7 @@ function makeHud(view, R, nRacers, laps) {
       <div class="posbox"><span class="cap">POZ</span><div class="pos"><b class="p">1</b><i>/${nRacers}</i></div><span class="dpos"></span></div>
       <div class="lapbox"><div><span class="cap">TUR</span><b class="l">1</b><i>/${laps}</i></div><div><span class="cap">SÜRE</span><b class="t">0:00.00</b></div><div><span class="cap">EN İYİ</span><b class="bl">—</b></div></div>
     </div>
-    <canvas class="mm"></canvas>
+    <div class="mmw"><canvas class="mm"></canvas></div>
     <div class="msg"><span></span></div>
     <div class="items"><div class="slot s0"></div><div class="slot s1"></div><span class="key">${key}</span></div>
     <div class="wet">ISLAK ZEMİN · TUTUŞ DÜŞÜK</div>
@@ -5060,43 +5333,75 @@ function hudFlash(R, text, ms = 1300, kind = '') {
   h.msgS.style.animation = 'none'; void h.msgS.offsetWidth; h.msgS.style.animation = '';
 }
 function setTxt(h, key, el, val) { if (h.last[key] !== val) { h.last[key] = val; el.textContent = val; } }
+// ── Mini harita: sol altta, perspektifli, araç yönü hep yukarı (önümüz görünür) ──
+const MINI = { cache: null, px: 2, x0: -470, z0: -350, x1: 450, z1: 120 };
+function minimapCache() {
+  if (MINI.cache) return MINI.cache;
+  const c = document.createElement('canvas');
+  c.width = Math.round((MINI.x1 - MINI.x0) * MINI.px); c.height = Math.round((MINI.z1 - MINI.z0) * MINI.px);
+  const o = c.getContext('2d'), k = MINI.px;
+  const X = (x) => (x - MINI.x0) * k, Z = (z) => (z - MINI.z0) * k;
+  // deniz
+  o.fillStyle = 'rgba(30,90,140,.55)'; o.fillRect(0, Z(34), c.width, c.height - Z(34));
+  o.lineJoin = o.lineCap = 'round';
+  const path = () => { o.beginPath(); for (let i = 0; i <= TRACK.N; i += 3) { const j = i % TRACK.N; const x = X(TRACK.px[j]), z = Z(TRACK.pz[j]); i ? o.lineTo(x, z) : o.moveTo(x, z); } o.closePath(); };
+  path(); o.strokeStyle = 'rgba(0,0,0,.65)'; o.lineWidth = 26 * k; o.stroke();
+  path(); o.strokeStyle = 'rgba(255,255,255,.9)'; o.lineWidth = 19 * k; o.stroke();
+  path(); o.strokeStyle = 'rgba(46,49,56,.96)'; o.lineWidth = 15 * k; o.stroke();
+  // ıslak bölgeler
+  o.strokeStyle = 'rgba(58,160,255,.9)'; o.lineWidth = 15 * k; o.lineCap = 'butt';
+  for (const w of TRACK.wet) { o.beginPath(); for (let s = w.s0; s <= w.s1; s += 3) { const p = trackAt(TRACK, s); s === w.s0 ? o.moveTo(X(p.x), Z(p.z)) : o.lineTo(X(p.x), Z(p.z)); } o.stroke(); }
+  // rampalar: sarı ok
+  for (const sr of TRACK.ramps || []) {
+    const p = trackAt(TRACK, sr);
+    o.save(); o.translate(X(p.x), Z(p.z)); o.rotate(Math.atan2(p.tz, p.tx) + Math.PI / 2);
+    o.fillStyle = '#ffc400'; o.beginPath(); o.moveTo(0, -9 * k); o.lineTo(7 * k, 5 * k); o.lineTo(-7 * k, 5 * k); o.closePath(); o.fill(); o.restore();
+  }
+  // başlangıç çizgisi (dama)
+  const s0 = trackAt(TRACK, 0);
+  o.save(); o.translate(X(s0.x), Z(s0.z)); o.rotate(Math.atan2(s0.tz, s0.tx));
+  for (let i = -4; i < 4; i++) for (let j = 0; j < 2; j++) { o.fillStyle = (i + j) % 2 ? '#fff' : '#111'; o.fillRect(j * 2 * k - 2 * k, i * 2 * k, 2 * k, 2 * k); }
+  o.restore();
+  MINI.cache = c;
+  return c;
+}
 function drawMinimap(h, race, me) {
   const c = h.mm, dpr = Math.min(2, window.devicePixelRatio || 1);
   const W = c.clientWidth, H = c.clientHeight;
-  if (!W) return;
-  if (c.width !== Math.round(W * dpr)) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); h.mmCache = null; }
+  if (!W || !me) return;
+  if (c.width !== Math.round(W * dpr)) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); }
   const g = c.getContext('2d');
-  const b = trackMiniPath(), pad = 8 * dpr;
-  const sc = Math.min((c.width - pad * 2) / (b.x1 - b.x0), (c.height - pad * 2) / (b.z1 - b.z0));
-  const ox = (c.width - (b.x1 - b.x0) * sc) / 2, oz = (c.height - (b.z1 - b.z0) * sc) / 2;
-  const X = (x) => ox + (x - b.x0) * sc, Z = (z) => oz + (z - b.z0) * sc;
-  if (!h.mmCache) {
-    const off = document.createElement('canvas'); off.width = c.width; off.height = c.height;
-    const o = off.getContext('2d');
-    o.lineJoin = 'round';
-    const path = () => { o.beginPath(); for (let i = 0; i < TRACK.N; i += 6) { const x = X(TRACK.px[i]), z = Z(TRACK.pz[i]); i ? o.lineTo(x, z) : o.moveTo(x, z); } o.closePath(); };
-    path(); o.strokeStyle = 'rgba(0,0,0,.75)'; o.lineWidth = 8 * dpr; o.stroke();
-    path(); o.strokeStyle = 'rgba(255,255,255,.88)'; o.lineWidth = 3 * dpr; o.stroke();
-    o.fillStyle = '#ffc400';
-    for (const sr of TRACK.ramps || []) { const p = trackAt(TRACK, sr); o.beginPath(); o.arc(X(p.x), Z(p.z), 3.2 * dpr, 0, 7); o.fill(); }
-    o.strokeStyle = '#3aa0ff'; o.lineWidth = 3.4 * dpr;
-    for (const w of TRACK.wet) { o.beginPath(); for (let s = w.s0; s <= w.s1; s += 5) { const p = trackAt(TRACK, s); s === w.s0 ? o.moveTo(X(p.x), Z(p.z)) : o.lineTo(X(p.x), Z(p.z)); } o.stroke(); }
-    const s0 = trackAt(TRACK, 0); o.fillStyle = '#ff3a28'; o.fillRect(X(s0.x) - 2 * dpr, Z(s0.z) - 6 * dpr, 4 * dpr, 12 * dpr);
-    h.mmCache = off;
-  }
+  const p = me.phys, sp = p.speed();
+  // hızlandıkça biraz uzaklaş
+  h.mmZoom = smooth(h.mmZoom || 1, clamp(1.25 - sp / 70, 0.7, 1.2), 2, 1 / 30);
+  const zs = (W / 260) * h.mmZoom * dpr;          // ekran pikseli / metre
+  const fx = Math.sin(p.h), fz = Math.cos(p.h);
+  const phi = -Math.PI / 2 - Math.atan2(fz, fx);   // gidiş yönü yukarı
+  g.setTransform(1, 0, 0, 1, 0, 0);
   g.clearRect(0, 0, c.width, c.height);
-  g.drawImage(h.mmCache, 0, 0);
+  g.save();
+  g.translate(c.width / 2, c.height * 0.66);
+  g.rotate(phi); g.scale(zs, zs); g.translate(-p.x, -p.z);
+  const cache = minimapCache();
+  g.drawImage(cache, MINI.x0, MINI.z0, MINI.x1 - MINI.x0, MINI.z1 - MINI.z0);
+  // rakipler
+  const rr = 4.2 * dpr / zs;
   for (const R of race.racers) {
     if (R.gone || R === me) continue;
-    g.beginPath(); g.arc(X(R.phys.x), Z(R.phys.z), 3.6 * dpr, 0, 7);
-    g.fillStyle = paintHex(R.custom); g.fill(); g.lineWidth = 1.4 * dpr; g.strokeStyle = '#000'; g.stroke();
+    g.beginPath(); g.arc(R.phys.x, R.phys.z, rr, 0, 7);
+    g.fillStyle = paintHex(R.custom); g.fill(); g.lineWidth = 1.6 * dpr / zs; g.strokeStyle = 'rgba(0,0,0,.85)'; g.stroke();
   }
-  if (me) {
-    const x = X(me.phys.x), z = Z(me.phys.z), a = me.phys.h;
-    g.save(); g.translate(x, z); g.rotate(-a + Math.PI);
-    g.beginPath(); g.moveTo(0, -7 * dpr); g.lineTo(5 * dpr, 6 * dpr); g.lineTo(0, 3 * dpr); g.lineTo(-5 * dpr, 6 * dpr); g.closePath();
-    g.fillStyle = '#fff'; g.fill(); g.lineWidth = 1.6 * dpr; g.strokeStyle = '#ff3a28'; g.stroke(); g.restore();
-  }
+  g.restore();
+  // ben: merkezde yukarı bakan ok + görüş konisi (+ perspektifi belli eden mesafe halkaları)
+  const cx = c.width / 2, cy = c.height * 0.66, a = 8 * dpr;
+  g.lineWidth = 1 * dpr;
+  for (let k = 1; k <= 4; k++) { g.strokeStyle = `rgba(255,255,255,${0.1 - k * 0.015})`; g.beginPath(); g.arc(cx, cy, 50 * k * zs, 0, 7); g.stroke(); }
+  g.strokeStyle = 'rgba(255,255,255,.06)'; g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx, 0); g.stroke();
+  const cone = g.createRadialGradient(cx, cy, 0, cx, cy, 70 * dpr);
+  cone.addColorStop(0, 'rgba(255,255,255,.22)'); cone.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = cone; g.beginPath(); g.moveTo(cx, cy); g.arc(cx, cy, 70 * dpr, -Math.PI / 2 - 0.45, -Math.PI / 2 + 0.45); g.closePath(); g.fill();
+  g.beginPath(); g.moveTo(cx, cy - a); g.lineTo(cx + a * 0.72, cy + a * 0.8); g.lineTo(cx, cy + a * 0.35); g.lineTo(cx - a * 0.72, cy + a * 0.8); g.closePath();
+  g.fillStyle = '#fff'; g.fill(); g.lineWidth = 2 * dpr; g.strokeStyle = '#ff3a28'; g.stroke();
 }
 
 // ── Yarış ──────────────────────────────────────────────────────────
@@ -5235,6 +5540,12 @@ class Race {
       if (R.gone) continue;
       updateVehicleVisual(R.vis, R.phys, dt);
       R.label.position.set(R.phys.x, (R.phys.y || 0) + (R.def.kind === 'horse' ? 3.6 : R.def.kind === 'bike' ? 2.7 : 2.35), R.phys.z);
+      if (!R.label.onBeforeRender.faded) {
+        // kameraya çok yakın ya da çok uzaksa isim etiketi kaybolur
+        const lab = R.label;
+        lab.onBeforeRender = (rd, sc, cam) => { const d = cam.position.distanceTo(lab.position); lab.material.opacity = smoothstep(7, 13, d) * (1 - smoothstep(120, 150, d)); };
+        lab.onBeforeRender.faded = true;
+      }
       racerFx(R, dt, running);
       let vol = 1;
       if (!R.local && R.snd && locals.length) {
@@ -5339,7 +5650,7 @@ class Race {
     if (p.drifting && this.time > 0 && R.def.kind === 'car') { R.driftT += dt; if (R.driftT > 0.9 && !R.wasDrift) { R.wasDrift = true; hudFlash(R, 'DRİFT', 900, 'gold'); } }
     else { R.driftT = 0; R.wasDrift = false; }
     h.mmT = (h.mmT || 0) - dt;
-    if (h.mmT <= 0) { h.mmT = 1 / 20; drawMinimap(h, this, R); }
+    if (h.mmT <= 0) { h.mmT = 1 / 30; drawMinimap(h, this, R); }
   }
 }
 
@@ -5377,20 +5688,33 @@ function racerFx(R, dt, running) {
       R.skid[i] = [x, z, gy];
     } else R.skid[i] = null;
     const rnd = () => Math.random() - 0.5;
-    if (skidding && Math.random() < dt * (launch ? 30 : 45)) {
-      PARTICLES.smoke.spawn(x + rnd() * 0.4, gy + 0.25, z + rnd() * 0.4, p.vx * 0.15 + rnd() * 1.5, 0.6 + Math.random(), p.vz * 0.15 + rnd() * 1.5, 1.1 + Math.random() * 0.8, 0.7, 3.8, 0.32, 0.86, 0.86, 0.88, 1.6, -0.5);
+    const rear = lz < 0;
+    if (skidding && Math.random() < dt * (launch ? 34 : 52) * (rear || p.drifting ? 1 : 0.4)) {
+      // lastik dumanı: yoğun başlar, açılıp yükselir
+      const k = launch || burnout ? 1.2 : clamp(p.slip / 6, 0.6, 1.3);
+      PARTICLES.smoke.spawn(x + rnd() * 0.4, gy + 0.22, z + rnd() * 0.4, p.vx * 0.18 + rnd() * 1.6, 0.4 + Math.random() * 0.9, p.vz * 0.18 + rnd() * 1.6, 1.4 + Math.random() * 1.2, 0.8, 4.6 * k, 0.4 * k, 0.9, 0.9, 0.92, 1.5, -0.35);
     }
-    if (p.wet > 0.2 && sp > 5 && !p.air && Math.random() < dt * 60 * Math.min(1, sp / 25)) {
-      PARTICLES.water.spawn(x + rnd() * 0.3, gy + 0.15, z + rnd() * 0.3, -fx * sp * 0.12 + rnd() * 2 + p.vx * 0.3, 1.5 + Math.random() * 2.8, -fz * sp * 0.12 + rnd() * 2 + p.vz * 0.3, 0.7, 0.18, 0.9, 0.55, 0.8, 0.87, 0.94, 1.5, 9.8);
+    if (p.wet > 0.2 && sp > 5 && !p.air && Math.random() < dt * 80 * Math.min(1, sp / 25)) {
+      // horoz kuyruğu: arka tekerleklerden geriye ve yukarı su
+      const up = rear ? 2.2 + Math.random() * 3.2 : 1 + Math.random() * 1.6;
+      PARTICLES.water.spawn(x + rnd() * 0.3, gy + 0.15, z + rnd() * 0.3, -fx * sp * 0.16 + rnd() * 2 + p.vx * 0.35, up, -fz * sp * 0.16 + rnd() * 2 + p.vz * 0.35, 0.75, 0.16, 0.7, 0.6, 0.85, 0.9, 0.96, 1.4, 9.8);
+      if (rear && Math.random() < 0.35) PARTICLES.smoke.spawn(x, gy + 0.4, z, p.vx * 0.4, 0.6, p.vz * 0.4, 0.9, 0.8, 3.2, 0.16, 0.92, 0.95, 1.0, 2.2, 0);
     }
-    if ((p.surface === 'off' || R.def.kind === 'horse') && sp > 6 && p.wet < 0.2 && !p.air && Math.random() < dt * 20) {
-      PARTICLES.smoke.spawn(x, gy + 0.2, z, rnd() * 1.2, 0.5 + Math.random() * 0.6, rnd() * 1.2, 0.9, 0.4, 2.2, R.def.kind === 'horse' ? 0.18 : 0.3, 0.78, 0.7, 0.56, 1.8, -0.2);
+    if ((p.surface === 'off' || R.def.kind === 'horse') && sp > 6 && p.wet < 0.2 && !p.air && Math.random() < dt * 26) {
+      PARTICLES.smoke.spawn(x, gy + 0.2, z, rnd() * 1.4 + p.vx * 0.1, 0.5 + Math.random() * 0.7, rnd() * 1.4 + p.vz * 0.1, 1.2, 0.5, 3.0, R.def.kind === 'horse' ? 0.2 : 0.34, 0.74, 0.64, 0.5, 1.6, -0.15);
+      if (Math.random() < 0.5) PARTICLES.water.spawn(x, gy + 0.15, z, rnd() * 2 + p.vx * 0.25, 1.5 + Math.random() * 2, rnd() * 2 + p.vz * 0.25, 0.6, 0.06, 0.05, 0.9, 0.32, 0.27, 0.2, 0.5, 12);
     }
   });
   if (p.nitroOn) for (const e of R.vis.exhausts) {
     const [x, z] = W2(e.x, e.z - 0.3);
-    if (Math.random() < dt * 60) PARTICLES.add.spawn(x, e.y + (p.y || 0), z, -fx * 6 + p.vx * 0.6, Math.random() * 0.6, -fz * 6 + p.vz * 0.6, 0.18, 0.35, 0.05, 0.8, 0.6, 1.4, 3.5, 2, 0);
+    if (Math.random() < dt * 90) PARTICLES.add.spawn(x, e.y + (p.y || 0), z, -fx * 7 + p.vx * 0.7, Math.random() * 0.6, -fz * 7 + p.vz * 0.7, 0.16, 0.45, 0.08, 0.85, 0.5, 1.3, 3.6, 2, 0);
+    if (Math.random() < dt * 40) PARTICLES.add.spawn(x, e.y + (p.y || 0), z, -fx * 4 + p.vx * 0.8, Math.random() * 0.4, -fz * 4 + p.vz * 0.8, 0.22, 0.3, 0.6, 0.5, 2.4, 1.0, 0.3, 2, 0);
   }
+  // vites büyütürken egzozdan alev patlaması
+  if (R.lastGear !== undefined && p.gear > R.lastGear && p.gear > 1 && p.throttle > 0.7 && R.def.kind !== 'horse' && Math.random() < 0.75) {
+    for (const e of R.vis.exhausts) { const [x, z] = W2(e.x, e.z - 0.15); PARTICLES.backfire(x, e.y + (p.y || 0), z, -fx, -fz, 1); }
+  }
+  R.lastGear = p.gear;
 }
 function racerHaptics(R, dt, running) {
   R.rumbleT -= dt;
