@@ -4294,9 +4294,9 @@ const MODELS = {
   },
 };
 // basit değer gürültüsü (yol pürüzü; aynı yerden geçen her teker aynı tümseği hisseder)
+const _vh = (a, b) => { const n = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return (n - Math.floor(n)) * 2 - 1; };
 function vnoise(x, z) {
-  const ix = Math.floor(x), iz = Math.floor(z), fx = x - ix, fz = z - iz;
-  const h = (a, b) => { const n = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return (n - Math.floor(n)) * 2 - 1; };
+  const ix = Math.floor(x), iz = Math.floor(z), fx = x - ix, fz = z - iz, h = _vh;
   const sx = fx * fx * (3 - 2 * fx), sz = fz * fz * (3 - 2 * fz);
   return (h(ix, iz) * (1 - sx) + h(ix + 1, iz) * sx) * (1 - sz) + (h(ix, iz + 1) * (1 - sx) + h(ix + 1, iz + 1) * sx) * sz;
 }
@@ -6611,6 +6611,8 @@ class Race {
     for (const R of locals) { R.snd = new EngineSound(R.def, R.pan); R.snd.local = true; R.snd.panV = R.pan; }
     this.items = new ItemSystem(this);
     $('#huds').classList.remove('hidden');
+    // tüm araç/sahne gölgelendiricilerini sinematik giriş sırasında arka planda derle (ilk saniyelerde takılma olmasın)
+    if (this.views[0]) { try { const p = renderer.compileAsync && renderer.compileAsync(scene, this.views[0].cam); if (p && p.catch) p.catch(() => { }); } catch (e) { } }
   }
   get me() { return this.racers.find(r => r.local); }
   // yarış sürerken odaya gelen oyuncuyu ekle (grid'in arkasına; uzaktan araçlar zaten anlık konumla gelir)
