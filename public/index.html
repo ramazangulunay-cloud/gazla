@@ -579,6 +579,7 @@ import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 // Yayınlanan oyunun adresi — davet linki bundan üretilir
 const ARTIFACT_URL = '__ARTIFACT_URL__';
@@ -3418,7 +3419,9 @@ const PAINTS = [
   { id: 'pembe', name: 'Disko Pembe', c: '#db4793' }, { id: 'kahve', name: 'Toprak', c: '#654328' },
   { id: 'turkuaz', name: 'Turkuaz', c: '#12979a', metal: true }, { id: 'turuncu', name: 'Portakal', c: '#e05f0e' }, { id: 'bakir', name: 'Bakır', c: '#c8561a', metal: true },
   { id: 'antrasit', name: 'Antrasit', c: '#3a3d42', metal: true }, { id: 'krem', name: 'Krem', c: '#e8dcc0' },
+  { id: 'kaplama', name: 'Yarış kaplaması', c: '#56653a', livery: true, only: ['scania'] },
 ];
+const paintOk = (p, veh) => !p.only || p.only.includes(veh);
 const RIMS = [
   { id: 'krom', name: 'Krom', c: '#eeeeee', metal: 1 }, { id: 'siyah', name: 'Siyah', c: '#18191b' },
   { id: 'altin', name: 'Altın', c: '#cf9d32', metal: 1 }, { id: 'beyaz', name: 'Beyaz', c: '#f1f1f1' },
@@ -3447,7 +3450,7 @@ function sanitizeCustom(c) {
   c = Object.assign({}, c || {});
   if (!VEHICLES[c.veh]) c.veh = 'sahin';
   const d = VEHICLES[c.veh];
-  if (!PAINTS.some(p => p.id === c.paint)) c.paint = 'kirmizi';
+  if (!PAINTS.some(p => p.id === c.paint && paintOk(p, c.veh))) c.paint = (d.defaults && d.defaults.paint) || 'kirmizi';
   const rims = d.rims || RIMS;
   if (!rims.some(p => p.id === c.rim)) c.rim = rims[0].id;
   if (!RIM_STYLES.some(p => p.id === c.rimStyle)) c.rimStyle = 'oz';
@@ -3663,7 +3666,7 @@ function makeWheel(parent, mats, r, w, x, y, z, front, style) {
   if (style === 'celik' || style === 'kapak') spin.add(new THREE.Mesh(G.hub, mats.chrome));
   spin.add(new THREE.Mesh(G.disc, mats.disc));
   pivot.add(new THREE.Mesh(G.cal, mats.caliper));
-  return { pivot, spin, r, front };
+  return { pivot, spin, r, front, y0: y };
 }
 
 // ── ARABA ──────────────────────────────────────────────────────────
@@ -4252,6 +4255,149 @@ function buildHorse(ctx) {
   };
 }
 
+// ════════════════════════════════════════════════════════════════════
+//  HAZIR 3B MODELLER (GLB) — def.model ile bağlanır. Model inene kadar
+//  aracın prosedürel gövdesi kullanılır, iner inmez sahnede yenisiyle değişir.
+// ════════════════════════════════════════════════════════════════════
+const MODELS = {
+  data: {}, err: {}, pend: {}, hooks: [], queue: [], active: 0,
+  base() { return HOSTED ? 'models/' : 'https://gazla.ramazangulunay.workers.dev/models/'; },
+  get(n) { return this.data[n] || null; },
+  want(n, first) {
+    if (!n || this.data[n] || this.err[n] || this.pend[n]) return;
+    const i = this.queue.indexOf(n); if (i >= 0) this.queue.splice(i, 1);
+    if (first) this.queue.unshift(n); else this.queue.push(n);
+    this.pump();
+  },
+  wantAll(firstVeh) {
+    const f = firstVeh && VEHICLES[firstVeh] && VEHICLES[firstVeh].model;
+    if (f) this.want(f.file, true);
+    for (const id of VEHICLE_ORDER) { const m = VEHICLES[id].model; if (m) this.want(m.file); }
+  },
+  pump() {
+    while (this.active < 2 && this.queue.length) {
+      const n = this.queue.shift(); this.pend[n] = true; this.active++;
+      const t0 = performance.now();
+      new GLTFLoader().loadAsync(this.base() + n + '.glb')
+        .then((g) => {
+          this.data[n] = prepModel(g.scene);
+          console.info('[model] ' + n + ' ' + Math.round(performance.now() - t0) + ' ms');
+          for (const f of this.hooks) { try { f(n); } catch (e) { console.warn('[model] kanca', e); } }
+        })
+        .catch((e) => { this.err[n] = true; console.warn('[model] yüklenemedi: ' + n, e && e.message); })
+        .finally(() => { delete this.pend[n]; this.active--; this.pump(); });
+    }
+  },
+};
+// basit değer gürültüsü (yol pürüzü; aynı yerden geçen her teker aynı tümseği hisseder)
+function vnoise(x, z) {
+  const ix = Math.floor(x), iz = Math.floor(z), fx = x - ix, fz = z - iz;
+  const h = (a, b) => { const n = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return (n - Math.floor(n)) * 2 - 1; };
+  const sx = fx * fx * (3 - 2 * fx), sz = fz * fz * (3 - 2 * fz);
+  return (h(ix, iz) * (1 - sx) + h(ix + 1, iz) * sx) * (1 - sz) + (h(ix, iz + 1) * (1 - sx) + h(ix + 1, iz + 1) * sx) * sz;
+}
+function prepModel(scene) {
+  scene.updateMatrixWorld(true);
+  const M = { body: null, wheels: [] };
+  for (const c of scene.children) {
+    if (c.name === 'body') M.body = c;
+    else if (/^w[FR][LR]$/.test(c.name)) {
+      const bb = new THREE.Box3().setFromObject(c);
+      M.wheels.push({ node: c, pos: c.position.clone(), front: c.name[1] === 'F', r: (bb.max.y - bb.min.y) / 2 });
+    }
+  }
+  if (!M.body || M.wheels.length < 4) throw new Error('model yapısı eksik');
+  M.box = new THREE.Box3().setFromObject(M.body);
+  // taranmış (köşe renkli) gövdelerde boyanacak yerlerin maskesi: açık renkli + az doygun yüzeyler.
+  // Burun ve kuyruktaki öne/arkaya bakan yüzler (far, stop, tampon) boyanmaz.
+  M.body.traverse((o) => {
+    if (!o.isMesh || !o.geometry.attributes.color) return;
+    const g = o.geometry, C = g.attributes.color, P = g.attributes.position, N = g.attributes.normal, n = P.count;
+    let zmax = 0; for (let i = 0; i < n; i++) zmax = Math.max(zmax, Math.abs(P.getZ(i)));
+    const m = new Float32Array(n), ss = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+    for (let i = 0; i < n; i++) {
+      const r = Math.pow(C.getX(i), 0.4545), gg = Math.pow(C.getY(i), 0.4545), b = Math.pow(C.getZ(i), 0.4545);
+      const mx = Math.max(r, gg, b), mn = Math.min(r, gg, b), sat = mx > 0.01 ? (mx - mn) / mx : 0;
+      let k = ss(0.46, 0.66, mx) * (1 - ss(0.12, 0.26, sat));
+      if (Math.abs(P.getZ(i)) > 0.84 * zmax && N) k *= 1 - ss(0.55, 0.85, Math.abs(N.getZ(i)));
+      m[i] = k;
+    }
+    g.setAttribute('pmask', new THREE.BufferAttribute(m, 1));
+  });
+  return M;
+}
+// köşe renkli gövdeyi oyuncunun boyasına boyayan malzeme (gölge/kir/ayrıntı korunur)
+function vcolPaintMat(p) {
+  const m = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: p.metal ? 0.34 : 0.42, metalness: p.metal ? 0.45 : 0.05, clearcoat: 1, clearcoatRoughness: 0.05, envMapIntensity: 1.35 });
+  const u = { value: new THREE.Color(p.c) };
+  m.onBeforeCompile = (sh) => {
+    sh.uniforms.uPaint = u;
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float pmask;\nvarying float vPm;').replace('#include <color_vertex>', '#include <color_vertex>\nvPm = pmask;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform vec3 uPaint;\nvarying float vPm;')
+      .replace('#include <color_fragment>', '#include <color_fragment>\n{ float l = dot(vColor.rgb, vec3(0.2126, 0.7152, 0.0722)); diffuseColor.rgb = mix(diffuseColor.rgb, uPaint * clamp(l * 1.45, 0.2, 1.25), vPm); }');
+  };
+  m.customProgramCacheKey = () => 'vcolpaint';
+  m.userData.cast = true;
+  return m;
+}
+// araç geometrisi (fizik/iz/kamera için): modelli araçta def.geo, yoksa profil
+function vehGeo(d) {
+  if (d.geo) return d.geo;
+  if (!d.spec) return null;
+  return d._geo || (d._geo = { W: d.spec.W, zf: d.spec.zf, zr: d.spec.zr, botY: d.spec.bot[1][1], wheel: d.spec.wheel });
+}
+function buildModelCar(def, ctx, M) {
+  const { mats, custom } = ctx, MD = def.model;
+  const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
+  const drop = custom.acc.includes('basik') ? -0.05 : 0;
+  body.position.y = drop;
+  const pc = findBy(PAINTS, custom.paint), brakeMats = [], cache = new Map();
+  let k = 0;
+  const own = (m) => { mats['x' + (k++)] = m; return m; };
+  const withMap = (base, src) => {
+    if (!src.map) return base;
+    const m = own(base.clone()); m.map = src.map; m.color.set(0xffffff);
+    if (m.emissive && base.emissiveIntensity > 0.05) m.emissiveMap = src.map;
+    return m;
+  };
+  const pick = (src, isBody) => {
+    const key = src.uuid + (isBody ? 'b' : 'w');
+    if (cache.has(key)) return cache.get(key);
+    const nm = (MD.matMap && MD.matMap[src.name]) || src.name;
+    let m = src;
+    if (nm === 'paint') m = pc.livery && src.map ? own(new THREE.MeshPhysicalMaterial({ map: src.map, roughness: 0.4, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.04, envMapIntensity: 1.3 })) : mats.paint;
+    else if (nm === 'vcol') m = isBody ? own(vcolPaintMat(pc)) : own(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.65, metalness: 0.2 }));
+    else if (nm === 'glass' || nm === 'glass2') m = mats.glass;
+    else if (nm === 'brake') { m = withMap(mats.tail, src); if (m === mats.tail) m = own(mats.tail.clone()); brakeMats.push(m); }
+    else if (nm === 'head') m = withMap(mats.head, src);
+    else if (nm === 'rev') m = mats.revlight;
+    else if (nm === 'chrome') m = withMap(mats.chrome, src);
+    else if (nm === 'rim') m = mats.rim;
+    else if (nm === 'tire') m = src.map ? src : mats.tire;
+    cache.set(key, m);
+    return m;
+  };
+  const dress = (obj, isBody) => obj.traverse((o) => {
+    if (!o.isMesh) return;
+    o.material = pick(o.material, isBody);
+    o.userData.shared = true;
+    const gl = o.material === mats.glass;
+    o.castShadow = !gl; o.receiveShadow = !gl;
+    if (gl) o.renderOrder = 3;
+  });
+  const b = M.body.clone(true); dress(b, true); body.add(b);
+  const wheels = M.wheels.map((w) => {
+    const pivot = new THREE.Group(); pivot.position.copy(w.pos); pivot.userData.keep = true; root.add(pivot);
+    const spin = new THREE.Group(); pivot.add(spin);
+    const c = w.node.clone(true); c.position.set(0, 0, 0); dress(c, false); spin.add(c);
+    return { pivot, spin, r: w.r, front: w.front, y0: w.pos.y };
+  });
+  const G = def.geo, box = M.box;
+  const ex = MD.ex ? vec(MD.ex[0], MD.ex[1], MD.ex[2]) : vec(0.45, 0.3, box.min.z + 0.05);
+  const eye = MD.eye ? vec(MD.eye[0], MD.eye[1], MD.eye[2]) : null;
+  return { root, body, wheels, brakeMats, exhausts: [ex], len: box.max.z - box.min.z, wid: G ? G.W : box.max.x - box.min.x, headMat: mats.head, revMat: mats.revlight, drop, eye, driver: null, needles: null, model: MD.file };
+}
+
 // ── kayıtlı araçlar ────────────────────────────────────────────────
 // stats: fizik (bkz. BASE_STATS). Arkadan itiş = drift, önden çekiş = dengeli, 4x4 = ıslakta güçlü.
 registerVehicle('sahin', {
@@ -4265,10 +4411,12 @@ registerVehicle('sahin', {
 registerVehicle('toros', {
   name: 'Toros', drive: 'Önden çekiş', desc: 'Pazarın, düğünün, yaylanın emektarı. Önden çekişli: virajda burnu dışa kaçar ama asla şaşırtmaz.',
   kind: 'car', spec: CAR_SPECS.toros,
+  model: { file: 'toros', ex: [-0.5, 0.3, -2.12] },
+  geo: { W: 1.7, zf: 2.17, zr: -2.17, botY: 0.32, wheel: { x: 0.807, fz: 1.443, rz: -1.218, w: 0.2, r: 0.309 } },
   stats: { mass: 1060, wheelbase: 2.54, frontW: 0.58, drive: 'fwd', torque: 225, gears: [3.6, 2.2, 1.5, 1.12, 0.92], final: 3.8, wheelR: 0.29, cd: 0.41, rearGrip: 1.05, radius: 0.92, axle: 1.25 },
   suspension: 1.2,
-  cam: { dist: 6.5, h: 2.2 }, accs: ['puskul', 'tozluk', 'spoiler', 'tavan', 'basik', 'sis'],
-  defaults: { paint: 'hardal', acc: ['tavan', 'tozluk'], sticker: 'YOLUN AÇIK OLSUN' },
+  cam: { dist: 6.5, h: 2.2 }, accs: ['basik'], noRimStyle: true, noSticker: true, noRim: true,
+  defaults: { paint: 'hardal', acc: [], sticker: '' },
 });
 registerVehicle('niva', {
   name: 'Niva', drive: '4x4', desc: 'Dağ bayır dinlemez. Dört çeker: ıslak zeminde ve pist dışında rakiplerinden çok daha az hız kaybeder.',
@@ -4297,18 +4445,52 @@ registerVehicle('transit', {
 registerVehicle('egea', {
   name: 'Egea', drive: 'Önden çekiş', desc: 'Filonun, taksinin, kurumsalın gözdesi. Önden çekişli ve dengeli: hata affeder, düz yolda şaşırtıcı hızlı.',
   kind: 'car', spec: CAR_SPECS.egea,
+  model: { file: 'egea', eye: [0.4, 1.17, -0.08], ex: [-0.55, 0.24, -2.22] },
+  geo: { W: 1.79, zf: 2.26, zr: -2.26, botY: 0.27, wheel: { x: 0.728, fz: 1.378, rz: -1.246, w: 0.23, r: 0.279 } },
   stats: { mass: 1240, wheelbase: 2.64, frontW: 0.6, drive: 'fwd', torque: 262, gears: [3.9, 2.2, 1.45, 1.08, 0.86], final: 3.7, wheelR: 0.32, cd: 0.4, rearGrip: 1.08, radius: 0.95, axle: 1.3 },
   suspension: 1.0,
-  cam: { dist: 6.6, h: 2.15 }, accs: ['puskul', 'kopek', 'tozluk', 'spoiler', 'basik', 'sis'],
-  defaults: { paint: 'beyaz', rim: 'krom', rimStyle: 'yildiz', acc: [], sticker: 'ŞİRKET ARACI', tint: 'koyu' },
+  cam: { dist: 6.6, h: 2.15 }, accs: ['basik'], noRimStyle: true, noSticker: true, noRim: true,
+  defaults: { paint: 'beyaz', rim: 'krom', acc: [], sticker: '', tint: 'koyu' },
 });
 registerVehicle('scania', {
-  name: 'Tır', drive: 'Arkadan itiş', desc: 'Dorsesiz uzun yol çekicisi. Yavaş ivmelenir ama 7 tonluk kütlesiyle önüne çıkanı biçer; virajda erken fren şart.',
+  name: 'Tır', drive: 'Arkadan itiş', desc: 'MAN TGS yarış çekicisi. Yavaş ivmelenir ama 7 tonluk kütlesiyle önüne çıkanı biçer; virajda erken fren şart.',
   kind: 'car', spec: CAR_SPECS.scania,
+  model: { file: 'man', eye: [0.62, 2.25, 1.55], ex: [-1.05, 0.7, -0.3] },
+  geo: { W: 2.46, zf: 3.0, zr: -3.0, botY: 0.6, wheel: { x: 0.993, fz: 1.528, rz: -2.042, w: 0.48, r: 0.494 } },
   stats: { mass: 7200, wheelbase: 3.7, frontW: 0.55, drive: 'rwd', torque: 1500, peakRpm: 1400, idle: 650, redline: 2500, gears: [6.0, 4.4, 3.2, 2.4, 1.8, 1.35, 1.0], final: 3.6, wheelR: 0.52, cd: 2.2, rr: 60, brake: 70000, mu: 1.25, cgH: 1.2, radius: 1.45, axle: 2.0 },
   suspension: 1.5,
-  cam: { dist: 12.5, h: 4.8 }, accs: ['puskul', 'kopek', 'tozluk', 'sis'],
-  defaults: { paint: 'bakir', rim: 'krom', acc: ['puskul'], sticker: 'ANAMIN DUASI', tint: 'acik' },
+  cam: { dist: 11.5, h: 4.6 }, accs: ['basik'], noRimStyle: true, noSticker: true, noRim: true,
+  defaults: { paint: 'kaplama', rim: 'krom', acc: [], sticker: '', tint: 'acik' },
+});
+registerVehicle('accent', {
+  name: 'Accent', drive: 'Önden çekiş', desc: "99 model Hyundai Accent. Hafif ve tepkili: virajı içten keser, düz yolda Egea'yı kovalar.",
+  kind: 'car', spec: CAR_SPECS.egea,
+  model: { file: 'accent', ex: [-0.5, 0.26, -2.03] },
+  geo: { W: 1.65, zf: 2.06, zr: -2.06, botY: 0.27, wheel: { x: 0.692, fz: 1.244, rz: -1.138, w: 0.22, r: 0.277 } },
+  stats: { mass: 1030, wheelbase: 2.38, frontW: 0.61, drive: 'fwd', torque: 238, gears: [3.5, 2.05, 1.42, 1.07, 0.87], final: 3.84, wheelR: 0.28, cd: 0.37, rearGrip: 1.07, radius: 0.9, axle: 1.2 },
+  suspension: 1.05,
+  cam: { dist: 6.3, h: 2.1 }, accs: ['basik'], noRimStyle: true, noSticker: true, noRim: true,
+  defaults: { paint: 'gumus', acc: [], sticker: '', tint: 'acik' },
+});
+registerVehicle('h100', {
+  name: 'H100', drive: 'Arkadan itiş', desc: 'Kasası boş Hyundai H100 kamyonet. Arkası hafif, kuyruğu kolay kayar; dizel torkuyla rampada bile durmaz.',
+  kind: 'car', spec: CAR_SPECS.transit,
+  model: { file: 'h100', ex: [-0.7, 0.4, -1.55] },
+  geo: { W: 1.78, zf: 2.35, zr: -2.35, botY: 0.45, wheel: { x: 0.816, fz: 1.098, rz: -1.024, w: 0.29, r: 0.362 } },
+  stats: { mass: 1580, wheelbase: 2.12, frontW: 0.6, drive: 'rwd', torque: 345, peakRpm: 2400, idle: 750, redline: 4600, gears: [4.1, 2.35, 1.5, 1.0, 0.8], final: 3.9, wheelR: 0.36, cd: 0.64, cgH: 0.78, rearGrip: 1.0, radius: 1.05, axle: 1.35 },
+  suspension: 1.45,
+  cam: { dist: 7.3, h: 2.8 }, accs: ['basik'], noRimStyle: true, noSticker: true, noRim: true,
+  defaults: { paint: 'beyaz', acc: [], sticker: '', tint: 'acik' },
+});
+registerVehicle('carry', {
+  name: 'Carry', drive: 'Arkadan itiş', desc: 'Suzuki Carry minivan: pazarın, kargonun, mahallenin kurtarıcısı. Kısa ve dar — trafikte arada kaybolur ama virajda dikkat, yatar.',
+  kind: 'car', spec: CAR_SPECS.transit,
+  model: { file: 'carry', eye: [0.28, 1.55, 0.72], ex: [-0.45, 0.27, -1.66] },
+  geo: { W: 1.48, zf: 1.7, zr: -1.7, botY: 0.36, wheel: { x: 0.615, fz: 0.95, rz: -0.945, w: 0.2, r: 0.304 } },
+  stats: { mass: 880, wheelbase: 1.9, frontW: 0.55, drive: 'rwd', torque: 196, gears: [3.8, 2.2, 1.45, 1.05, 0.84], final: 4.5, wheelR: 0.3, cd: 0.52, cgH: 0.72, radius: 0.85, axle: 1.1, steerMax: 0.66 },
+  suspension: 1.5,
+  cam: { dist: 6.1, h: 2.6 }, accs: ['basik'], noRimStyle: true, noSticker: true,
+  defaults: { paint: 'beyaz', rim: 'beyaz', acc: [], sticker: '', tint: 'acik' },
 });
 registerVehicle('cg', {
   name: 'CG Motor', drive: 'Zincir', desc: 'Kuryenin sadık dostu. Hafif ve çevik, dar virajda bulunmaz nimet — ama ıslakta dikkat!',
@@ -4333,7 +4515,13 @@ function buildVehicle(custom, opts = {}) {
   const lite = !!opts.lite;
   const mats = vehicleMats(custom, lite);
   const ctx = { mats, custom, lite };
-  const v = def.kind === 'car' ? buildCar(def.spec, ctx) : def.build(ctx);
+  let v = null;
+  const MD = def.model && !lite ? MODELS.get(def.model.file) : null;
+  if (MD) { try { v = buildModelCar(def, ctx, MD); } catch (e) { console.warn('[model] kurulamadı: ' + def.model.file, e); v = null; } }
+  if (!v) {
+    v = def.kind === 'car' ? buildCar(def.spec, ctx) : def.build(ctx);
+    if (def.model && !lite && !MODELS.err[def.model.file]) { v.wantsModel = def.model.file; MODELS.want(def.model.file, true); }
+  }
   v.def = def; v.custom = custom; v.mats = mats;
   if (!lite) {
     const blob = new THREE.Mesh(new THREE.PlaneGeometry(v.wid * 1.45, v.len * 1.1), new THREE.MeshBasicMaterial({ color: 0x000000, map: TEX.dot, transparent: true, opacity: 0.62, depthWrite: false }));
@@ -4346,10 +4534,11 @@ function buildVehicle(custom, opts = {}) {
       const nm = new THREE.Mesh(new THREE.PlaneGeometry(gw, gl), new THREE.MeshBasicMaterial({ color: col.clone().multiplyScalar(1.15), map: neonGlowTex(gw, gl), transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
       nm.rotation.x = -Math.PI / 2; nm.position.y = 0.06; nm.renderOrder = 2; v.root.add(nm);
       const tube = new THREE.MeshBasicMaterial({ color: col.clone().multiplyScalar(2.6), toneMapped: false });
-      const ty = def.kind === 'car' ? def.spec.bot[1][1] - 0.03 : 0.22;
+      const GG = def.kind === 'car' ? vehGeo(def) : null;
+      const ty = GG ? GG.botY - 0.03 : 0.22;
       const tl = v.len * (def.kind === 'car' ? 0.62 : 0.5), tx = v.wid / 2 - (def.kind === 'car' ? 0.2 : 0.12);
       for (const sx of [-1, 1]) { const t = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, tl, 8), tube); t.rotation.x = Math.PI / 2; t.position.set(sx * tx, ty, 0); t.userData.keep = true; (v.lean || v.body).add(t); }
-      if (def.kind === 'car') for (const zz of [def.spec.wheel.fz + 0.45, def.spec.wheel.rz - 0.45]) { const t = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, v.wid - 0.5, 8), tube); t.rotation.z = Math.PI / 2; t.position.set(0, ty, zz); t.userData.keep = true; v.body.add(t); }
+      if (GG) for (const zz of [GG.wheel.fz + 0.45, GG.wheel.rz - 0.45]) { const t = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, v.wid - 0.5, 8), tube); t.rotation.z = Math.PI / 2; t.position.set(0, ty, zz); t.userData.keep = true; v.body.add(t); }
       v.neon = nm; v.neonBase = 0.9;
     }
     v.flames = [];
@@ -4384,30 +4573,73 @@ function updateVehicleVisual(v, ph, dt) {
     w.spin.rotation.x += (w.front ? (ph.vF || 0) / w.r : wW) * dt;
     if (w.front && v.kind !== 'bike') w.pivot.rotation.y = -delta;
   }
-  // gövde yatışı: ivmeye göre (süspansiyon hissi)
-  // ── süspansiyon: yay-sönümleyici (gaz → burun kalkar, fren → burun dalar, viraj → dışa yatar, tümsek → zıplar)
+  // ── SÜSPANSİYON: her teker yolu ayrı hisseder (bordür sırtları, pist dışı çukurlar, asfalt pürüzü),
+  // gövde dört köşedeki yaylar üzerinde gecikmeli izler: ivme → burun kalkar/dalar, viraj → dışa yatar
+  // (viraj denge çubuğu yatışı sınırlar), iniş → çöker ve geri seker. Sertlik/sönüm araca özel.
   const aL = ph.aL ?? 0, aT = ph.aT ?? 0, spd = Math.abs(ph.vF || 0);
-  if (S.soft === undefined) S.soft = (v.def && v.def.suspension || 1) * (v.custom && v.custom.acc && v.custom.acc.includes('basik') ? 0.72 : 1);
+  if (S.soft === undefined) {
+    const d = v.def || {}, low = v.custom && v.custom.acc && v.custom.acc.includes('basik');
+    S.soft = (d.suspension || 1) * (low ? 0.72 : 1);
+    S.kH = 165 / S.soft; S.kP = 105 / S.soft; S.kR = 90 / Math.sqrt(S.soft) * (low ? 1.25 : 1); // denge çubuğu: yatış sertliği
+    S.zH = 0.34 + (low ? 0.08 : 0); S.zP = 0.32; S.zR = 0.3;
+    S.pv = 0; S.rv = 0; S.heave = 0; S.hv = 0;
+  }
   const soft = S.soft;
-  const pitchT = air ? 0 : clamp(-aL * 0.0068 * soft, -0.075, 0.06);
-  const rollT = air ? 0 : clamp(-aT * 0.0062 * soft, -0.09, 0.09);
+  let pitchT = air ? 0 : clamp(-aL * 0.0068 * soft, -0.075, 0.06);
+  let rollT = air ? 0 : clamp(-aT * 0.0062 * soft, -0.09, 0.09);
   let heaveT = -Math.min(0.035, Math.abs(aT) * 0.0011 + Math.max(0, -aL) * 0.0008);
   if (air) heaveT = 0.06; // havada tekerlekler sarkar, gövde yükselir
-  if (S.wasAir && !air) { S.hv -= clamp(Math.abs(ph.vy || 0) * 0.12, 0.3, 1.2); S.pv += 0.6; } // iniş: gövde çöker
+  if (S.wasAir && !air) { S.hv -= clamp(Math.abs(ph.vy || 0) * 0.12, 0.3, 1.2) * Math.sqrt(soft); S.pv += 0.6; for (const w of v.wheels) w.wv = (w.wv || 0) - 0.6; } // iniş: gövde çöker, lastikler ezilir
   S.wasAir = air;
-  if (S.pv === undefined) { S.pv = 0; S.rv = 0; S.heave = 0; S.hv = 0; }
-  // tümsekler: bordür, pist dışı, yol dokusu
-  const bumpRate = ph.surface === 'kerb' ? spd / 1.5 : ph.surface === 'off' ? spd / 0.8 : spd / 9;
-  if (Math.random() < bumpRate * dt) {
-    const a = ph.surface === 'kerb' ? 1 : ph.surface === 'off' ? 0.8 : 0.18;
-    S.hv += (Math.random() - 0.5) * 0.9 * a; S.rv += (Math.random() - 0.5) * 1.1 * a; S.pv += (Math.random() - 0.5) * 0.6 * a;
+  // teker başına yol girdisi
+  const car4 = !v.kind && v.wheels.length >= 4;
+  const TT = typeof TRACK !== 'undefined' ? TRACK : null, hasT = !!(TT && ph.idx >= 0 && ph.lat !== undefined);
+  if (car4) {
+    const ch = Math.cos(ph.h || 0), sh = Math.sin(ph.h || 0);
+    const tx = hasT ? TT.tx[ph.idx] : 0, tz = hasT ? TT.tz[ph.idx] : 1;
+    let sL = 0, sR = 0, sF = 0, sB = 0, nL = 0, nR = 0, nF = 0, nB = 0, xw = 0.7, zF = 1.2, zB = -1.2;
+    for (const w of v.wheels) {
+      const lx = w.pivot.position.x, lz = w.pivot.position.z;
+      let u = 0;
+      if (hasT && !air && dt > 0) {
+        const wx = ph.x + lx * ch + lz * sh, wz = ph.z - lx * sh + lz * ch;
+        const lat = Math.abs(ph.lat + (wx - ph.x) * -tz + (wz - ph.z) * tx);
+        if (lat <= TT.half) u = vnoise(wx * 1.7, wz * 1.7) * 0.005 + vnoise(wx * 0.45, wz * 0.45) * 0.006;
+        else if (lat <= TT.half + TT.kerb) u = 0.026 + 0.016 * Math.max(0, Math.sin((wx * tx + wz * tz) * 5.4)); // bordür sırtları
+        else u = vnoise(wx * 0.85, wz * 0.85) * 0.045 + vnoise(wx * 2.9, wz * 2.9) * 0.014 + 0.012;
+      }
+      // lastik + teker kütlesi: sert ve hızlı yay (yola yapışık kalır, sert tümsekte zıplar)
+      if (w.wy === undefined) { w.wy = 0; w.wv = 0; }
+      if (dt > 0) {
+        const m = Math.max(1, Math.ceil(dt / 0.006)), hh = dt / m;
+        for (let i = 0; i < m; i++) { w.wv += (2500 * (u - w.wy) - 2 * 0.6 * 50 * w.wv) * hh; w.wy += w.wv * hh; }
+        w.wy = clamp(w.wy, -0.05, 0.09);
+      }
+      w.pivot.position.y = (w.y0 ?? w.pivot.position.y) + (air ? -0.035 * Math.min(1, (ph.airT || 0) * 4) : w.wy);
+      if (lx > 0) { sL += w.wy; nL++; xw = lx; } else { sR += w.wy; nR++; }
+      if (lz > 0) { sF += w.wy; nF++; zF = lz; } else { sB += w.wy; nB++; zB = lz; }
+    }
+    if (!air) {
+      // köşe yüksekliklerinden gövde hedefleri (yaylar gövdeye ancak gecikmeyle aktarır)
+      const mL = sL / Math.max(1, nL), mR = sR / Math.max(1, nR), mF = sF / Math.max(1, nF), mB = sB / Math.max(1, nB);
+      heaveT += (mL + mR) * 0.5 * 0.9;
+      rollT += (mL - mR) / Math.max(0.5, 2 * xw) * 0.85;
+      pitchT -= (mF - mB) / Math.max(1, zF - zB) * 0.85;
+    }
+  } else {
+    // iki tekerli / at: eski rastgele tümsekler
+    const bumpRate = ph.surface === 'kerb' ? spd / 1.5 : ph.surface === 'off' ? spd / 0.8 : spd / 9;
+    if (Math.random() < bumpRate * dt) {
+      const a = ph.surface === 'kerb' ? 1 : ph.surface === 'off' ? 0.8 : 0.18;
+      S.hv += (Math.random() - 0.5) * 0.9 * a; S.rv += (Math.random() - 0.5) * 1.1 * a; S.pv += (Math.random() - 0.5) * 0.6 * a;
+    }
   }
   if (S.kickR) { S.rv += S.kickR; S.pv += S.kickP || 0; S.hv += 0.4 * Math.abs(S.kickR); S.kickR = 0; S.kickP = 0; }
   const n = Math.max(1, Math.ceil(dt / 0.008)), h = dt / n;
   for (let i = 0; i < n; i++) {
-    S.pv += (95 * (pitchT - S.pitch) - 2 * 0.3 * Math.sqrt(95) * S.pv) * h; S.pitch += S.pv * h;
-    S.rv += (80 * (rollT - S.roll) - 2 * 0.28 * Math.sqrt(80) * S.rv) * h; S.roll += S.rv * h;
-    S.hv += (160 * (heaveT - S.heave) - 2 * 0.35 * Math.sqrt(160) * S.hv) * h; S.heave += S.hv * h;
+    S.pv += (S.kP * (pitchT - S.pitch) - 2 * S.zP * Math.sqrt(S.kP) * S.pv) * h; S.pitch += S.pv * h;
+    S.rv += (S.kR * (rollT - S.roll) - 2 * S.zR * Math.sqrt(S.kR) * S.rv) * h; S.roll += S.rv * h;
+    S.hv += (S.kH * (heaveT - S.heave) - 2 * S.zH * Math.sqrt(S.kH) * S.hv) * h; S.heave += S.hv * h;
   }
   S.pitch = clamp(S.pitch, -0.12, 0.1); S.roll = clamp(S.roll, -0.14, 0.14); S.heave = clamp(S.heave, -0.08, 0.06);
   S.t += dt;
@@ -4445,7 +4677,7 @@ function updateVehicleVisual(v, ph, dt) {
 function disposeVehicle(v) {
   const shared = new Set(Object.values(RBOX));
   for (const c of Object.values(_wheelCache)) { for (const k of ['tire', 'rim', 'hub', 'disc', 'cal']) { shared.add(c[k]); shared.add(c.L[k]); } }
-  v.root.traverse(o => { if (o.isMesh && !shared.has(o.geometry)) o.geometry.dispose(); });
+  v.root.traverse(o => { if (o.isMesh && !o.userData.shared && !shared.has(o.geometry)) o.geometry.dispose(); });
   for (const m of Object.values(v.mats)) if (m && m.dispose) m.dispose();
   if (v.root.parent) v.root.parent.remove(v.root);
 }
@@ -4717,6 +4949,9 @@ const SOUND_PROFILES = {
   egea: { cyl: 4, comb: [0.0118, 0.005], fb: [0.5, 0.38], mufBase: 620, mufLoad: 1700, body: 98, tau: 0.0012, rough: 0.14, pops: 0.01, gain: 0.85, intakeF: 900, squealF: 880, road: 0.9 },
   scania: { cyl: 6, comb: [0.021, 0.0095], fb: [0.6, 0.48], mufBase: 320, mufLoad: 900, body: 58, tau: 0.0019, rough: 0.28, pops: 0.0, gain: 1.15, intakeF: 520, squealF: 620, road: 1.5 },
   transit: { cyl: 4, comb: [0.0142, 0.0068], fb: [0.5, 0.38], mufBase: 480, mufLoad: 1300, body: 84, tau: 0.0015, rough: 0.3, pops: 0.01, gain: 1.05, intakeF: 700, squealF: 760, road: 1.25 },
+  accent: { cyl: 4, comb: [0.0112, 0.0047], fb: [0.55, 0.4], mufBase: 700, mufLoad: 2000, body: 108, tau: 0.0012, rough: 0.12, pops: 0.03, gain: 0.9, intakeF: 960, squealF: 870, road: 0.95 },
+  h100: { cyl: 4, comb: [0.0151, 0.0071], fb: [0.52, 0.4], mufBase: 430, mufLoad: 1150, body: 78, tau: 0.0016, rough: 0.34, pops: 0.0, gain: 1.08, intakeF: 640, squealF: 740, road: 1.3 },
+  carry: { cyl: 3, comb: [0.0098, 0.0044], fb: [0.5, 0.36], mufBase: 760, mufLoad: 2200, body: 126, tau: 0.0012, rough: 0.2, pops: 0.02, gain: 0.95, intakeF: 1050, squealF: 900, road: 1.1 },
   cg: { cyl: 1, comb: [0.0049, 0.0021], fb: [0.5, 0.35], mufBase: 1100, mufLoad: 2900, body: 165, tau: 0.0016, rough: 0.2, pops: 0.05, gain: 0.85, intakeF: 1300, squealF: 1050, road: 0.7, chain: 1 },
   at: { horse: 1, gain: 1.0, road: 0.4, squealF: 0 },
 };
@@ -4930,6 +5165,9 @@ const ENGINE_SAMPLES = {
   transit: { low: ['eng_diesel_idle', 900, 0.75], mid: ['eng_rattle_mid', 1750, 0.6], eqF: 110, eqG: 4 },
   egea: { low: ['eng_idle_b', 900, 0.6], mid: ['eng_rattle_mid', 1850, 0.5], eqF: 300, eqG: 1 },
   scania: { low: ['eng_truck_idle', 650, 0.8], mid: ['eng_truck_load', 1150, 0.7], eqF: 90, eqG: 5 },
+  accent: { low: ['eng_petrol_idle', 900, 0.65], mid: ['eng_rattle_mid', 2000, 0.55], eqF: 280, eqG: 1 },
+  h100: { low: ['eng_diesel_idle', 820, 0.8], mid: ['eng_rattle_mid', 1600, 0.6], eqF: 100, eqG: 4 },
+  carry: { low: ['eng_idle_b', 1150, 0.65], mid: ['eng_rattle_mid', 2350, 0.55], eqF: 240, eqG: 2 },
   cg: { low: ['eng_moto_idle', 1500, 0.7], mid: ['eng_moto_rev', 4200, 0.65], eqF: 400, eqG: 2 },
 };
 const SFX = {
@@ -5314,7 +5552,7 @@ class EngineSound {
     };
     this.layers = { low: mk(map.low[0], map.low[1], map.low[2] ?? 0.6), mid: mk(map.mid[0], map.mid[1], map.mid[2] ?? 0.55) };
     // lastik ciyaklaması döngüsü (iki çeşit, araca göre)
-    const sk = SFX.buf[this.vid === 'scania' || this.vid === 'transit' ? 'skid_loop2' : 'skid_loop'] || SFX.buf.skid_loop;
+    const sk = SFX.buf[this.vid === 'scania' || this.vid === 'transit' || this.vid === 'h100' ? 'skid_loop2' : 'skid_loop'] || SFX.buf.skid_loop;
     if (sk && this.vid !== 'at') {
       const src = c.createBufferSource(); src.buffer = sk; src.loop = true; const g = c.createGain(); g.gain.value = 0;
       const bp = c.createBiquadFilter(); bp.type = 'highpass'; bp.frequency.value = 300;
@@ -6067,10 +6305,10 @@ function makeBots(n, taken) {
   const names = BOT_NAMES.slice().sort(() => r() - 0.5);
   const out = [];
   for (let i = 0; i < n; i++) {
-    const veh = r() < 0.08 ? r.pick(['cg', 'at']) : r.pick(['sahin', 'toros', 'niva', 'e30', 'sahin', 'e30', 'transit', 'egea', 'egea']);
+    const veh = r() < 0.08 ? r.pick(['cg', 'at']) : r.pick(['sahin', 'toros', 'niva', 'e30', 'sahin', 'e30', 'transit', 'egea', 'egea', 'accent', 'accent', 'h100', 'carry']);
     const d = VEHICLES[veh];
     const c = defaultCustom(veh);
-    c.paint = r.pick(PAINTS).id;
+    c.paint = r.pick(PAINTS.filter(p => paintOk(p, veh))).id;
     if (d.rims !== COATS) c.rim = r.pick(RIMS).id;
     c.neon = r() < 0.2 ? r.pick(NEONS.slice(1)).id : 'yok';
     c.sticker = r() < 0.6 ? r.pick(STICKERS) : '';
@@ -6117,6 +6355,14 @@ class Racer {
     if (this.bot) { const L = o.level || BOT_LEVELS.orta; this.ai = { skill: L.skill, pace: L.pace * (0.97 + Math.random() * 0.06), lane: (Math.random() - 0.5) * 6 }; }
   }
   get controlled() { return this.local || this.bot; }
+  // 3B model sonradan indiyse: yedek gövdeyi yarış sürerken yenisiyle değiştir
+  swapVis() {
+    const old = this.vis, nv = buildVehicle(this.custom);
+    nv.state = old.state; nv.root.visible = old.root.visible;
+    scene.add(nv.root); this.vis = nv;
+    updateVehicleVisual(nv, this.phys, 0.016);
+    disposeVehicle(old);
+  }
   dispose() { if (this.snd) this.snd.stop(); if (this.melody) { this.melody.stop(); this.melody = null; } disposeVehicle(this.vis); if (this.hud) this.hud.el.remove(); scene.remove(this.label); this.label.material.map.dispose(); this.label.material.dispose(); }
   netUpdate(dt) {
     const s = NET.snapshot(this.id);
@@ -6572,7 +6818,7 @@ function saveRecord(R) {
 // ── efektler (her yarışçı) ─────────────────────────────────────────
 const _wheelLocal = (R) => {
   const d = R.def;
-  if (d.kind === 'car') return [[d.spec.wheel.x, d.spec.wheel.rz], [-d.spec.wheel.x, d.spec.wheel.rz], [d.spec.wheel.x, d.spec.wheel.fz], [-d.spec.wheel.x, d.spec.wheel.fz]];
+  if (d.kind === 'car') { const w = vehGeo(d).wheel; return [[w.x, w.rz], [-w.x, w.rz], [w.x, w.fz], [-w.x, w.fz]]; }
   if (d.kind === 'bike') return [[0, -0.66]];
   return [[0.2, -0.62], [-0.2, -0.62]];
 };
@@ -6592,7 +6838,7 @@ function racerFx(R, dt, running) {
     if (markOn) {
       const last = R.skid[i];
       const a = clamp((p.drifting ? 0.35 + p.slip * 0.05 : hardBrake ? 0.3 + sp * 0.006 : 0.55) * (front ? 0.6 : 1), 0.15, 0.75);
-      if (last) PARTICLES.skids.add(last[0], last[1], x, z, R.def.kind === 'bike' ? 0.12 : (R.def.spec ? R.def.spec.wheel.w + 0.04 : 0.22), a, undefined, last[2], gy);
+      if (last) PARTICLES.skids.add(last[0], last[1], x, z, R.def.kind === 'bike' ? 0.12 : (R.def.kind === 'car' ? vehGeo(R.def).wheel.w + 0.04 : 0.22), a, undefined, last[2], gy);
       R.skid[i] = [x, z, gy];
     } else R.skid[i] = null;
     const rnd = () => Math.random() - 0.5;
@@ -6675,7 +6921,7 @@ function cinematicCamera(view, R, race, dt) {
     cam.position.set(cx + hx * along + rx * 6.2, gy + 0.42 + k * 0.25, cz + hz * along + rz * 6.2);
     cam.lookAt(cx + hx * (along + 9), gy + 0.7, cz + hz * (along + 9)); fov = 44;
   } else {
-    const ang = 0.55 + k * 1.5, rad = 4.6 + k * 2.2 + (R.def.cam ? R.def.cam.dist * 0.15 : 0), h = 0.55 + k * 0.9 + (R.def.kind === 'car' && R.def.spec.W > 2.2 ? 1.6 : 0);
+    const ang = 0.55 + k * 1.5, rad = 4.6 + k * 2.2 + (R.def.cam ? R.def.cam.dist * 0.15 : 0), h = 0.55 + k * 0.9 + (R.def.kind === 'car' && vehGeo(R.def).W > 2.2 ? 1.6 : 0);
     const dx = hx * Math.cos(ang) - rx * Math.sin(ang), dz = hz * Math.cos(ang) - rz * Math.sin(ang);
     cam.position.set(p.x + dx * rad, gy + h, p.z + dz * rad);
     cam.lookAt(p.x - dx * 0.6, gy + 0.75 + (h > 2 ? 1 : 0), p.z - dz * 0.6); fov = 40 + k * 10;
@@ -6770,7 +7016,7 @@ function updateCamera(view, R, dt, spectator) {
     view.camInit = false;
   } else if (mode === 2) {
     const k = R.def.kind, S = R.vis && R.vis.state || {};
-    const fwdOff = k === 'car' ? R.def.spec.zf + 0.2 : k === 'bike' ? 0.2 : 0.4;
+    const fwdOff = k === 'car' ? vehGeo(R.def).zf + 0.2 : k === 'bike' ? 0.2 : 0.4;
     const hh = (k === 'car' ? 0.62 : k === 'bike' ? 1.75 : 2.95) + (S.heave || 0);
     cam.position.set(p.x + fx * fwdOff + rX * shX * 0.4, py + hh + shY * 0.5, p.z + fz * fwdOff + rZ * shX * 0.4);
     const lx = fx * Math.cos(oy) + fz * Math.sin(oy), lz = -fx * Math.sin(oy) + fz * Math.cos(oy);
@@ -6849,6 +7095,7 @@ function drawOverlay(views) {
 let SHOW = { cars: [], key: '', ang: 0.6, drag: null };
 function setShowcase(customs) {
   const key = JSON.stringify(customs);
+  SHOW.lastCustoms = customs;
   if (key === SHOW.key) return;
   SHOW.key = key;
   for (const v of SHOW.cars) disposeVehicle(v);
@@ -6869,11 +7116,12 @@ function clearShowcase() { for (const v of SHOW.cars) disposeVehicle(v); SHOW.ca
 // Garaj atlıkarıncası: tüm araçlar pist boyunca yan yana; seçili araç oyuncunun ayarıyla
 function setShowcaseRow(sel) {
   const key = 'row' + JSON.stringify(sel);
+  SHOW.lastSel = sel;
   if (SHOW.key === key) return;
   if (!SHOW.row) { for (const v of SHOW.cars) disposeVehicle(v); SHOW.cars = []; SHOW.row = new Map(); }
   SHOW.key = key;
   const s0 = TRACK.length - 34, p = trackAt(TRACK, s0), hd = Math.atan2(p.tx, p.tz);
-  const widths = VEHICLE_ORDER.map(id => (VEHICLES[id].spec && VEHICLES[id].spec.W > 2.2) ? 9.5 : 6.6);
+  const widths = VEHICLE_ORDER.map(id => (VEHICLES[id].kind === 'car' && vehGeo(VEHICLES[id]).W > 2.2) ? 9.5 : 6.6);
   const total = widths.reduce((a, b) => a + b, 0);
   let acc = 0;
   VEHICLE_ORDER.forEach((id, i) => {
@@ -6894,6 +7142,15 @@ function setShowcaseRow(sel) {
   SHOW.sel = sel.veh;
   if (SHOW.camD == null) SHOW.camD = SHOW.row.get(sel.veh).d;
 }
+// model indiğinde sahnedeki yedek (prosedürel) gövdeleri yenisiyle değiştir
+MODELS.hooks.push((name) => {
+  if (SHOW.row) {
+    let ch = false;
+    for (const e of SHOW.row.values()) if (e.v.wantsModel === name) { e.ck = null; ch = true; }
+    if (ch && SHOW.lastSel) { SHOW.key = ''; setShowcaseRow(SHOW.lastSel); }
+  } else if (SHOW.cars.some(v => v.wantsModel === name) && SHOW.lastCustoms) { SHOW.key = ''; setShowcase(SHOW.lastCustoms); }
+  if (RACE) for (const R of RACE.racers) if (R.vis && R.vis.wantsModel === name) R.swapVis();
+});
 function updateMenuScene(dt, t) {
   const s = TRACK.length - 34, p = trackAt(TRACK, s);
   const c = new THREE.Vector3(p.x, 0, p.z);
@@ -6907,7 +7164,7 @@ function updateMenuScene(dt, t) {
     // atlıkarınca kamerası: seçili araca yumuşakça kayar
     const e = SHOW.row.get(SHOW.sel); const tgt = e ? e.d : 0;
     SHOW.camD = smooth(SHOW.camD ?? tgt, tgt, 4.5, dt);
-    const big = e && e.v.def && e.v.def.spec && e.v.def.spec.W > 2.2;
+    const big = e && e.v.def && e.v.def.kind === 'car' && vehGeo(e.v.def).W > 2.2;
     const lx = -p.tz, lz = p.tx, Rr = big ? 13 : 8.6;
     const fx = p.x + p.tx * SHOW.camD, fz = p.z + p.tz * SHOW.camD;
     cam.position.set(fx + lx * Rr + p.tx * 1.2, big ? 3.6 : 2.2, fz + lz * Rr + p.tz * 1.2);
@@ -7572,14 +7829,16 @@ function renderGarage() {
   $('#gPaintLbl').textContent = d.paintLabel || 'Renk';
   const pw = $('#gPaint'); pw.innerHTML = '';
   for (const p of PAINTS) {
-    const b = document.createElement('button'); b.title = p.name; b.style.background = p.metal ? `linear-gradient(135deg,${p.c},#fff 160%)` : p.c;
+    if (!paintOk(p, c.veh)) continue;
+    const b = document.createElement('button'); b.title = p.name; b.style.background = p.livery ? `repeating-linear-gradient(55deg,${p.c} 0 6px,#2b3320 6px 10px,#8a8f5a 10px 13px)` : p.metal ? `linear-gradient(135deg,${p.c},#fff 160%)` : p.c;
     if (p.id === c.paint) b.classList.add('on');
     b.onclick = () => setGarageCustom(Object.assign({}, c, { paint: p.id }));
     pw.appendChild(b);
   }
   $('#gRimBox .lbl').textContent = d.rimLabel || 'Jant';
+  $('#gRimBox').classList.toggle('hidden', !!d.noRim);
   chipRow($('#gRim'), d.rims || RIMS, it => it.id === c.rim, it => setGarageCustom(Object.assign({}, c, { rim: it.id })));
-  $('#gRimStyleBox').classList.toggle('hidden', d.kind !== 'car');
+  $('#gRimStyleBox').classList.toggle('hidden', d.kind !== 'car' || !!d.noRimStyle);
   chipRow($('#gRimStyle'), RIM_STYLES, it => it.id === (c.rimStyle || 'oz'), it => setGarageCustom(Object.assign({}, c, { rimStyle: it.id })));
   $('#gTintBox').classList.toggle('hidden', !!d.noTint);
   chipRow($('#gTint'), TINTS, it => it.id === c.tint, it => setGarageCustom(Object.assign({}, c, { tint: it.id })));
@@ -7814,6 +8073,7 @@ async function boot() {
     await loadFonts();
     setLoad(0.08, 'Dokular'); await nextFrame();
     buildTextures(); buildSignAtlas(); buildMaterials(); buildGeos();
+    MODELS.wantAll(PLAYER.custom[0] && PLAYER.custom[0].veh); // 3B araç modelleri arka planda iner
     applyQuality(); onResize();
     const aoP = loadAO();
     await buildWorld(async (p, txt) => { setLoad(0.1 + p * 0.85, txt); await nextFrame(); });

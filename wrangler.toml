@@ -6,8 +6,8 @@ compatibility_date = "2025-10-01"
 [assets]
 directory = "./public"
 binding = "ASSETS"
-# ses dosyaları worker üzerinden (CORS başlığı için)
-run_worker_first = ["/snd/*"]
+# ses ve model dosyaları worker üzerinden (CORS başlığı için)
+run_worker_first = ["/snd/*", "/models/*"]
 
 # Her oda = bir Durable Object (WebSocket sunucusu)
 [[durable_objects.bindings]]
