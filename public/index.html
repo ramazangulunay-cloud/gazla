@@ -4270,10 +4270,14 @@ const MODELS = {
     this.pump();
   },
   wantAll(firstVeh) {
+    const ms = VEHICLE_ORDER.map(id => VEHICLES[id].model).filter(Boolean);
+    for (const m of ms) this.want(m.file + '_lo');
+    for (const m of ms) this.want(m.file);
     const f = firstVeh && VEHICLES[firstVeh] && VEHICLES[firstVeh].model;
-    if (f) this.want(f.file, true);
-    for (const id of VEHICLE_ORDER) { const m = VEHICLES[id].model; if (m) this.want(m.file); }
+    if (f) { this.want(f.file, true); this.want(f.file + '_lo', true); }
   },
+  // bu araç için henüz inmemiş model dosyaları
+  missing(file) { return [file + '_lo', file].filter(n => !this.data[n] && !this.err[n]); },
   pump() {
     while (this.active < 2 && this.queue.length) {
       const n = this.queue.shift(); this.pend[n] = true; this.active++;
@@ -4311,7 +4315,21 @@ function prepModel(scene) {
   // taranmış (köşe renkli) gövdelerde boyanacak yerlerin maskesi: açık renkli + az doygun yüzeyler.
   // Burun ve kuyruktaki öne/arkaya bakan yüzler (far, stop, tampon) boyanmaz.
   M.body.traverse((o) => {
+    if (!o.isMesh) return;
+    for (const k of ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap']) { const t = o.material[k]; if (t && typeof renderer !== 'undefined' && renderer.initTexture) { try { renderer.initTexture(t); } catch (e) { } } }
+  });
+  const rgb = (g) => { // RGBA köşe rengi → RGB (opak malzemede alfa karışmasın); alfa döndürülür
+    const C = g.attributes.color; if (!C || C.itemSize !== 4) return null;
+    const n = C.count, a = new Float32Array(n), c3 = new Uint8Array(n * 3), src = C.array;
+    const isU8 = src instanceof Uint8Array;
+    for (let i = 0; i < n; i++) { a[i] = C.getW(i); if (isU8) { c3[i * 3] = src[i * 4]; c3[i * 3 + 1] = src[i * 4 + 1]; c3[i * 3 + 2] = src[i * 4 + 2]; } else { c3[i * 3] = C.getX(i) * 255; c3[i * 3 + 1] = C.getY(i) * 255; c3[i * 3 + 2] = C.getZ(i) * 255; } }
+    g.setAttribute('color', new THREE.BufferAttribute(c3, 3, true)); return a;
+  };
+  for (const w of M.wheels) w.node.traverse((o) => { if (o.isMesh) rgb(o.geometry); });
+  M.body.traverse((o) => {
     if (!o.isMesh || !o.geometry.attributes.color) return;
+    const al = rgb(o.geometry);
+    if (o.material.name === 'lodp') { o.geometry.setAttribute('pmask', new THREE.BufferAttribute(al || new Float32Array(o.geometry.attributes.position.count), 1)); return; }
     const g = o.geometry, C = g.attributes.color, P = g.attributes.position, N = g.attributes.normal, n = P.count;
     let zmax = 0; for (let i = 0; i < n; i++) zmax = Math.max(zmax, Math.abs(P.getZ(i)));
     const m = new Float32Array(n), ss = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
@@ -4346,7 +4364,9 @@ function vehGeo(d) {
   if (!d.spec) return null;
   return d._geo || (d._geo = { W: d.spec.W, zf: d.spec.zf, zr: d.spec.zr, botY: d.spec.bot[1][1], wheel: d.spec.wheel });
 }
-function buildModelCar(def, ctx, M) {
+const LOD_FAR = 30; // m: bundan uzaktaki araçlar hafif modelle çizilir
+function buildModelCar(def, ctx, M, ML) {
+  M = M || ML; if (M === ML) ML = null;
   const { mats, custom } = ctx, MD = def.model;
   const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
   const drop = custom.acc.includes('basik') ? -0.05 : 0;
@@ -4366,7 +4386,11 @@ function buildModelCar(def, ctx, M) {
     const nm = (MD.matMap && MD.matMap[src.name]) || src.name;
     let m = src;
     if (nm === 'paint') m = pc.livery && src.map ? own(new THREE.MeshPhysicalMaterial({ map: src.map, roughness: 0.4, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.04, envMapIntensity: 1.3 })) : mats.paint;
-    else if (nm === 'vcol') m = isBody ? own(vcolPaintMat(pc)) : own(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.65, metalness: 0.2 }));
+    else if (nm === 'vcol' || nm === 'lodp') {
+      if (isBody) m = cache.get('vp') || own(vcolPaintMat(pc)); // kaplamalı boyada uzak model kaplamanın ana rengini alır
+      else m = cache.get('vplain') || own(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.6, metalness: 0.15 }));
+      cache.set(m.isMeshPhysicalMaterial ? 'vp' : 'vplain', m);
+    }
     else if (nm === 'glass' || nm === 'glass2') m = mats.glass;
     else if (nm === 'brake') { m = withMap(mats.tail, src); if (m === mats.tail) m = own(mats.tail.clone()); brakeMats.push(m); }
     else if (nm === 'head') m = withMap(mats.head, src);
@@ -4385,11 +4409,19 @@ function buildModelCar(def, ctx, M) {
     o.castShadow = !gl; o.receiveShadow = !gl;
     if (gl) o.renderOrder = 3;
   });
-  const b = M.body.clone(true); dress(b, true); body.add(b);
-  const wheels = M.wheels.map((w) => {
+  const lod = (hi, lo, far) => {
+    if (!lo) return hi;
+    const L = new THREE.LOD(); L.addLevel(hi, 0); L.addLevel(lo, far); return L;
+  };
+  const bl = ML ? ML.body.clone(true) : null; if (bl) dress(bl, true);
+  const b = M.body.clone(true); dress(b, true); body.add(lod(b, bl, LOD_FAR));
+  const wheels = M.wheels.map((w, i) => {
     const pivot = new THREE.Group(); pivot.position.copy(w.pos); pivot.userData.keep = true; root.add(pivot);
     const spin = new THREE.Group(); pivot.add(spin);
-    const c = w.node.clone(true); c.position.set(0, 0, 0); dress(c, false); spin.add(c);
+    const c = w.node.clone(true); c.position.set(0, 0, 0); dress(c, false);
+    const wl = ML && ML.wheels.find(x => x.node.name === w.node.name);
+    let cl = null; if (wl) { cl = wl.node.clone(true); cl.position.set(0, 0, 0); dress(cl, false); }
+    spin.add(lod(c, cl, LOD_FAR * 0.8));
     return { pivot, spin, r: w.r, front: w.front, y0: w.pos.y };
   });
   const G = def.geo, box = M.box;
@@ -4516,12 +4548,11 @@ function buildVehicle(custom, opts = {}) {
   const mats = vehicleMats(custom, lite);
   const ctx = { mats, custom, lite };
   let v = null;
-  const MD = def.model && !lite ? MODELS.get(def.model.file) : null;
-  if (MD) { try { v = buildModelCar(def, ctx, MD); } catch (e) { console.warn('[model] kurulamadı: ' + def.model.file, e); v = null; } }
-  if (!v) {
-    v = def.kind === 'car' ? buildCar(def.spec, ctx) : def.build(ctx);
-    if (def.model && !lite && !MODELS.err[def.model.file]) { v.wantsModel = def.model.file; MODELS.want(def.model.file, true); }
-  }
+  const mf = def.model && !lite ? def.model.file : null;
+  const MH = mf && MODELS.get(mf), ML = mf && MODELS.get(mf + '_lo');
+  if (MH || ML) { try { v = buildModelCar(def, ctx, MH, ML); } catch (e) { console.warn('[model] kurulamadı: ' + mf, e); v = null; } }
+  if (!v) v = def.kind === 'car' ? buildCar(def.spec, ctx) : def.build(ctx);
+  if (mf) { const miss = MODELS.missing(mf); if (miss.length) { v.modelPending = miss; for (const n of miss) MODELS.want(n, true); } }
   v.def = def; v.custom = custom; v.mats = mats;
   if (!lite) {
     const blob = new THREE.Mesh(new THREE.PlaneGeometry(v.wid * 1.45, v.len * 1.1), new THREE.MeshBasicMaterial({ color: 0x000000, map: TEX.dot, transparent: true, opacity: 0.62, depthWrite: false }));
@@ -6356,12 +6387,21 @@ class Racer {
   }
   get controlled() { return this.local || this.bot; }
   // 3B model sonradan indiyse: yedek gövdeyi yarış sürerken yenisiyle değiştir
+  // gölgelendiriciler arka planda derlenir, hazır olunca değiştirilir (takılma olmasın)
   swapVis() {
-    const old = this.vis, nv = buildVehicle(this.custom);
-    nv.state = old.state; nv.root.visible = old.root.visible;
-    scene.add(nv.root); this.vis = nv;
-    updateVehicleVisual(nv, this.phys, 0.016);
-    disposeVehicle(old);
+    if (this.swapping) { this.swapAgain = true; return; }
+    this.swapping = true;
+    const nv = buildVehicle(this.custom);
+    precompile(nv.root, () => {
+      this.swapping = false;
+      if (!RACE || !RACE.racers.includes(this)) { disposeVehicle(nv); return; }
+      const old = this.vis;
+      nv.state = old.state; nv.root.visible = old.root.visible;
+      scene.add(nv.root); this.vis = nv;
+      updateVehicleVisual(nv, this.phys, 0.016);
+      disposeVehicle(old);
+      if (this.swapAgain) { this.swapAgain = false; if (nv.modelPending) this.swapVis(); }
+    });
   }
   dispose() { if (this.snd) this.snd.stop(); if (this.melody) { this.melody.stop(); this.melody = null; } disposeVehicle(this.vis); if (this.hud) this.hud.el.remove(); scene.remove(this.label); this.label.material.map.dispose(); this.label.material.dispose(); }
   netUpdate(dt) {
@@ -7142,14 +7182,27 @@ function setShowcaseRow(sel) {
   SHOW.sel = sel.veh;
   if (SHOW.camD == null) SHOW.camD = SHOW.row.get(sel.veh).d;
 }
-// model indiğinde sahnedeki yedek (prosedürel) gövdeleri yenisiyle değiştir
+// gölgelendiricileri kare akışını kesmeden derle (destek yoksa hemen devam)
+function precompile(obj, done) {
+  let p = null;
+  try { p = renderer.compileAsync && renderer.compileAsync(obj, menuView.cam, scene); } catch (e) { p = null; }
+  if (p && typeof p.then === 'function') p.then(done, done); else done();
+}
+// model indiğinde sahnedeki yedek gövdeleri yenisiyle değiştir
+const waits = (v, name) => v && v.modelPending && v.modelPending.includes(name);
 MODELS.hooks.push((name) => {
-  if (SHOW.row) {
-    let ch = false;
-    for (const e of SHOW.row.values()) if (e.v.wantsModel === name) { e.ck = null; ch = true; }
-    if (ch && SHOW.lastSel) { SHOW.key = ''; setShowcaseRow(SHOW.lastSel); }
-  } else if (SHOW.cars.some(v => v.wantsModel === name) && SHOW.lastCustoms) { SHOW.key = ''; setShowcase(SHOW.lastCustoms); }
-  if (RACE) for (const R of RACE.racers) if (R.vis && R.vis.wantsModel === name) R.swapVis();
+  // vitrin: önce görünmeyen bir deneme aracıyla derle, sonra eskisini bir anda değiştir
+  const vid = VEHICLE_ORDER.find(id => VEHICLES[id].model && name.startsWith(VEHICLES[id].model.file));
+  const refresh = () => {
+    if (SHOW.row) {
+      let ch = false;
+      for (const e of SHOW.row.values()) if (waits(e.v, name)) { e.ck = null; ch = true; }
+      if (ch && SHOW.lastSel) { SHOW.key = ''; setShowcaseRow(SHOW.lastSel); }
+    } else if (SHOW.cars.some(v => waits(v, name)) && SHOW.lastCustoms) { SHOW.key = ''; setShowcase(SHOW.lastCustoms); }
+  };
+  if (MODE === 'menu' && vid) { const probe = buildVehicle(defaultCustom(vid)); precompile(probe.root, () => { disposeVehicle(probe); refresh(); }); }
+  else refresh();
+  if (RACE) for (const R of RACE.racers) if (waits(R.vis, name)) R.swapVis();
 });
 function updateMenuScene(dt, t) {
   const s = TRACK.length - 34, p = trackAt(TRACK, s);
