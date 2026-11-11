@@ -129,7 +129,7 @@ h2::before{content:'';width:5px;height:24px;background:var(--acc);transform:skew
 .sw button.on{box-shadow:0 0 0 2px #fff}
 .chips{display:flex;flex-wrap:wrap;gap:4px}
 .chips button{padding:7px 12px;background:rgba(255,255,255,.05);font-family:var(--disp);font-weight:600;font-size:12px;letter-spacing:.06em;color:#cfd3d9;border:1px solid transparent}
-.chips button.on{background:rgba(255,58,40,.16);border-color:var(--acc);color:#fff}
+.chips button.on{background:rgba(157,255,0,.14);border-color:var(--acc);color:#fff}
 .stats{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-family:var(--disp);font-size:11px;letter-spacing:.12em;align-items:center;color:var(--mute);text-transform:uppercase}
 .stats i{display:block;height:4px;background:rgba(255,255,255,.08);overflow:hidden}
 .stats i u{display:block;height:100%;background:linear-gradient(90deg,var(--acc),#ff8a5c)}
@@ -160,7 +160,7 @@ table.res td:first-child{font-family:var(--num);font-weight:800;font-size:24px;w
 table.res tr:nth-child(1) td:first-child{color:var(--acc2)}
 table.res tr:nth-child(2) td:first-child{color:#d6dbe2}
 table.res tr:nth-child(3) td:first-child{color:#d08a4b}
-table.res tr.me{background:rgba(255,58,40,.12)}
+table.res tr.me{background:rgba(157,255,0,.12)}
 .ctrls{display:grid;grid-template-columns:1fr 1fr;gap:8px 22px;font-size:13px;color:#cfd2d8}
 .ctrls div{display:flex;justify-content:space-between;gap:8px;align-items:center;border-bottom:1px solid var(--line);padding-bottom:6px}
 .plist{display:flex;flex-direction:column;gap:2px}
@@ -245,6 +245,20 @@ body.touch.racing #touch{display:block}
 #touch [data-t=hb]{right:calc(3% + 106px);bottom:calc(7% + 94px);width:84px;height:58px}
 #touch [data-t=item]{right:calc(3% + 200px);bottom:7%;width:70px;height:70px;color:var(--acc2)}
 #touch [data-t=pause]{left:12px;top:112px;width:54px;height:36px}
+#touch [data-t=cam]{left:74px;top:112px;width:84px;height:36px;font-size:11px}
+#touch [data-t=tilt]{left:166px;top:112px;width:104px;height:36px;font-size:11px}
+#touch [data-t=tilt].act{background:rgba(24,214,255,.4);border-color:var(--neonb)}
+#touch.tilt .tsteer{opacity:.25;pointer-events:none}
+#touch .tb{border-radius:6px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+#touch [data-t=gas]{border-color:rgba(157,255,0,.6);color:var(--neon)}
+#touch .tb.on{background:rgba(24,214,255,.45);border-color:var(--neonb);box-shadow:0 0 16px rgba(24,214,255,.6)}
+#touch [data-t=gas].on{background:rgba(157,255,0,.45);border-color:var(--neon);box-shadow:0 0 18px rgba(157,255,0,.6)}
+#rotate{position:fixed;inset:0;z-index:60;display:none;place-items:center;background:#03060d;color:#fff;text-align:center;font-family:var(--disp)}
+#rotate div{display:grid;justify-items:center;gap:10px;color:var(--neonb)}
+#rotate b{font-size:20px;letter-spacing:.12em;color:#fff}
+#rotate span{font-family:var(--body);color:#8fb0c8;font-size:13px}
+@media (orientation: portrait){body.touch.racing #rotate{display:grid}}
+html,body{overscroll-behavior:none;touch-action:manipulation}
 body.touch.racing .hud .gauge{bottom:auto;top:8px;right:8px;width:112px}
 body.touch.racing .hud .mmw,body.touch.racing .hud .nm{display:none}
 body.touch.racing .hud .spd b{font-size:30px}
@@ -257,6 +271,57 @@ body.touch.racing .hud .gear{width:24px;height:24px}body.touch.racing .hud .gear
   .trackcard,.keys{display:none}
   #padbtn{display:none}
 }
+
+/* ════ Yeraltı sokak yarışı teması: gece laciverti, neon yeşil + elektrik mavisi, krom yazılar ════ */
+:root{--acc:#9dff00;--acc2:#18d6ff;--blue:#18d6ff;--neon:#9dff00;--neonb:#18d6ff;--bg:#03060d;--panel:rgba(5,11,22,.9);--panel2:rgba(8,16,30,.94);--line:rgba(24,214,255,.14);--line2:rgba(24,214,255,.3)}
+.screen:not(.hud)::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:-1;background:repeating-linear-gradient(0deg,rgba(24,214,255,.035) 0 1px,transparent 1px 4px)}
+#menu{background:radial-gradient(ellipse 60% 70% at 0% 100%,rgba(24,214,255,.16),transparent 60%),linear-gradient(90deg,rgba(2,5,12,.96) 0,rgba(2,5,12,.78) 30%,rgba(2,5,12,0) 58%),linear-gradient(0deg,rgba(2,5,12,.8),transparent 26%)}
+.logo .r{background:linear-gradient(180deg,#fff 0,#dfe8f2 44%,#6d7c90 50%,#b9c6d6 64%,#fff 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 14px rgba(24,214,255,.5)) drop-shadow(0 2px 0 rgba(0,0,0,.6))}
+.logo .n{color:var(--neon);text-shadow:0 0 22px rgba(157,255,0,.75),0 0 3px rgba(255,255,255,.8)}
+.logo .n::after{background:var(--neon);box-shadow:0 0 16px var(--neon)}
+.sub{color:#7fa6c4}.sub b{color:var(--neonb);text-shadow:0 0 8px rgba(24,214,255,.7)}
+.mi{transform:skewX(-11deg);margin:3px 0 3px 6px;background:linear-gradient(90deg,rgba(8,22,42,.78),rgba(8,22,42,0) 92%);border:1px solid rgba(24,214,255,.1);border-left:3px solid rgba(24,214,255,.4)}
+.mi>*{transform:skewX(11deg)}
+.mi .ix{color:#3f6f94}
+.mi:hover,.mi:focus-visible,.mi.pad-focus{background:linear-gradient(90deg,rgba(24,214,255,.32),rgba(24,214,255,.03) 90%);border-color:rgba(24,214,255,.55);border-left-color:#fff;box-shadow:0 0 22px rgba(24,214,255,.3),inset 0 0 14px rgba(24,214,255,.18)}
+.mi:hover .tt,.mi:focus-visible .tt,.mi.pad-focus .tt{text-shadow:0 0 12px rgba(24,214,255,.95)}
+.mi:hover .ix,.mi:focus-visible .ix{color:#fff}
+.mi.prime{background:linear-gradient(90deg,rgba(157,255,0,.96),rgba(157,255,0,.55) 55%,rgba(157,255,0,0) 97%);border-color:rgba(157,255,0,.6);border-left-color:#fff;box-shadow:0 0 24px rgba(157,255,0,.35)}
+.mi.prime .tt{color:#071200}.mi.prime .ix,.mi.prime small{color:rgba(7,18,0,.72)}
+.mi.prime:hover,.mi.prime:focus-visible{background:linear-gradient(90deg,#c6ff4a,rgba(157,255,0,.6) 55%,rgba(157,255,0,.02) 97%);box-shadow:0 0 34px rgba(157,255,0,.6)}
+.mi.prime:hover .tt{text-shadow:none}
+.mi.prime .ch{border-color:#071200}
+.panel{background:linear-gradient(160deg,rgba(8,18,34,.93),rgba(3,7,15,.93));border:1px solid rgba(24,214,255,.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 0 30px rgba(24,214,255,.08)}
+.btn{background:rgba(10,30,54,.6);border-color:rgba(24,214,255,.35)}
+.btn:hover,.btn:focus-visible{background:rgba(24,214,255,.2);border-color:var(--neonb);box-shadow:0 0 16px rgba(24,214,255,.45)}
+.btn.y,.btn.p{background:var(--neon);border-color:var(--neon);color:#071200;box-shadow:0 0 18px rgba(157,255,0,.4)}
+.btn.y:hover,.btn.p:hover,.btn.y:focus-visible{background:#c6ff4a;border-color:#c6ff4a}
+.tabs button.on{color:#fff;border-bottom-color:var(--neonb);background:rgba(24,214,255,.14);text-shadow:0 0 8px rgba(24,214,255,.8)}
+.veh.on{border-color:var(--neon);background:rgba(157,255,0,.1);box-shadow:inset 0 0 14px rgba(157,255,0,.15)}
+.chips button.on,.sw button.on{border-color:var(--neon)!important;box-shadow:0 0 10px rgba(157,255,0,.45)}
+.who input:focus{border-color:var(--neonb)!important;box-shadow:0 0 12px rgba(24,214,255,.4)}
+#loading{background:radial-gradient(ellipse at 30% 30%,#0a1830,#02040a 70%)}
+#loading .bar i{background:linear-gradient(90deg,var(--neonb),var(--neon));box-shadow:0 0 12px var(--neonb)}
+#touch .tsteer .ttrack{border-color:rgba(24,214,255,.4);background:rgba(3,10,22,.35);border-radius:8px;box-shadow:inset 0 0 14px rgba(24,214,255,.15)}
+#touch .tknob{border-radius:8px;background:rgba(24,214,255,.3);border-color:var(--neonb);box-shadow:0 0 14px rgba(24,214,255,.6)}
+#count{text-shadow:0 0 30px rgba(24,214,255,.7),0 6px 30px rgba(0,0,0,.6)}#count.go{color:var(--neon);text-shadow:0 0 34px rgba(157,255,0,.7)}
+/* HUD */
+.hud .posbox{border-left-color:var(--neon);background:linear-gradient(90deg,rgba(3,10,22,.86),rgba(3,10,22,.45));box-shadow:-4px 0 18px -6px rgba(157,255,0,.6)}
+.hud .pos b{background:linear-gradient(180deg,#fff 0,#e1ecf6 46%,#7c90a8 52%,#d4e2f0 70%,#fff);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 9px rgba(24,214,255,.6))}
+.hud .lapbox{background:linear-gradient(90deg,rgba(3,10,22,.8),rgba(3,10,22,.4));box-shadow:inset 0 1px 0 rgba(24,214,255,.5)}
+.hud .cap{color:var(--neonb)!important;text-shadow:0 0 6px rgba(24,214,255,.6)}
+.hud .gauge::before{content:'';position:absolute;inset:6%;border-radius:50%;background:radial-gradient(circle,rgba(3,9,20,.82) 0,rgba(3,9,20,.6) 58%,rgba(3,9,20,0) 71%)}
+.hud .g-trk{stroke:rgba(3,10,22,.75)}
+.hud .g-tick{stroke:rgba(24,214,255,.6)}
+.hud .g-rpm{stroke:var(--neonb);filter:drop-shadow(0 0 6px rgba(24,214,255,.95))}
+.hud .gauge.red .g-rpm{stroke:#ff3a28;filter:drop-shadow(0 0 9px #ff3a28)}
+.hud .g-nit{stroke:var(--neon);filter:drop-shadow(0 0 6px rgba(157,255,0,.95))}
+.hud .gauge.non .g-nit{stroke:#e2ff9a}
+.hud .spd b{text-shadow:0 0 16px rgba(24,214,255,.75),0 2px 0 rgba(0,0,0,.5)}
+.hud .spd small{color:var(--neonb)}
+.hud .gear{border-color:var(--neonb);box-shadow:0 0 12px rgba(24,214,255,.55),inset 0 0 8px rgba(24,214,255,.25);background:rgba(3,10,22,.85)}
+.hud .gear b{text-shadow:0 0 8px rgba(24,214,255,.9)}
+.hud .gauge.red .gear{border-color:#ff3a28;color:#ff3a28;box-shadow:0 0 14px rgba(255,58,40,.7)}
 </style>
 </head>
 <body>
@@ -275,7 +340,10 @@ body.touch.racing .hud .gear{width:24px;height:24px}body.touch.racing .hud .gear
   <button class="tb" data-t="hb">DRİFT</button>
   <button class="tb" data-t="item">EŞYA</button>
   <button class="tb" data-t="pause">II</button>
+  <button class="tb" data-t="cam">KAMERA</button>
+  <button class="tb" data-t="tilt">EĞ: KAPALI</button>
 </div>
+<div id="rotate"><div><svg viewBox="0 0 64 64" width="64" height="64"><rect x="20" y="8" width="24" height="44" rx="4" fill="none" stroke="currentColor" stroke-width="3"/><path d="M50 40a18 18 0 0 1-18 18" fill="none" stroke="currentColor" stroke-width="3"/><path d="M28 54l4 4-4 4" fill="none" stroke="currentColor" stroke-width="3"/></svg><b>TELEFONU YAN ÇEVİR</b><span>Yarış yatay ekranda oynanır</span></div></div>
 
 <div id="loading"><div class="box">
   <div class="logo"><span class="r">RAPID</span><span class="n">55</span></div>
@@ -470,7 +538,14 @@ const LS = {
   set(k, v) { try { localStorage.setItem('gazla.' + k, JSON.stringify(v)); } catch (e) { } },
 };
 // dokunmatik / zayıf cihazlarda daha hafif grafikle başla
-const IS_TOUCH = (typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches) || 'ontouchstart' in window;
+// Dokunmatik arayüz yalnızca telefon/tablette (dokunmatik ekranlı dizüstünde değil)
+const IS_TOUCH = (() => {
+  const ua = navigator.userAgent || '';
+  if (/Android|iPhone|iPad|iPod|Mobile|Silk|Kindle|Opera Mini|IEMobile/i.test(ua)) return true;
+  if (/Macintosh/.test(ua) && (navigator.maxTouchPoints || 0) > 1) return true; // iPadOS
+  const mm = (q) => typeof matchMedia === 'function' && matchMedia(q).matches;
+  return mm('(pointer: coarse)') && !mm('(any-pointer: fine)') && (navigator.maxTouchPoints || 0) > 0;
+})();
 const SETTINGS = Object.assign({ laps: 3, quality: IS_TOUCH ? 'low' : (navigator.hardwareConcurrency || 8) <= 4 ? 'mid' : 'high', dynRes: true, split: 'v', sound: true, padSwap: false, rumble: true, localPlayers: 2, bots: 7, botLevel: 'orta' }, LS.get('settings', {}));
 const saveSettings = () => LS.set('settings', SETTINGS);
 
@@ -901,7 +976,7 @@ class CarPhys {
 
     // ── nitro
     const thr = clamp(inp.throttle, 0, 1) * (this.stunT > 0 ? 0.15 : 1), brk = clamp(inp.brake, 0, 1);
-    this.throttle = thr;
+    this.throttle = thr; this.brakeIn = brk;
     this.nitroOn = !!inp.nitro && this.nitro > 0.01 && vL > 3;
     if (this.nitroOn) this.nitro = Math.max(0, this.nitro - dt * st.nitroDrain);
 
@@ -1078,24 +1153,40 @@ class CarPhys {
 
     // ── bariyer (ön ve arka daire, rijit cisim itkisi)
     this.scrape = Math.max(0, this.scrape - dt);
+    let wallHit = false;
     for (const c of carCircles(this)) {
-      const cdx = c.x - T.px[i], cdz = c.z - T.pz[i];
-      const clat = cdx * trx + cdz * trz;
+      // her daire kendi en yakın pist noktasına göre (virajlarda yanlış normal → takılma olmasın)
+      const ci = trackNearest(T, c.x, c.z, i, 6);
+      const ctrx = -T.tz[ci], ctrz = T.tx[ci];
+      const cdx = c.x - T.px[ci], cdz = c.z - T.pz[ci];
+      const clat = cdx * ctrx + cdz * ctrz;
       const lim = T.wall - st.radius - 0.15;
       if (Math.abs(clat) <= lim) continue;
       const sg = Math.sign(clat), pen = Math.abs(clat) - lim;
-      const nx = trx * sg, nz = trz * sg;
-      this.x -= nx * pen; this.z -= nz * pen; this.lat -= sg * pen;
-      const hit = rigidImpulse(this, c.x - this.x, c.z - this.z, nx, nz, 0.22, 0.25);
-      const sc = Math.exp(-1.2 * dt); this.vx *= sc; this.vz *= sc;
-      this.scrape = 0.15;
+      const nx = ctrx * sg, nz = ctrz * sg;
+      this.x -= nx * (pen + 0.01); this.z -= nz * (pen + 0.01); this.lat -= sg * pen;
+      const hit = rigidImpulse(this, c.x - this.x, c.z - this.z, nx, nz, 0.25, 0.1);
+      // duvar boyunca kayma: yalnızca teğet hızdan hafif sürtünme kaybı
+      const sc = Math.exp(-0.35 * dt); this.vx *= sc; this.vz *= sc;
+      this.scrape = 0.15; wallHit = true;
       if (ev && hit > 1.5) ev.push({ t: 'wall', p: hit, x: c.x + nx * st.radius, z: c.z + nz * st.radius });
+    }
+    // duvara burnu dayalı kaldıysa: aracı yavaşça pist yönüne çevirip içeri it
+    if (wallHit && sp < 4 && (thr > 0.3 || brk > 0.3)) this.wallT = (this.wallT || 0) + dt; else this.wallT = Math.max(0, (this.wallT || 0) - dt * 2);
+    if (this.wallT > 0.7) {
+      const dir = Math.atan2(T.tx[i], T.tz[i]), fwdOk = Math.cos(this.h - dir) > -0.2;
+      const tgtH = fwdOk ? dir : wrapAngle(dir + Math.PI);
+      this.h = wrapAngle(this.h + wrapAngle(tgtH - this.h) * Math.min(1, dt * 2.5)); this.w *= 0.5;
+      const sg = Math.sign(this.lat) || 1; this.x -= trx * sg * dt * 1.5; this.z -= trz * sg * dt * 1.5; this.lat -= sg * dt * 1.5;
     }
 
     // ── ters yön / takılma
     const along = fx2 * T.tx[i] + fz2 * T.tz[i];
     if (along < -0.35 && sp > 4) this.wrongT += dt; else this.wrongT = Math.max(0, this.wrongT - dt * 2);
     if (thr > 0.5 && sp < 1.2) this.stuckT += dt; else this.stuckT = 0;
+    // ilerleme yoksa (duvara sürtünerek sürünme, kenarda takılma) 3.5 sn sonra piste geri koy
+    this.progT = (this.progT || 0) + dt;
+    if (this.progT > 3.5) { if (this.progD != null && thr > 0.4 && !this.air && this.dist - this.progD < 5) this.needReset = true; this.progT = 0; this.progD = this.dist; }
   }
 }
 
@@ -1385,14 +1476,18 @@ function aimSun(x, z) {
 
 // Hız efekti: radyal bulanıklık + vinyet
 const SpeedShader = {
-  uniforms: { tDiffuse: { value: null }, amount: { value: 0 }, center: { value: new THREE.Vector2(0.5, 0.45) }, tint: { value: 0 } },
+  uniforms: { tDiffuse: { value: null }, amount: { value: 0 }, center: { value: new THREE.Vector2(0.5, 0.45) }, tint: { value: 0 }, time: { value: 0 }, res: { value: new THREE.Vector2(1280, 720) } },
   vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
-  fragmentShader: `uniform sampler2D tDiffuse; uniform float amount; uniform vec2 center; uniform float tint; varying vec2 vUv;
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float amount; uniform vec2 center; uniform float tint; uniform float time; uniform vec2 res; varying vec2 vUv;
+    float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
     void main(){
       vec2 dir = vUv - center; float d = length(dir);
       float k = amount * smoothstep(0.2, 0.7, d) * 0.035;
+      // kenarlarda hıza bağlı renk sapması (lens kromatik aberasyonu)
+      vec2 ca = dir * (0.0016 + amount * 0.0045 + tint * 0.003) * smoothstep(0.15, 0.75, d);
       vec4 acc = vec4(0.0);
-      for (int i = 0; i < 9; i++) { float t = float(i) / 8.0; acc += texture2D(tDiffuse, center + dir * (1.0 - k * t)); }
+      for (int i = 0; i < 9; i++) { float t = float(i) / 8.0; vec2 uv = center + dir * (1.0 - k * t);
+        acc += vec4(texture2D(tDiffuse, uv + ca).r, texture2D(tDiffuse, uv).g, texture2D(tDiffuse, uv - ca).b, 1.0); }
       vec4 col = acc / 9.0;
       col.rgb *= 1.0 - smoothstep(0.5, 1.0, d) * (0.18 + amount * 0.15);
       col.rgb += vec3(0.25, 0.55, 1.0) * tint * smoothstep(0.45, 0.95, d) * 0.12;
@@ -1402,7 +1497,10 @@ const SpeedShader = {
       // renk düzenleme: hafif doygunluk + sıcak ışık, serin gölge
       float l = dot(col.rgb, vec3(0.2126, 0.7152, 0.0722));
       col.rgb = mix(vec3(l), col.rgb, 1.12);
-      col.rgb *= mix(vec3(0.97, 1.0, 1.04), vec3(1.03, 1.0, 0.96), smoothstep(0.04, 0.8, l));
+      col.rgb *= mix(vec3(0.95, 1.0, 1.07), vec3(1.04, 1.01, 0.95), smoothstep(0.04, 0.8, l));
+      // ince film greni (ekranda canlılık, banding'i kırar)
+      float g = hash(floor(vUv * res) + fract(time * 7.13) * 91.7) - 0.5;
+      col.rgb += g * 0.022 * (1.0 - l * 0.6);
       gl_FragColor = max(col, vec4(0.0));
     }`,
 };
@@ -1514,6 +1612,8 @@ class View {
     if (this.composer) {
       this.speedPass.uniforms.amount.value = this.speedAmt;
       this.speedPass.uniforms.tint.value = this.tint;
+      this.speedPass.uniforms.time.value = performance.now() / 1000;
+      this.speedPass.uniforms.res.value.set(p.w, p.h);
       try { this.composer.render(); }
       catch (e) { if (this.ao) { console.warn('AO kapatıldı', e); AO.broken = true; this.setupPost(); } else throw e; }
     } else {
@@ -1641,6 +1741,17 @@ function buildTextures() {
     for (let i = 0; i < 260; i++) { const cx = r.range(0, w), cy = r.range(0, h), n = r.int(5, 14), gg = r.int(90, 130); for (let k = 0; k < n; k++) { g.strokeStyle = `rgba(${gg - 20},${gg},${r.int(40, 60)},${r.range(0.35, 0.7)})`; g.lineWidth = r.range(0.8, 1.6); g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + r.range(-6, 6), cy - r.range(4, 12)); g.stroke(); } }
     for (let i = 0; i < 900; i++) { g.strokeStyle = `rgba(120,110,70,${r.range(0.2, 0.45)})`; g.lineWidth = 1; const x = r.range(0, w), y = r.range(0, h); g.beginPath(); g.moveTo(x, y); g.lineTo(x + r.range(-3, 3), y - r.range(3, 8)); g.stroke(); }
   }, { repeat: true });
+  // lastik izi: enine sırt çizgileri, kenarlara doğru söner (alfa = siyahlık)
+  TEX.skid = canvasTex(64, 64, (g, w, h) => {
+    const im = g.createImageData(w, h), d = im.data, r = rng(9);
+    const lanes = []; for (let x = 0; x < w; x++) lanes.push(0.55 + r() * 0.45);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const u = x / (w - 1), edge = Math.sin(u * Math.PI) ** 0.5, groove = (x % 13 < 2) ? 0.45 : 1;
+      const k = (y * w + x) * 4; d[k] = d[k + 1] = d[k + 2] = 255;
+      d[k + 3] = Math.round(255 * edge * groove * lanes[x] * (0.8 + r() * 0.2));
+    }
+    g.putImageData(im, 0, 0);
+  });
   // duman topağı: gürültülü, yumuşak kenarlı (R kanalı yoğunluk ayrıntısı)
   TEX.puff = canvasTex(128, 128, (g, w, h) => {
     const img = g.createImageData(w, h), d = img.data, r = rng(71);
@@ -2635,7 +2746,7 @@ async function buildWorld(progress) {
     const base = M(x, 0.08, z, yaw); atS(s);
     if (i === 3) { boxVehicle(b, base, 'dolmus', '#ffd400'); cat(b, MM(base, M(0.3, 2.55, -1.2, 1)), 1); return; }
     if (i === 7) { boxVehicle(b, base, 'truck', '#1f5fe0'); WORLD.truck = { m: base, h: trackElev(T, s) }; return; }
-    const kind = ['sahin', 'toros', 'niva', 'e30', 'sahin', 'toros'][i % 6];
+    const kind = ['sahin', 'toros', 'niva', 'e30', 'transit', 'sahin', 'toros'][i % 7];
     const custom = { veh: kind, paint: i === 5 ? 'taksi' : parkCols[i % parkCols.length], rim: 'krom', tint: 'acik', neon: 'yok', acc: [], sticker: '' };
     const v = buildVehicle(custom, { lite: true });
     b.addObject(v.root, base);
@@ -2914,7 +3025,7 @@ const CAR_SPECS = {
     plan: { front: 0.2, rear: 0.12, endK: 0.92 }, shoulder: 0.08, tumble: 0.03, crown: 0.018, flare: 0,
     cab: { belt: 0.965, base: 0.93, sill: 1.01, roof: 1.44, rr: 0.06, glassTop: 0.025, zB: 0.79, zA: -2.12, zWf: 0.18, zWr: -2.06, hwB: 0.69, hwR: 0.62, rc: 0.07, bow: 0.04, side: [[0.03, 0.33], [0.37, 0.64], [0.68, 0.97]], cornerGlass: 0.4, pillarTrim: true },
     head: { type: 'quad', r: 0.083, xs: [0.5, 0.67], y: 0.665 }, front: { w: 1.5, h: 0.24, y: 0.665 }, grille: { w: 0.62, h: 0.17, y: 0.665, bars: 6, barMat: 'black' },
-    tail: { type: 'tall', w: 0.16, h: 0.32, x: 0.66, y: 0.76 }, bumper: { mat: 'black', y: 0.44, h: 0.14, wrap: 0.36 },
+    tail: { type: 'corner', w: 0.15, h: 0.36, x: 0.66, y: 0.74 }, bumper: { mat: 'black', y: 0.44, h: 0.15, wrap: 0.36 }, rearPads: true,
     strip: { y: 0.6, mat: 'trim' }, doors: [0.78, -0.42, -1.4], handleY: 0.84, shelf: false, rack: true, spoiler: null, rearSeatZ: -0.95,
     hood: { z0: 2.08, z1: 0.88 }, mirror: 'black',
   },
@@ -2945,8 +3056,20 @@ const CAR_SPECS = {
     skirt: true, strip: null, doors: [0.72, -0.34], handleY: 0.8, shelf: true, wing: { z: -1.98, y: 0.93, w: 1.42 },
     hood: { z0: 2.06, z1: 0.82 }, trunk: { z0: -1.36, z1: -2.08 }, mirror: 'paint',
   },
-};
-// ---- src/29_loft.js
+  // 90'lar Avrupa panelvan/minibüs (yarım camlı yolcu kasa): kısa eğik burun, yüksek kutu gövde, sürgülü kapı, çift arka kapı
+  transit: {
+    W: 1.94, zf: 2.36, zr: -2.36,
+    wheel: { r: 0.33, w: 0.2, fz: 1.48, rz: -1.52, x: 0.82, style: 'celik' },
+    top: [[-2.36, 1.06], [-2.31, 1.17], [-2.2, 1.19], [1.45, 1.2], [1.62, 1.17], [2.16, 1.07], [2.31, 1.0], [2.36, 0.88]],
+    bot: [[-2.36, 0.44], [-2.22, 0.37], [2.12, 0.37], [2.36, 0.48]],
+    plan: { front: 0.32, rear: 0.06, endK: 0.88 }, shoulder: 0.06, tumble: 0.02, crown: 0.014, flare: 0,
+    cab: { belt: 1.18, base: 1.14, sill: 1.23, roof: 2.08, rr: 0.07, glassTop: 0.12, zB: 1.56, zA: -2.33, zWf: 0.92, zWr: -2.31, hwB: 0.93, hwR: 0.88, rc: 0.06, bow: 0.02, side: [[0.02, 0.2], [0.26, 0.47], [0.52, 0.73], [0.78, 0.97]], cornerGlass: 0.22, absSide: true },
+    head: { type: 'rect', w: 0.36, h: 0.18, x: 0.6, y: 0.92 }, grille: { w: 0.6, h: 0.17, y: 0.92, bars: 4, barMat: 'black' },
+    tail: { type: 'corner', w: 0.12, h: 0.34, x: 0.82, y: 0.86 }, bumper: { mat: 'black', y: 0.56, h: 0.2, wrap: 0.3 },
+    cladding: { y: 0.66, h: 0.08 }, strip: null, doors: [1.36, 0.52, -0.62], handleY: 1.05, shelf: false, rack: false, spoiler: null, rearSplit: true,
+    hood: { z0: 2.26, z1: 1.64 }, mirror: 'black',
+  },
+};// ---- src/29_loft.js
 // ════════════════════════════════════════════════════════════════════
 //  LOFT: araba gövdesini kesitlerden üreten saf geometri (THREE'siz)
 //  Çıktı: { pos:[], idx:[], uv:[] } dizileri
@@ -3072,7 +3195,9 @@ function cabinRing(C, zF, zR, hw, y) {
   corner(-ex, zFc, Math.PI / 2, 'FC');
   // sol yan: önden arkaya
   const fr = C.sideFr;
-  for (const f of fr) pts.push({ x: -hw, z: zFc + (zRc - zFc) * f, seg: 'S', p: f });
+  // absSide: arka direkler dikey (minibüs), öndeki çerçeve A direğini izler
+  const sz = (f) => { const zr0 = zFc + (zRc - zFc) * f; if (!C.absSide || f <= 0) return zr0; const za = lerp(C.zWf - rc, zRc, f), w = smoothstep(0.08, 0.22, f); return Math.min(zFc - 0.02, lerp(zr0, za, w)); };
+  for (const f of fr) pts.push({ x: -hw, z: sz(f), seg: 'S', p: f });
   // sol arka köşe: 180° → 270°
   corner(-ex, zRc, Math.PI, 'RC');
   // arka kenar: -x → +x
@@ -3080,7 +3205,7 @@ function cabinRing(C, zF, zR, hw, y) {
   // sağ arka köşe: 270° → 360°
   corner(ex, zRc, Math.PI * 1.5, 'RC2');
   // sağ yan: arkadan öne
-  for (let k = fr.length - 1; k >= 0; k--) pts.push({ x: hw, z: zFc + (zRc - zFc) * fr[k], seg: 'S', p: fr[k] });
+  for (let k = fr.length - 1; k >= 0; k--) pts.push({ x: hw, z: sz(fr[k]), seg: 'S', p: fr[k] });
   // sağ ön köşe: 0° → 90°
   corner(ex, zFc, 0, 'FC2');
   for (const p of pts) p.y = y;
@@ -3273,14 +3398,23 @@ function plateTex(text) {
   });
 }
 function stickerTex(text) {
-  return canvasTex(1024, 256, (g, w, h) => {
+  // arka cam yamuk: üst kenar dar. Yazı sığana kadar punto küçülür; font geç yüklenirse yeniden çizilir
+  const draw = (g, w, h) => {
     g.clearRect(0, 0, w, h);
-    let fs = 150; g.font = `${fs}px "Kaushan Script"`;
-    while (g.measureText(text).width > w * 0.82 && fs > 40) { fs -= 6; g.font = `${fs}px "Kaushan Script"`; }
+    const fam = '"Kaushan Script", "Saira Condensed", sans-serif', maxW = w * 0.68;
+    let fs = 150; g.font = `${fs}px ${fam}`;
+    while (fs > 18 && (g.measureText(text).width + fs * 0.12 > maxW)) { fs -= 4; g.font = `${fs}px ${fam}`; }
     g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.lineWidth = fs * 0.1; g.strokeStyle = 'rgba(0,0,0,.55)'; g.strokeText(text, w / 2, h * 0.42 + 6);
-    g.fillStyle = '#ffffff'; g.fillText(text, w / 2, h * 0.42);
-  });
+    const y = h * 0.47;
+    g.lineWidth = Math.max(3, fs * 0.1); g.lineJoin = 'round'; g.strokeStyle = 'rgba(0,0,0,.55)'; g.strokeText(text, w / 2, y + 5);
+    g.fillStyle = '#ffffff'; g.fillText(text, w / 2, y);
+  };
+  let cv = null;
+  const tex = canvasTex(1024, 256, (g, w, h) => { cv = g; draw(g, w, h); });
+  try {
+    if (document.fonts && !document.fonts.check('150px "Kaushan Script"')) document.fonts.load('150px "Kaushan Script"').then(() => { if (cv) { draw(cv, 1024, 256); tex.needsUpdate = true; } }).catch(() => { });
+  } catch (e) { }
+  return tex;
 }
 
 // ── geometri yardımcıları ──────────────────────────────────────────
@@ -3478,6 +3612,17 @@ function buildCar(spec, ctx) {
       part(body, rbox(T.w * 0.62, T.h, 0.04, 0.012), mats.tail, sx * (T.x + T.w * 0.18), T.y, zr - 0.012);
       part(body, rbox(T.w * 0.2, T.h, 0.04, 0.012), mats.amber, sx * (T.x - T.w * 0.3), T.y, zr - 0.012);
       part(body, rbox(T.w * 0.14, T.h * 0.8, 0.04, 0.012), mats.revlight, sx * (T.x - T.w * 0.43), T.y, zr - 0.012);
+    } else if (T.type === 'corner') {
+      // köşeye oturan, yana dolanan dikey stop (üst kırmızı, alt turuncu)
+      const tx = F.hw(zr + 0.05) * 0.94 - T.w / 2 - 0.02;
+      part(body, rbox(T.w + 0.025, T.h + 0.025, 0.04, 0.015), mats.trim, sx * tx, T.y, zr + 0.006);
+      part(body, rbox(T.w, T.h * 0.62, 0.04, 0.01), mats.tail, sx * tx, T.y + T.h * 0.19, zr - 0.01);
+      part(body, rbox(T.w, T.h * 0.34, 0.04, 0.01), mats.amber, sx * tx, T.y - T.h * 0.32, zr - 0.01);
+      const sxz = zr + 0.075, hx = F.hw(sxz);
+      part(body, rbox(0.03, T.h * 0.62, 0.13, 0.01), mats.tail, sx * (hx * 0.95), T.y + T.h * 0.19, sxz);
+      part(body, rbox(0.03, T.h * 0.34, 0.13, 0.01), mats.amber, sx * (hx * 0.95), T.y - T.h * 0.32, sxz);
+      // bagaj kapağı derzi (stobun iç kenarı boyunca)
+      part(body, rbox(0.008, S.cab.belt - (S.bumper.y + S.bumper.h / 2) - 0.03, 0.01, 0.003), mats.trim, sx * (tx - T.w / 2 - 0.035), (S.cab.belt + S.bumper.y + S.bumper.h / 2) / 2, zr - 0.004);
     } else {
       part(body, rbox(T.w + 0.03, T.h + 0.03, 0.04, 0.02), mats.trim, sx * T.x, T.y, zr + 0.005);
       part(body, rbox(T.w, T.h * 0.6, 0.04, 0.012), mats.tail, sx * T.x, T.y + T.h * 0.2, zr - 0.012);
@@ -3498,11 +3643,20 @@ function buildCar(spec, ctx) {
     for (const sx of [-1, 1]) part(body, rbox(0.16, 0.08, 0.05, 0.02), mats.black, sx * 0.55, S.bumper.y - 0.02, zf + 0.12);
   }
   if (S.bumper.mat === 'chrome') { part(body, rbox(bwF - 0.1, 0.035, 0.05, 0.015), mats.rubber, 0, S.bumper.y, zf + 0.115); part(body, rbox(bwR - 0.1, 0.035, 0.05, 0.015), mats.rubber, 0, S.bumper.y, zr - 0.115); }
+  if (S.rearSplit) part(body, rbox(0.012, S.cab.roof - S.cab.rr - (S.bumper.y + S.bumper.h / 2) - 0.06, 0.012, 0.004), mats.trim, 0, (S.cab.roof - S.cab.rr + S.bumper.y + S.bumper.h / 2) / 2, zr - 0.012);
   // plakalar
   if (!lite) {
     const pm = new THREE.MeshStandardMaterial({ map: plateTex(custom.plate || '34 GZL 34'), roughness: 0.45 });
     part(body, rbox(0.52, 0.12, 0.012, 0.004), pm, 0, S.bumper.y + bh / 2 + 0.075, zf + 0.012);
-    part(body, rbox(0.52, 0.12, 0.012, 0.004), pm, 0, S.bumper.y + bh / 2 + 0.085, zr - 0.012, 0, Math.PI, 0);
+    const py = S.bumper.y + bh / 2 + 0.085;
+    part(body, rbox(0.52, 0.12, 0.012, 0.004), pm, 0, py, zr - 0.012, 0, Math.PI, 0);
+    if (S.rearPads) {
+      // plaka yuvası, iki yanda lastik takozlar, kilit
+      part(body, rbox(0.62, 0.18, 0.012, 0.01), mats.rubber, 0, py, zr - 0.004);
+      for (const sx of [-1, 1]) part(body, rbox(0.15, 0.1, 0.05, 0.018), mats.pad || (mats.pad = new THREE.MeshStandardMaterial({ color: 0xc9b48a, roughness: 0.85 })), sx * 0.4, py + 0.01, zr - 0.02);
+      part(body, rbox(0.035, 0.035, 0.012, 0.008), mats.chrome, 0, py + 0.15, zr - 0.006);
+      for (const sx of [-1, 1]) part(body, rbox(0.07, 0.035, 0.01, 0.006), mats.tail, sx * (bwR / 2 - 0.16), S.bumper.y, zr - 0.122);
+    }
   }
   // yan detaylar
   const midZ = (S.wheel.fz + S.wheel.rz) / 2;
@@ -3832,6 +3986,14 @@ registerVehicle('e30', {
   cam: { dist: 6.3, h: 2.05 }, accs: ['puskul', 'kopek', 'spoiler', 'basik', 'sis'],
   defaults: { paint: 'siyah', rim: 'altin', acc: ['spoiler', 'basik'], sticker: 'HIZ TUTKUNU', tint: 'koyu' },
 });
+registerVehicle('transit', {
+  name: 'Transit', drive: 'Arkadan itiş', desc: 'Yarım camlı minibüs kasa. Ağır ve yüksek: virajda yatar, ama gazı köklediğinde kimse önüne çıkmaya cesaret edemez.',
+  kind: 'car', spec: CAR_SPECS.transit,
+  stats: { mass: 1700, wheelbase: 3.0, frontW: 0.55, drive: 'rwd', torque: 300, gears: [4.0, 2.3, 1.45, 1.0, 0.8], final: 3.9, wheelR: 0.33, cd: 0.66, cgH: 0.78, radius: 1.02, axle: 1.45 },
+  suspension: 1.4,
+  cam: { dist: 7.4, h: 2.9 }, accs: ['puskul', 'kopek', 'tozluk', 'tavan', 'sis'],
+  defaults: { paint: 'kirmizi', rim: 'krom', acc: ['puskul', 'tozluk'], sticker: 'BEKLE BENİ GÜZELİM' },
+});
 registerVehicle('cg', {
   name: 'CG Motor', drive: 'Zincir', desc: 'Kuryenin sadık dostu. Hafif ve çevik, dar virajda bulunmaz nimet — ama ıslakta dikkat!',
   kind: 'bike', stats: { mass: 260, wheelbase: 1.32, frontW: 0.45, drive: 'rwd', torque: 50, gears: [3.1, 2.0, 1.45, 1.1, 0.9], final: 4.4, wheelR: 0.31, cd: 0.24, rr: 5, brake: 4200, nitroForce: 1300, steerMax: 0.5, steerSpeed: 0.06, wetGrip: 0.45, radius: 0.55, axle: 0.6, hbGrip: 0.75, inertiaK: 0.6, cgH: 0.7, kind: 'bike', mu: 1.75, redline: 9500, peakRpm: 6500, idle: 1400 },
@@ -4100,15 +4262,52 @@ class SparkLines {
   }
 }
 
+// Rüzgar çizgileri: yüksek hızda kameranın önüne dünyaya sabit ince çizgiler bırakılır; geçerken uzun iz gibi görünür
+class WindLines {
+  constructor(max = 260) {
+    this.max = max; this.n = 0;
+    const g = new THREE.BufferGeometry();
+    this.pos = new Float32Array(max * 6); this.col = new Float32Array(max * 6);
+    g.setAttribute('position', new THREE.BufferAttribute(this.pos, 3).setUsage(THREE.DynamicDrawUsage));
+    g.setAttribute('color', new THREE.BufferAttribute(this.col, 3).setUsage(THREE.DynamicDrawUsage));
+    g.setDrawRange(0, 0);
+    this.mesh = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
+    this.mesh.frustumCulled = false; this.mesh.renderOrder = 8; scene.add(this.mesh);
+    this.a = new Float32Array(max * 7); // x,y,z,dx,dy,dz,len
+    this.life = new Float32Array(max); this.lmax = new Float32Array(max); this.k = new Float32Array(max);
+  }
+  spawn(x, y, z, dx, dy, dz, len, life, k) {
+    if (this.n >= this.max) return;
+    const i = this.n++; this.a.set([x, y, z, dx, dy, dz, len], i * 7); this.life[i] = 0; this.lmax[i] = life; this.k[i] = k;
+  }
+  update(dt) {
+    let j = 0;
+    for (let i = 0; i < this.n; i++) {
+      const l = this.life[i] + dt; if (l >= this.lmax[i]) continue;
+      if (j !== i) { for (let q = 0; q < 7; q++) this.a[j * 7 + q] = this.a[i * 7 + q]; this.lmax[j] = this.lmax[i]; this.k[j] = this.k[i]; }
+      this.life[j] = l;
+      const A = this.a, o = j * 7, t = l / this.lmax[j], br = Math.sin(t * Math.PI) * this.k[j];
+      this.pos.set([A[o], A[o + 1], A[o + 2], A[o] - A[o + 3] * A[o + 6], A[o + 1] - A[o + 4] * A[o + 6], A[o + 2] - A[o + 5] * A[o + 6]], j * 6);
+      this.col.set([0.55 * br, 0.75 * br, 1.0 * br, 0, 0, 0], j * 6);
+      j++;
+    }
+    this.n = j;
+    const g = this.mesh.geometry; g.setDrawRange(0, j * 2);
+    g.attributes.position.needsUpdate = true; g.attributes.color.needsUpdate = true;
+  }
+}
+
 class SkidMarks {
   constructor(max = 2400) {
     this.max = max; this.i = 0; this.count = 0;
     const g = new THREE.BufferGeometry();
-    this.pos = new Float32Array(max * 6 * 3); this.col = new Float32Array(max * 6 * 4);
+    this.pos = new Float32Array(max * 6 * 3); this.col = new Float32Array(max * 6 * 4); this.uv = new Float32Array(max * 6 * 2);
+    for (let i = 0; i < max; i++) this.uv.set([0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1], i * 12);
     g.setAttribute('position', new THREE.BufferAttribute(this.pos, 3).setUsage(THREE.DynamicDrawUsage));
+    g.setAttribute('uv', new THREE.BufferAttribute(this.uv, 2));
     g.setAttribute('color', new THREE.BufferAttribute(this.col, 4).setUsage(THREE.DynamicDrawUsage));
     g.setDrawRange(0, 0);
-    const m = new THREE.MeshBasicMaterial({ color: 0xffffff, vertexColors: true, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 });
+    const m = new THREE.MeshBasicMaterial({ color: 0xffffff, map: TEX.skid || null, vertexColors: true, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 });
     this.mesh = new THREE.Mesh(g, m); this.mesh.frustumCulled = false; this.mesh.renderOrder = 3;
     scene.add(this.mesh); this.dirty = false;
   }
@@ -4116,7 +4315,7 @@ class SkidMarks {
   add(x0, z0, x1, z1, w, a, rgb = [0.05, 0.05, 0.05], ya = 0, yb = ya) {
     const dx = x1 - x0, dz = z1 - z0, l = Math.hypot(dx, dz);
     if (l < 0.05 || l > 4) return;
-    const nx = -dz / l * w / 2, nz = dx / l * w / 2, y = 0.045 + ya, y2 = 0.045 + yb;
+    const nx = -dz / l * w / 2, nz = dx / l * w / 2, y = 0.03 + ya, y2 = 0.03 + yb;
     const k = this.i * 18;
     const P = [x0 - nx, y, z0 - nz, x0 + nx, y, z0 + nz, x1 + nx, y2, z1 + nz, x0 - nx, y, z0 - nz, x1 + nx, y2, z1 + nz, x1 - nx, y2, z1 - nz];
     this.pos.set(P, k);
@@ -4136,20 +4335,20 @@ class SkidMarks {
 }
 
 const PARTICLES = {
-  smoke: null, add: null, water: null, skids: null, lines: null,
+  smoke: null, add: null, water: null, skids: null, lines: null, wind: null,
   init() {
     this.smoke = new ParticlePool(2200, false, 'smoke');
     this.water = new ParticlePool(1600, false, 'water');
     this.add = new ParticlePool(1200, true, 'add');
     this.lines = new SparkLines(700);
-    this.skids = new SkidMarks(2400);
+    this.skids = new SkidMarks(9000); this.wind = new WindLines(260);
   },
   setViewport(hPx, cam) {
     if (!this.smoke) return;
     const s = (hPx * renderer.getPixelRatio()) / (2 * Math.tan(THREE.MathUtils.degToRad(cam.fov) / 2));
     this.smoke.uni.uScale.value = s; this.water.uni.uScale.value = s; this.add.uni.uScale.value = s;
   },
-  update(dt) { this.smoke.update(dt); this.water.update(dt); this.add.update(dt); this.lines.update(dt); this.skids.update(); },
+  update(dt) { this.smoke.update(dt); this.water.update(dt); this.add.update(dt); this.lines.update(dt); this.wind.update(dt); this.skids.update(); },
   sparks(x, y, z, n, power = 1) {
     for (let i = 0; i < n; i++) this.lines.spawn(x, y, z, (Math.random() - 0.5) * 12 * power, Math.random() * 6 * power + 1, (Math.random() - 0.5) * 12 * power, 0.35 + Math.random() * 0.5, 0.7 + Math.random() * 0.5);
     for (let i = 0; i < n * 0.3; i++) this.add.spawn(x, y, z, (Math.random() - 0.5) * 4, Math.random() * 2, (Math.random() - 0.5) * 4, 0.15, 0.6, 0.1, 0.8, 3.2, 1.8, 0.6, 3, 0);
@@ -4198,6 +4397,7 @@ const SOUND_PROFILES = {
   toros: { cyl: 4, comb: [0.0121, 0.0052], fb: [0.52, 0.4], mufBase: 650, mufLoad: 1700, body: 104, tau: 0.0013, rough: 0.17, pops: 0.03, gain: 0.95, intakeF: 820, squealF: 820, road: 1.05 },
   niva: { cyl: 4, comb: [0.0136, 0.0063], fb: [0.58, 0.42], mufBase: 560, mufLoad: 1450, body: 88, tau: 0.0014, rough: 0.2, pops: 0.02, gain: 1.05, intakeF: 760, squealF: 780, road: 1.35 },
   e30: { cyl: 6, comb: [0.0092, 0.0038], fb: [0.66, 0.5], mufBase: 1050, mufLoad: 3300, body: 132, tau: 0.0009, rough: 0.06, pops: 0.12, gain: 0.9, intakeF: 1100, squealF: 900, road: 0.95 },
+  transit: { cyl: 4, comb: [0.0142, 0.0068], fb: [0.5, 0.38], mufBase: 480, mufLoad: 1300, body: 84, tau: 0.0015, rough: 0.3, pops: 0.01, gain: 1.05, intakeF: 700, squealF: 760, road: 1.25 },
   cg: { cyl: 1, comb: [0.0049, 0.0021], fb: [0.5, 0.35], mufBase: 1100, mufLoad: 2900, body: 165, tau: 0.0016, rough: 0.2, pops: 0.05, gain: 0.85, intakeF: 1300, squealF: 1050, road: 0.7, chain: 1 },
   at: { horse: 1, gain: 1.0, road: 0.4, squealF: 0 },
 };
@@ -4207,7 +4407,7 @@ class VehicleDSP {
   constructor(sr, cfg) {
     this.sr = sr; this.c = cfg;
     this.p = { rpm: 900, load: 0, speed: 0, slip: 0, surface: 0, wet: 0, nitro: 0, scrape: 0, gear: 1, pitch: 1, idle: 900, red: 6800, trans: 0, gain: 0 };
-    this.s = { rpm: 900, load: 0, speed: 0, slip: 0, wet: 0, nitro: 0, scrape: 0, gain: 0 };
+    this.s = { rpm: 900, load: 0, speed: 0, slip: 0, wet: 0, nitro: 0, scrape: 0, gain: 0, brake: 0 }; this.absPh = 0;
     this.seed = (Math.random() * 2147483647) | 1;
     this.crank = 0; this.fireN = 0; this.nextFire = 0; this.pulse = 0; this.pop = 0; this.popRel = 0; this.offT = 0; this.highLoadT = 0;
     const N = Math.max(1, cfg.cyl || 1);
@@ -4216,7 +4416,7 @@ class VehicleDSP {
     this.b1 = new Float32Array(4096); this.b2 = new Float32Array(4096); this.wi = 0;
     this.d1 = Math.min(4000, Math.max(8, Math.round((cfg.comb ? cfg.comb[0] : 0.01) * sr)));
     this.d2 = Math.min(4000, Math.max(8, Math.round((cfg.comb ? cfg.comb[1] : 0.004) * sr)));
-    this.f = {}; for (const k of ['muf', 'muf2', 'body', 'intake', 'wind', 'road', 'sq', 'kerb', 'hoof', 'breath', 'scr', 'pop']) this.f[k] = [0, 0, 0, 0];
+    this.f = {}; for (const k of ['muf', 'muf2', 'body', 'intake', 'wind', 'road', 'sq', 'kerb', 'hoof', 'breath', 'scr', 'pop', 'brk', 'brk2']) this.f[k] = [0, 0, 0, 0];
     this.co = {};
     this.hp1 = 0; this.hp1x = 0; this.brown = 0; this.wetHp = 0; this.wetX = 0; this.gravel = 0; this.dcx = 0; this.dcy = 0;
     this.sqPh = 0; this.sqF = cfg.squealF || 850; this.sqChirp = 0; this.sqChirpF = 9; this.sqA = 0;
@@ -4243,7 +4443,7 @@ class VehicleDSP {
     const sr = this.sr, c = this.c, p = this.p, s = this.s, f = this.f;
     const bt = n / sr;
     const sm = (k, tau) => { s[k] += (p[k] - s[k]) * Math.min(1, bt / tau); };
-    sm('rpm', 0.03); sm('load', 0.04); sm('speed', 0.05); sm('wet', 0.1); sm('nitro', 0.05); sm('scrape', 0.03); sm('gain', 0.06);
+    sm('rpm', 0.03); sm('load', 0.04); sm('speed', 0.05); sm('wet', 0.1); sm('nitro', 0.05); sm('scrape', 0.03); sm('gain', 0.06); s.brake += ((p.brake || 0) - s.brake) * Math.min(1, bt / (p.brake > s.brake ? 0.05 : 0.12));
     s.slip += (p.slip - s.slip) * Math.min(1, bt / (p.slip > s.slip ? 0.03 : 0.09));
     const rpmN = Math.min(1.1, Math.max(0, (s.rpm - p.idle) / (p.red - p.idle)));
     const spd = s.speed, pitch = p.pitch || 1;
@@ -4254,7 +4454,8 @@ class VehicleDSP {
     co.intake = this.coef('bp', (c.intakeF || 900) * (0.75 + rpmN * 0.6), 2.2);
     co.wind = this.coef('bp', 260 + spd * 13, 0.55);
     co.road = this.coef('lp', 150 + spd * 8, 0.7);
-    co.sq = this.coef('bp', this.sqF * 1.7, 4);
+    co.sq = this.coef('bp', this.sqF * 1.6, 2.2);
+    co.brk = this.coef('bp', 1150 + spd * 6, 1.1); co.brk2 = this.coef('bp', 210 + spd * 2, 1.4);
     co.kerb = this.coef('bp', 72, 2.5);
     co.scr = this.coef('bp', 1900 + this.rnd() * 900, 3);
     co.pop = this.coef('lp', 3200, 0.7);
@@ -4281,6 +4482,7 @@ class VehicleDSP {
     const kerbInc = p.surface === 1 ? spd / 1.5 / sr : 0;
     const transF = p.trans * pitch, transAmp = Math.min(1, spd / 15) * (0.006 + s.load * 0.012);
     const gain = s.gain * (c.gain || 1);
+    const brkAmp = s.brake * Math.min(1, spd / 28) * (1 - s.wet * 0.6) * (spd > 3 ? 1 : 0);
     for (let i = 0; i < n; i++) {
       const wn = this.rnd() * 2 - 1;
       let eng = 0;
@@ -4367,9 +4569,15 @@ class VehicleDSP {
         this.sqPh += this.sqF * pitch / sr; if (this.sqPh > 1) this.sqPh -= 1;
         this.sqChirp += this.sqChirpF / sr; if (this.sqChirp > 1) { this.sqChirp -= 1; this.sqChirpF = 6 + this.rnd() * 10; }
         const t2 = this.sqPh * 2 * Math.PI;
-        const w = Math.sin(t2) + 0.45 * Math.sin(2 * t2 + 0.3) + 0.22 * Math.sin(3 * t2 + 1.1) + 0.1 * Math.sin(5 * t2);
+        const w = Math.sin(t2) + 0.3 * Math.sin(2 * t2 + 0.3) + 0.12 * Math.sin(3 * t2 + 1.1);
         const am = 0.62 + 0.38 * Math.sin(this.sqChirp * 2 * Math.PI);
-        o += (w * 0.07 + this.bq(f.sq, co.sq, wn) * 0.12) * this.sqA * am;
+        o += (w * 0.03 + this.bq(f.sq, co.sq, wn) * 0.2) * this.sqA * am;
+      }
+      // sert fren: lastik sürtme hışırtısı + ABS titreşimi (bip değil)
+      if (brkAmp > 0.004) {
+        this.absPh += 13 / sr; if (this.absPh > 1) this.absPh -= 1;
+        const abs = 0.7 + 0.3 * Math.sin(this.absPh * 2 * Math.PI);
+        o += (this.bq(f.brk, co.brk, wn) * 0.16 + this.bq(f.brk2, co.brk2, wn) * 0.22) * brkAmp * abs;
       }
       // duvar sürtünmesi
       if (s.scrape > 0.01) o += this.bq(f.scr, co.scr, wn) * s.scrape * Math.min(1, spd / 10) * 0.6;
@@ -4600,7 +4808,8 @@ class EngineSound {
     if (!this.alive) return;
     const st = ph.st || {};
     const sp = ph.speed ? ph.speed() : Math.hypot(ph.vx || 0, ph.vz || 0);
-    const slipN = revOnly ? 0 : clamp(Math.max(Math.abs(ph.ar || 0) - 0.08, Math.abs(ph.af || 0) - 0.12) * 3 + (ph.spin || 0) * 0.8 + (ph.hb && sp > 5 ? 0.55 : 0) + (ph.braking && sp > 18 && (ph.slip || 0) > 2 ? 0.3 : 0), 0, 1.3);
+    const slipN = revOnly ? 0 : clamp(Math.max(Math.abs(ph.ar || 0) - 0.08, Math.abs(ph.af || 0) - 0.12) * 3 + (ph.spin || 0) * 0.8 + (ph.hb && sp > 5 ? 0.55 : 0)  + (ph.braking && sp > 18 && (ph.slip || 0) > 4.5 ? 0.2 : 0), 0, 1.3);
+    const brakeN = revOnly || !ph.braking ? 0 : clamp(((ph.brakeIn || 0) - 0.25) / 0.75, 0, 1);
     let load = ph.throttle || 0;
     if (ph.shiftT > 0) load *= 0.12;
     const gears = st.gears || [1], gi = clamp((ph.gear || 1) - 1, 0, gears.length - 1);
@@ -4608,7 +4817,7 @@ class EngineSound {
     this.send_({
       rpm: ph.rpm || 900, load, speed: revOnly ? 0 : sp, slip: slipN, surface: ph.surface === 'kerb' ? 1 : ph.surface === 'off' ? 2 : 0,
       wet: ph.wet || 0, nitro: ph.nitroOn ? 1 : 0, scrape: (ph.scrape || 0) > 0 ? 1 : 0, gear: ph.gear || 1, trans,
-      idle: st.idle || 900, red: st.redline || 6800, gain: clamp(vol, 0, 1.5), pitch: this.pitch || 1,
+      idle: st.idle || 900, red: st.redline || 6800, gain: clamp(vol, 0, 1.5), pitch: this.pitch || 1, brake: brakeN,
     });
   }
   // uzaktaki araç: mesafe, yön, Doppler
@@ -4667,7 +4876,7 @@ const btnV = (p, i) => (p && p.buttons[i] ? p.buttons[i].value || (p.buttons[i].
 const dz = (v, d = 0.12) => (Math.abs(v) < d ? 0 : Math.sign(v) * Math.pow((Math.abs(v) - d) / (1 - d), 1.35));
 
 // ── dokunmatik kontroller (telefon/tablet): sol yarı direksiyon, sağda pedallar
-const TOUCH = { steer: 0, throttle: 0, brake: 0, nitro: false, hb: false, item: false, active: false };
+const TOUCH = { steer: 0, throttle: 0, brake: 0, nitro: false, hb: false, item: false, cam: false, active: false, tilt: false, tiltSteer: 0, tilt0: null };
 function setupTouch() {
   const root = $('#touch'); if (!root) return;
   const steerPad = root.querySelector('.tsteer'), knob = root.querySelector('.tknob');
@@ -4688,6 +4897,34 @@ function setupTouch() {
     b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off); b.addEventListener('pointercancel', off); b.addEventListener('pointerleave', off);
   }
   root.querySelector('[data-t=pause]').addEventListener('click', () => onPauseKey());
+  const camB = root.querySelector('[data-t=cam]');
+  camB.addEventListener('pointerdown', (e) => { e.preventDefault(); TOUCH.active = true; TOUCH.cam = true; setTimeout(() => TOUCH.cam = false, 120); });
+  // eğerek direksiyon (ivmeölçer); ilk açılışta düz tutulan açı sıfır kabul edilir
+  const tiltB = root.querySelector('[data-t=tilt]');
+  const onOri = (e) => {
+    if (!TOUCH.tilt) return;
+    const ang = (screen.orientation && screen.orientation.angle) || window.orientation || 0;
+    let v = ang === 90 ? e.beta : ang === -90 || ang === 270 ? -e.beta : e.gamma;
+    if (v == null) return;
+    if (TOUCH.tilt0 == null) TOUCH.tilt0 = v;
+    const k = clamp((v - TOUCH.tilt0) / 22, -1, 1);
+    TOUCH.tiltSteer = Math.sign(k) * Math.pow(Math.abs(k), 1.3); TOUCH.active = true;
+  };
+  const setTilt = (on) => { TOUCH.tilt = on; TOUCH.tilt0 = null; TOUCH.tiltSteer = 0; tiltB.textContent = on ? 'EĞ: AÇIK' : 'EĞ: KAPALI'; tiltB.classList.toggle('act', on); root.classList.toggle('tilt', on); LS.set('tilt', on ? 1 : 0); };
+  tiltB.addEventListener('click', async () => {
+    if (!TOUCH.tilt && typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      try { if (await DeviceOrientationEvent.requestPermission() !== 'granted') { toast('Hareket sensörüne izin verilmedi'); return; } } catch (e) { return; }
+    }
+    setTilt(!TOUCH.tilt); if (TOUCH.tilt) toast('Telefonu düz tut: o açı orta kabul edildi');
+  });
+  window.addEventListener('deviceorientation', onOri);
+  if (LS.get('tilt', 0) && !(typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function')) setTilt(true);
+  // yarış başlarken tam ekran + yatay kilit (destekleyen tarayıcılarda)
+  document.addEventListener('pointerdown', () => {
+    if (!document.body.classList.contains('racing') || document.fullscreenElement) return;
+    const el = document.documentElement;
+    try { const p = el.requestFullscreen && el.requestFullscreen({ navigationUI: 'hide' }); if (p && p.then) p.then(() => { try { screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => { }); } catch (e) { } }).catch(() => { }); } catch (e) { }
+  }, { passive: true });
 }
 
 const _prev = [{}, {}, {}, {}];
@@ -4715,7 +4952,9 @@ function readControls(slot, shared) {
     pause = btn(p, 9);
   }
   if (slot === 0 && TOUCH.active) {
-    if (Math.abs(TOUCH.steer) > Math.abs(steer)) steer = TOUCH.steer;
+    const ts = TOUCH.tilt ? TOUCH.tiltSteer : TOUCH.steer;
+    if (Math.abs(ts) > Math.abs(steer)) steer = ts;
+    cam = cam || TOUCH.cam;
     throttle = Math.max(throttle, TOUCH.throttle); brake = Math.max(brake, TOUCH.brake);
     nitro = nitro || TOUCH.nitro; hb = hb || TOUCH.hb; item = item || TOUCH.item;
   }
@@ -4733,6 +4972,8 @@ const _rumbleT = [0, 0, 0, 0];
 function rumble(slot, strong, weak, ms = 90, force = false) {
   if (!SETTINGS.rumble) return;
   if (HID.dev && slot === HID.slot()) { HID.motor(strong, weak, ms); return; }
+  // telefonda titreşim (yalnızca belirgin darbeler)
+  if (IS_TOUCH && slot === 0 && TOUCH.active && strong > 0.35 && navigator.vibrate) { const n = performance.now(); if (!rumble.vt || n - rumble.vt > 250) { rumble.vt = n; try { navigator.vibrate(Math.min(60, ms * 0.4)); } catch (e) { } } }
   const p = padFor(slot);
   const a = p && p.vibrationActuator;
   if (!a || !a.playEffect) return;
@@ -5199,7 +5440,7 @@ function makeBots(n, taken) {
   const names = BOT_NAMES.slice().sort(() => r() - 0.5);
   const out = [];
   for (let i = 0; i < n; i++) {
-    const veh = r() < 0.08 ? r.pick(['cg', 'at']) : r.pick(['sahin', 'toros', 'niva', 'e30', 'sahin', 'e30']);
+    const veh = r() < 0.08 ? r.pick(['cg', 'at']) : r.pick(['sahin', 'toros', 'niva', 'e30', 'sahin', 'e30', 'transit']);
     const d = VEHICLES[veh];
     const c = defaultCustom(veh);
     c.paint = r.pick(PAINTS).id;
@@ -5443,6 +5684,17 @@ class Race {
     $('#huds').classList.remove('hidden');
   }
   get me() { return this.racers.find(r => r.local); }
+  // yarış sürerken odaya gelen oyuncuyu ekle (grid'in arkasına; uzaktan araçlar zaten anlık konumla gelir)
+  addRacer(o) {
+    if (this.racers.length >= MAX_RACERS || this.racers.some(r => r.id === o.id)) return null;
+    const R = new Racer(o); R.grid = this.racers.length;
+    const L = TRACK.length, s = L - 9.4 - R.grid * 4.4, lat = (R.grid % 2 ? 1 : -1) * 3.6;
+    R.phys.place(s, lat); R.phys.s = s; R.phys.dist = s - L;
+    updateVehicleVisual(R.vis, R.phys, 0.016);
+    this.racers.push(R);
+    document.querySelectorAll('#huds .pos i').forEach(e => e.textContent = '/' + this.racers.length);
+    return R;
+  }
   dispose() {
     for (const R of this.racers) R.dispose();
     if (this.items) this.items.dispose();
@@ -5496,9 +5748,10 @@ class Race {
       if (running && inp) {
         const ev = [];
         const sub = 3;
+        if (R.ghostT > 0) R.ghostT -= dt;
         for (let k = 0; k < sub; k++) R.phys.update(dt / sub, inp, ev);
         for (const e of ev) this.onEvent(e, R);
-        if (R.phys.stuckT > 2.5 || R.phys.wrongT > (R.bot ? 2.5 : 6)) { R.phys.resetToTrack(); R.phys.stuckT = 0; R.phys.wrongT = 0; hudFlash(R, 'PİSTE GERİ KONDUN', 1200); }
+        if (R.phys.needReset || R.phys.stuckT > 2.5 || R.phys.wrongT > (R.bot ? 2.5 : 6)) { R.phys.resetToTrack(); R.phys.stuckT = 0; R.phys.wrongT = 0; R.phys.needReset = false; R.phys.progT = 0; R.phys.progD = R.phys.dist; hudFlash(R, 'PİSTE GERİ KONDUN', 1200); }
       }
     }
     if (running && !this.paused) {
@@ -5510,7 +5763,7 @@ class Race {
         for (const e of ev) { this.onEvent(e, ctrl[i]); this.onEvent(e, ctrl[j]); }
       }
       for (const R of ctrl) {
-        for (const G2 of remotes) { if ((R.phys.x - G2.phys.x) ** 2 + (R.phys.z - G2.phys.z) ** 2 > 36) continue; const ev = []; collideGhost(R.phys, G2.phys, ev); for (const e of ev) this.onEvent(e, R); }
+        for (const G2 of remotes) { if ((R.ghostT || 0) > 0 || (G2.ghostUntil || 0) > performance.now() / 1000 || (R.phys.x - G2.phys.x) ** 2 + (R.phys.z - G2.phys.z) ** 2 > 36) continue; const ev = []; collideGhost(R.phys, G2.phys, ev); for (const e of ev) this.onEvent(e, R); }
         const drafting = computeDraft(R.phys, physOthers(R), dt);
         R.draftT = drafting ? R.draftT + dt : 0;
         if (R.draftT > 0.6 && R.draftT - dt <= 0.6) hudFlash(R, 'RÜZGAR ARKASI', 1000, 'blue');
@@ -5667,7 +5920,7 @@ function saveRecord(R) {
 // ── efektler (her yarışçı) ─────────────────────────────────────────
 const _wheelLocal = (R) => {
   const d = R.def;
-  if (d.kind === 'car') return [[d.spec.wheel.x, d.spec.wheel.rz], [-d.spec.wheel.x, d.spec.wheel.rz]];
+  if (d.kind === 'car') return [[d.spec.wheel.x, d.spec.wheel.rz], [-d.spec.wheel.x, d.spec.wheel.rz], [d.spec.wheel.x, d.spec.wheel.fz], [-d.spec.wheel.x, d.spec.wheel.fz]];
   if (d.kind === 'bike') return [[0, -0.66]];
   return [[0.2, -0.62], [-0.2, -0.62]];
 };
@@ -5678,13 +5931,16 @@ function racerFx(R, dt, running) {
   const wheels = _wheelLocal(R);
   const launch = !running && p.throttle > 0.6 && R.def.kind !== 'horse';
   const burnout = running && p.throttle > 0.9 && sp < 9 && p.vF >= 0 && R.def.kind !== 'horse';
-  const skidding = (p.drifting || (p.braking && sp > 14 && p.slip > 1.5) || burnout || launch) && p.wet < 0.3 && p.surface !== 'off' && R.def.kind !== 'horse' && !p.air;
+  const hardBrake = p.braking && (p.brakeIn || 0) > 0.75 && sp > 10;
+  const skidding = (p.drifting || (p.braking && sp > 14 && p.slip > 1.5) || hardBrake || burnout || launch) && p.wet < 0.3 && p.surface !== 'off' && R.def.kind !== 'horse' && !p.air;
   const gy = p.gy || 0;
   wheels.forEach(([lx, lz], i) => {
     const [x, z] = W2(lx, lz);
-    if (skidding && running) {
+    const front = lz > 0, markOn = skidding && running && (!front || p.drifting || hardBrake);
+    if (markOn) {
       const last = R.skid[i];
-      if (last) PARTICLES.skids.add(last[0], last[1], x, z, R.def.kind === 'bike' ? 0.12 : 0.22, clamp(0.25 + p.slip * 0.05, 0.2, 0.6), undefined, last[2], gy);
+      const a = clamp((p.drifting ? 0.35 + p.slip * 0.05 : hardBrake ? 0.3 + sp * 0.006 : 0.55) * (front ? 0.6 : 1), 0.15, 0.75);
+      if (last) PARTICLES.skids.add(last[0], last[1], x, z, R.def.kind === 'bike' ? 0.12 : (R.def.spec ? R.def.spec.wheel.w + 0.04 : 0.22), a, undefined, last[2], gy);
       R.skid[i] = [x, z, gy];
     } else R.skid[i] = null;
     const rnd = () => Math.random() - 0.5;
@@ -5793,6 +6049,14 @@ function updateCamera(view, R, dt, spectator) {
   // FOV: hız + nitro + ani ivme vuruşu
   C.fovK = smooth(C.fovK, clamp(aLong * 0.35, -2.5, 5), 3, dt);
   const fovT = (mode === 2 ? 72 : 63) + clamp(sp / 58, 0, 1.25) * 12 + nitroK * 9 + C.fovK;
+  // yüksek hızda rüzgar çizgileri
+  if (!spectator && sp > 26 && PARTICLES.wind && !p.air) {
+    let n = (sp - 26) * (1.4 + nitroK * 1.6) * dt; const ux = p.vx / sp, uz = p.vz / sp, by = p.y || 0;
+    while (n > 0) { if (n < 1 && Math.random() > n) break; n -= 1;
+      const ah = 8 + Math.random() * 26, side = (Math.random() < 0.5 ? -1 : 1) * (1.4 + Math.random() * 5.5);
+      PARTICLES.wind.spawn(p.x + ux * ah - uz * side, by + 0.3 + Math.random() * 3.4, p.z + uz * ah + ux * side, ux, 0, uz, sp * (0.045 + nitroK * 0.03), 0.3 + Math.random() * 0.3, (0.18 + Math.random() * 0.3) * (0.7 + nitroK * 0.8) * clamp((sp - 26) / 20, 0.2, 1));
+    }
+  }
   if (mode === 2) {
     const k = R.def.kind, S = R.vis && R.vis.state || {};
     const fwdOff = k === 'car' ? R.def.spec.zf + 0.2 : k === 'bike' ? 0.2 : 0.4;
@@ -6205,6 +6469,16 @@ const NET = {
           return;
         }
       }
+      // süren bir yarış var ve ben içinde değilsem: ortasından katıl
+      if (me && this.ready) for (const p of ps) {
+        const r = p.presence && p.presence.race;
+        if (!r || typeof r !== 'object' || p.isMe || p.presence.rid !== r.id || this.seenRaces.has(r.id) || !Array.isArray(r.grid) || r.grid.includes(me)) continue;
+        const inRace = ps.filter(q => q.presence && q.presence.rid === r.id && !q.presence.f);
+        if (!inRace.length || inRace.length >= MAX_RACERS) continue;
+        this.seenRaces.add(r.id);
+        this.lateJoin(r, inRace);
+        return;
+      }
       // ben lider miyim?
       const ready = ps.filter(p => p.presence && p.presence.rdy && !(p.presence.rid));
       const sortedR = ready.map(p => p.peer).sort();
@@ -6227,6 +6501,12 @@ const NET = {
         }
       }
     } else if (this.state === 'racing' && RACE) {
+      // yarışa sonradan katılanlar
+      for (const p of ps) {
+        if (p.isMe || !p.presence || p.presence.rid !== this.raceId || RACE.racers.some(r => r.id === p.peer)) continue;
+        const R2 = RACE.addRacer({ id: p.peer, name: String(p.presence.n || 'Rakip').slice(0, 14), custom: sanitizeCustom(p.presence.c), local: false });
+        if (R2) { R2.ghostUntil = performance.now() / 1000 + 8; toast(R2.name + ' yarışa katıldı'); }
+      }
       for (const R of RACE.racers) {
         if (R.local || R.gone) continue;
         if (!ps.some(p => p.peer === R.id)) { R.gone = true; R.vis.root.visible = false; if (R.snd) R.snd.stop(); toast(R.name + ' yarıştan ayrıldı'); }
@@ -6251,6 +6531,17 @@ const NET = {
     this.push({ rdy: false, rid: race.id, f: 0, bl: 0, lp: 0, qt: null });
     const laps = clamp(Number(race.laps) || 3, 1, 9);
     startRace('online', { racers, laps, goAt });
+  },
+  lateJoin(race, inRace) {
+    const me = this.myPeer();
+    const racers = [{ id: me, name: PLAYER.nick || 'Sen', custom: PLAYER.custom[0], local: true, slot: 0, grid: inRace.length }];
+    inRace.slice(0, MAX_RACERS - 1).forEach((p, i) => racers.push({ id: p.peer, name: String((p.presence && p.presence.n) || 'Rakip').slice(0, 14), custom: sanitizeCustom(p.presence && p.presence.c), local: false, grid: i }));
+    this.state = 'racing'; this.raceId = race.id; this.ready = false; this.quorumAt = 0;
+    this.push({ rdy: false, rid: race.id, f: 0, bl: 0, lp: 0, qt: null });
+    const laps = clamp(Number(race.laps) || 3, 1, 9);
+    startRace('online', { racers, laps, goAt: performance.now() / 1000 + 3.2, late: true });
+    if (RACE && RACE.me) RACE.me.ghostT = 5;
+    toast('Süren yarışa katıldın — 5 sn hayalet moddasın');
   },
   endRace() {
     if (this.state !== 'racing') return;

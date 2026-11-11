@@ -68,7 +68,7 @@ export class Room extends DurableObject {
     if (me && !me.http) { try { me.ws.close(4000, 'http'); } catch (e) { } this.peers.delete(id); me = null; }
     if (!me) {
       const busy = [...this.peers.values()].some(x => x.p && x.p.rid);
-      if (this.peers.size >= MAX_PEERS || (quick && busy)) return json({ t: 'full', busy });
+      if (this.peers.size >= MAX_PEERS) return json({ t: 'full', busy });
       me = { http: true, p: {}, tok: RATE, last: now, seen: now, upd: now };
       this.peers.set(id, me);
       this.broadcast({ t: 'join', id }, id);
@@ -99,7 +99,7 @@ export class Room extends DurableObject {
     const old = this.peers.get(id);
     if (old) { try { old.ws.close(4000, 'yeniden bağlandı'); } catch (e) { } this.peers.delete(id); }
     const busy = [...this.peers.values()].some(x => x.p && x.p.rid);
-    if (this.peers.size >= MAX_PEERS || (quick && busy)) {
+    if (this.peers.size >= MAX_PEERS) {
       server.send(JSON.stringify({ t: 'full', busy }));
       server.close(4001, 'dolu');
       return new Response(null, { status: 101, webSocket: client });
