@@ -32,6 +32,12 @@ export default {
       catch (e) { console.error('ws hata', room, e && e.stack || e); return new Response('Oda hatası: ' + (e && e.message), { status: 500 }); }
     }
     if (url.pathname === '/health') return new Response('ok');
+    // ses dosyaları: claude.ai sürümü de çekebilsin diye CORS + uzun önbellek
+    if (url.pathname.startsWith('/snd/')) {
+      const r = await env.ASSETS.fetch(req); const h = new Headers(r.headers);
+      h.set('access-control-allow-origin', '*'); h.set('cache-control', 'public, max-age=604800');
+      return new Response(r.body, { status: r.status, headers: h });
+    }
     // ── geri bildirim: oyuncular yazar, yalnızca anahtarı bilen okur
     if (url.pathname === '/feedback') {
       if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
