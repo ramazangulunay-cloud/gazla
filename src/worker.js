@@ -7,6 +7,11 @@ const MAX_PEERS = 12;
 const MAX_MSG = 8000;          // bayt
 const RATE = 60;               // saniyede en fazla mesaj (oyuncu başı)
 const HEAVY = ['s', 'it', 'u']; // yarış sırasında her karede değişen alanlar (eke yazılmaz)
+// geri bildirim okuma anahtarının SHA-256 özeti (anahtarın kendisi kodda yok)
+const FB_KEY_HASH = '3d973d4e18501885e22f6200dda3a499fc80c839bf22f8bdbbcb36d12153b624';
+const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'POST, GET, OPTIONS', 'access-control-allow-headers': 'content-type' };
+async function sha256hex(t) { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join(''); }
+const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 export default {
   async fetch(req, env) {
@@ -27,6 +32,26 @@ export default {
       catch (e) { console.error('ws hata', room, e && e.stack || e); return new Response('Oda hatası: ' + (e && e.message), { status: 500 }); }
     }
     if (url.pathname === '/health') return new Response('ok');
+    // ── geri bildirim: oyuncular yazar, yalnızca anahtarı bilen okur
+    if (url.pathname === '/feedback') {
+      if (req.method === 'OPTIONS') return new Response(null, { headers: CORS });
+      if (req.method !== 'POST') return new Response('POST bekleniyordu', { status: 405, headers: CORS });
+      let body; try { body = await req.json(); } catch (e) { return new Response('Geçersiz', { status: 400, headers: CORS }); }
+      const text = String(body.text || '').trim().slice(0, 1500);
+      if (text.length < 2) return new Response('Boş', { status: 400, headers: CORS });
+      const item = { t: Date.now(), text, nick: String(body.nick || '').slice(0, 24), veh: String(body.veh || '').slice(0, 16), ua: String(req.headers.get('user-agent') || '').slice(0, 160), ip: req.headers.get('cf-connecting-ip') || '' };
+      const r = await env.ROOMS.get(env.ROOMS.idFromName('__geribildirim__')).fetch('https://do/fb-add', { method: 'POST', body: JSON.stringify(item) });
+      return new Response(r.ok ? 'ok' : 'hata', { status: r.status, headers: CORS });
+    }
+    if (url.pathname === '/geribildirim') {
+      const k = url.searchParams.get('k') || '';
+      if (!k || await sha256hex(k) !== FB_KEY_HASH) return new Response('Anahtar gerekli', { status: 403 });
+      const r = await env.ROOMS.get(env.ROOMS.idFromName('__geribildirim__')).fetch('https://do/fb-list');
+      const list = await r.json();
+      if (url.searchParams.get('json')) return new Response(JSON.stringify(list, null, 1), { headers: { 'content-type': 'application/json; charset=utf-8' } });
+      const rows = list.map(f => `<article><header><b>${esc(f.nick || 'isimsiz')}</b> · ${esc(f.veh || '')} · <time>${new Date(f.t).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' })}</time></header><p>${esc(f.text).replace(/\n/g, '<br>')}</p><small>${esc(f.ua)}</small></article>`).join('');
+      return new Response(`<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>RAPID55 geri bildirim (${list.length})</title><style>body{font:15px system-ui;background:#05080f;color:#e8eef5;max-width:760px;margin:0 auto;padding:20px}h1{font-size:20px;color:#9dff00}article{border:1px solid #1d3550;background:#0a1524;padding:12px 14px;margin:10px 0;border-radius:6px}header{color:#7fb3d8;font-size:13px}p{margin:8px 0;white-space:normal}small{color:#566;font-size:11px}</style><h1>RAPID55 · Geri bildirimler (${list.length})</h1>${rows || '<p>Henüz yok.</p>'}`, { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } });
+    }
     return env.ASSETS.fetch(req);
   },
 };
@@ -48,6 +73,20 @@ export class Room extends DurableObject {
     try {
       const url = new URL(req.url);
       if (url.pathname === '/sync') return await this.sync(req, url);
+      if (url.pathname === '/fb-add') {
+        const it = await req.json();
+        // IP başına saatte en fazla 12
+        this.fbRate = this.fbRate || new Map(); const now = Date.now(), q = (this.fbRate.get(it.ip) || []).filter(x => now - x < 3600e3);
+        if (q.length >= 12) return new Response('çok sık', { status: 429 });
+        q.push(now); this.fbRate.set(it.ip, q);
+        delete it.ip;
+        await this.ctx.storage.put('fb:' + String(now).padStart(15, '0') + ':' + Math.random().toString(36).slice(2, 6), it);
+        return new Response('ok');
+      }
+      if (url.pathname === '/fb-list') {
+        const m = await this.ctx.storage.list({ prefix: 'fb:', reverse: true, limit: 500 });
+        return new Response(JSON.stringify([...m.values()]), { headers: { 'content-type': 'application/json' } });
+      }
       return this.handle(req);
     } catch (e) { console.error('DO hata', e && e.stack || e); throw e; }
   }
