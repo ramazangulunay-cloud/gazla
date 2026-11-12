@@ -4520,12 +4520,16 @@ function buildModelCar(def, ctx, M, ML) {
     cache.set(key, m);
     return m;
   };
+  const INSIDE = /^(int|black|metal|m_)/;
   const dress = (obj, isBody) => obj.traverse((o) => {
     if (!o.isMesh) return;
+    const srcName = o.material.name || '';
     o.material = pick(o.material, isBody);
     o.userData.shared = true;
     const gl = o.material === mats.glass;
     o.castShadow = !gl; o.receiveShadow = !gl;
+    // kabin içi parçalar: yakından bakınca gölge lekesi (acne) yapmasın
+    if (isBody && MD.eye && !MD.hood && INSIDE.test(srcName)) { o.receiveShadow = false; o.castShadow = false; }
     if (gl) o.renderOrder = 3;
   });
   const lod = (hi, lo, far) => {
@@ -7540,7 +7544,12 @@ function frame(now) {
   for (const v of views) {
     // iç kamerada kendi sürücünü gizle (bölünmüş ekranda diğer görünümlerde görünür kalır)
     if (MODE === 'race' && RACE) for (const R2 of RACE.racers) if (R2.vis && R2.vis.driver) R2.vis.driver.visible = !(v.racer === R2 && R2.camMode === 3);
+    // iç kamerada kendi camların neredeyse şeffaf (cam filmi ve yansıma yolu kapatmasın)
+    const gm = MODE === 'race' && v.racer && v.racer.camMode === 3 && v.racer.vis && v.racer.vis.eye && v.racer.vis.mats ? v.racer.vis.mats.glass : null;
+    let go = 0, ge = 0, gc = 0;
+    if (gm) { go = gm.opacity; ge = gm.envMapIntensity; gc = gm.clearcoat || 0; gm.opacity = Math.min(go, 0.12); gm.envMapIntensity = 0.25; if (gm.clearcoat !== undefined) gm.clearcoat = 0.15; }
     v.render();
+    if (gm) { gm.opacity = go; gm.envMapIntensity = ge; if (gm.clearcoat !== undefined) gm.clearcoat = gc; }
   }
   drawOverlay(views);
   NET.tick(dt);
