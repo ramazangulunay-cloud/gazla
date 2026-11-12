@@ -370,6 +370,219 @@ body.touch.racing .hud .gear{width:24px;height:24px}body.touch.racing .hud .gear
 .hud .gear{border-color:var(--neonb);box-shadow:0 0 12px rgba(24,214,255,.55),inset 0 0 8px rgba(24,214,255,.25);background:rgba(3,10,22,.85)}
 .hud .gear b{text-shadow:0 0 8px rgba(24,214,255,.9)}
 .hud .gauge.red .gear{border-color:#ff3a28;color:#ff3a28;box-shadow:0 0 14px rgba(255,58,40,.7)}
+/* ════════════════════════════════════════════════════════════════════════
+   RAPID55 · 2026 ARAYÜZÜ — Forza Horizon (karo menü, sade HUD, performans sınıfı),
+   Gran Turismo 7 (canlı sıralama, tur farkı, vites ışıkları), NFS Heat/Unbound
+   (kalın eğik yazı, sekmeli garaj), Mario Kart (renkli büyük sıra, SON TUR afişi)
+   ════════════════════════════════════════════════════════════════════════ */
+:root{--acc:#ff4b2b;--acc2:#ffc531;--acc3:#ff8a1f;--blue:#38c6ff;--neon:#ff4b2b;--neonb:#38c6ff;--green:#3ee08f;--purple:#b77bff;
+  --bg:#07080b;--glass:rgba(14,16,22,.66);--glass2:rgba(20,23,31,.82);--line:rgba(255,255,255,.09);--line2:rgba(255,255,255,.18);
+  --panel:rgba(12,14,19,.78);--panel2:rgba(18,21,28,.9);--r:10px}
+.screen:not(.hud)::before{display:none}
+.panel{background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,0) 40%),var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:0 24px 60px rgba(0,0,0,.45);backdrop-filter:blur(22px) saturate(1.3);-webkit-backdrop-filter:blur(22px) saturate(1.3)}
+.cut{clip-path:none}
+h2{font-style:italic;font-weight:700;letter-spacing:.01em;font-size:28px}
+h2::before{width:6px;height:26px;background:linear-gradient(180deg,var(--acc),var(--acc3));transform:skewX(-16deg);box-shadow:none}
+.lbl{color:rgba(255,255,255,.5);letter-spacing:.2em}
+/* logo */
+.logo .r{background:none;-webkit-text-fill-color:#fff;color:#fff;filter:none;text-shadow:0 6px 30px rgba(0,0,0,.5)}
+.logo .n{background:linear-gradient(180deg,#ff6a3d,#ff3b1f);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;filter:drop-shadow(0 4px 18px rgba(255,75,43,.45))}
+.logo .n::after{background:linear-gradient(90deg,var(--acc),var(--acc3));box-shadow:none}
+.sub{color:rgba(255,255,255,.55)}.sub b{color:#fff;text-shadow:none}
+/* düğmeler */
+.btn{border-radius:8px;clip-path:none;background:rgba(255,255,255,.07);border:1px solid var(--line2);box-shadow:none;letter-spacing:.1em;transition:background .15s,border-color .15s,transform .12s}
+.btn:hover,.btn:focus-visible{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.4);box-shadow:none;transform:translateY(-1px)}
+.btn.y,.btn.p{background:linear-gradient(100deg,var(--acc),var(--acc3));border-color:transparent;color:#fff;box-shadow:0 8px 24px rgba(255,75,43,.35)}
+.btn.y:hover,.btn.p:hover,.btn.y:focus-visible{background:linear-gradient(100deg,#ff6040,#ffa03a);border-color:transparent}
+.btn.g{background:linear-gradient(100deg,#21c46f,#3ee08f);color:#03140a;border-color:transparent}
+.chips button{border-radius:999px;padding:7px 14px;background:rgba(255,255,255,.06);border:1px solid transparent;color:#d9dce2;transition:background .12s,border-color .12s}
+.chips button:hover{background:rgba(255,255,255,.12)}
+.chips button.on{background:rgba(255,75,43,.16);border-color:var(--acc)!important;color:#fff;box-shadow:none!important}
+.sw button{border-radius:50%;transform:none;width:30px;height:30px;border:2px solid rgba(0,0,0,.6);box-shadow:0 0 0 1px rgba(255,255,255,.2);transition:transform .12s}
+.sw button:hover{transform:scale(1.12)}
+.sw button.on{box-shadow:0 0 0 2px #0b0c10,0 0 0 4px #fff!important;border-color:transparent!important}
+.tabs button{border-radius:8px 8px 0 0}
+.tabs button.on{border-bottom-color:var(--acc);background:rgba(255,75,43,.12);text-shadow:none}
+input[type=text]{border-radius:8px;background:rgba(0,0,0,.35);border-color:var(--line2)}
+input[type=text]:focus{border-color:var(--acc)}
+/* ── ANA MENÜ: Forza Horizon karoları ── */
+#menu{background:linear-gradient(90deg,rgba(6,7,10,.9) 0,rgba(6,7,10,.6) 32%,rgba(6,7,10,0) 62%),linear-gradient(0deg,rgba(6,7,10,.75),transparent 34%)}
+#menu .mlist:not(.mrow){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:min(600px,94vw)}
+#menu .mi{transform:none;margin:0;display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-start;min-height:clamp(96px,13vh,128px);padding:14px 16px;border-radius:var(--r);
+  background:linear-gradient(160deg,rgba(255,255,255,.1),rgba(255,255,255,.02) 55%),rgba(14,16,22,.7);border:1px solid rgba(255,255,255,.1);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:0 10px 26px rgba(0,0,0,.35);overflow:hidden;transition:transform .18s cubic-bezier(.2,.9,.3,1.2),border-color .15s,box-shadow .18s,background .18s}
+#menu .mi>*{transform:none}
+#menu .mi .ix{position:absolute;top:12px;right:14px;font-size:13px;color:rgba(255,255,255,.28)}
+#menu .mi .ic{position:absolute;top:14px;left:16px;width:30px;height:30px;color:var(--acc);transition:transform .2s}
+#menu .mi .ic svg{width:100%;height:100%}
+#menu .mi .tt{font-size:clamp(18px,1.8vw,23px);text-shadow:none!important;color:#fff}
+#menu .mi .tt small{color:rgba(255,255,255,.55);font-size:12px}
+#menu .mi .ch{display:none}
+#menu .mi::after{content:'';position:absolute;left:0;bottom:0;height:3px;width:0;background:linear-gradient(90deg,var(--acc),var(--acc3));transition:width .25s}
+#menu .mi:hover,#menu .mi:focus-visible,#menu .mi.pad-focus{transform:translateY(-4px) scale(1.015);border-color:rgba(255,255,255,.35);background:linear-gradient(160deg,rgba(255,255,255,.16),rgba(255,255,255,.03) 55%),rgba(18,20,27,.82);box-shadow:0 18px 36px rgba(0,0,0,.5);padding-left:16px}
+#menu .mi:hover::after,#menu .mi:focus-visible::after,#menu .mi.pad-focus::after{width:100%}
+#menu .mi:hover .ic,#menu .mi:focus-visible .ic{transform:scale(1.12) rotate(-6deg)}
+#menu .mi.prime{grid-column:1/-1;min-height:clamp(120px,17vh,160px);background:radial-gradient(ellipse at 85% 0%,rgba(255,255,255,.35),transparent 55%),linear-gradient(115deg,#ff3d1f,#ff6b25 55%,#ffad33);border-color:transparent;box-shadow:0 14px 40px rgba(255,75,43,.4)}
+#menu .mi.prime .ic{color:#fff;width:40px;height:40px}
+#menu .mi.prime .tt{color:#fff;font-size:clamp(26px,3vw,38px)}
+#menu .mi.prime .tt small,#menu .mi.prime .ix{color:rgba(255,255,255,.85)}
+#menu .mi.prime:hover,#menu .mi.prime:focus-visible{background:radial-gradient(ellipse at 85% 0%,rgba(255,255,255,.45),transparent 55%),linear-gradient(115deg,#ff4a2a,#ff7a33 55%,#ffbc45);border-color:transparent;box-shadow:0 20px 50px rgba(255,75,43,.55)}
+#menu .mi.prime::after{background:#fff}
+#menu .mrow{display:flex;gap:8px;margin-top:10px}
+#menu .ms{border-radius:8px;background:rgba(14,16,22,.66);border:1px solid var(--line);color:rgba(255,255,255,.7);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+#menu .ms:hover,#menu .ms:focus-visible{color:#fff;border-color:rgba(255,255,255,.35);background:rgba(255,255,255,.12)}
+.who{border-radius:999px;clip-path:none;background:rgba(14,16,22,.7);border:1px solid var(--line);padding:5px 6px 5px 16px;backdrop-filter:blur(12px)}
+.who input:focus{box-shadow:none!important}
+.trackcard b{font-size:18px}
+kbd{border-radius:5px;clip-path:none;background:rgba(255,255,255,.1)}
+#padbtn{border-radius:var(--r);clip-path:none;background:rgba(14,16,22,.72);backdrop-filter:blur(12px)}
+/* ── GARAJ: sekmeli kategori + sınıf rozeti ── */
+#garage .side{gap:12px;border-radius:14px}
+.gcat{display:flex;gap:4px;flex-wrap:wrap;padding:4px;background:rgba(0,0,0,.28);border-radius:10px}
+.gcat button{flex:1 1 auto;padding:8px 10px;border-radius:7px;font:700 11.5px var(--disp);letter-spacing:.12em;color:rgba(255,255,255,.55);transition:background .15s,color .15s}
+.gcat button:hover{color:#fff;background:rgba(255,255,255,.07)}
+.gcat button.on{background:linear-gradient(100deg,var(--acc),var(--acc3));color:#fff;box-shadow:0 4px 14px rgba(255,75,43,.35)}
+#garage .side [data-cat].catoff{display:none!important}
+.pclass{display:inline-flex;align-items:stretch;border-radius:6px;overflow:hidden;font:800 13px/1 var(--num);letter-spacing:.04em;box-shadow:0 2px 10px rgba(0,0,0,.35);font-style:normal}
+.pclass b{padding:5px 8px;color:#fff;background:var(--pc,#888)}
+.pclass span{padding:5px 8px;background:#fff;color:#111}
+.pclass.cD{--pc:#3aa7e0}.pclass.cC{--pc:#e6b400}.pclass.cB{--pc:#ff7a1a}.pclass.cA{--pc:#e8283c}.pclass.cS1{--pc:#9b4dff}.pclass.cS2{--pc:#1f5fff}
+.vehs{gap:6px}.veh{border-radius:8px;clip-path:none;border:1px solid var(--line)}
+.veh.on{border-color:var(--acc);background:rgba(255,75,43,.12);box-shadow:none}
+.stats{grid-template-columns:auto 1fr 30px;gap:8px 12px}
+.stats b{font:700 13px var(--num);color:#fff;text-align:right}
+.stats i{height:7px;border-radius:2px;background:rgba(255,255,255,.08);position:relative}
+.stats i::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 calc(10% - 2px),rgba(7,8,11,.9) calc(10% - 2px) 10%)}
+.stats i u{background:linear-gradient(90deg,var(--acc),var(--acc3) 70%,var(--acc2))}
+#carNav button{border-radius:50%;transform:none;width:52px;height:52px;background:rgba(14,16,22,.7);border:1px solid rgba(255,255,255,.2);box-shadow:none;backdrop-filter:blur(10px);font-size:30px}
+#carNav button:hover{background:var(--acc);border-color:transparent;box-shadow:0 8px 24px rgba(255,75,43,.45)}
+#carNav .cn{background:none;min-width:260px}
+#carNav .cn .pclass{margin-bottom:6px;font-size:14px}
+#carNav .cn b{background:none;-webkit-text-fill-color:#fff;color:#fff;filter:drop-shadow(0 4px 20px rgba(0,0,0,.6));font-size:clamp(30px,3.4vw,46px)}
+#carNav .cn span{color:rgba(255,255,255,.7);letter-spacing:.2em}
+#carNav .cn i u{width:18px;height:4px;border-radius:2px;transform:none}
+#carNav .cn i u.on{background:var(--acc);box-shadow:none;width:28px}
+/* ── sonuçlar: kürsü ── */
+.podium{display:grid;grid-template-columns:1fr 1.15fr 1fr;align-items:end;gap:8px}
+.podium:empty{display:none}
+.pd{position:relative;display:grid;justify-items:center;gap:3px;padding:16px 10px 12px;border-radius:12px 12px 4px 4px;background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.02));border:1px solid var(--line);text-align:center;animation:pdIn .5s cubic-bezier(.2,.9,.3,1.2) both}
+.pd.p1{padding-top:26px;background:linear-gradient(180deg,rgba(255,197,49,.3),rgba(255,197,49,.04));border-color:rgba(255,197,49,.55);animation-delay:.25s}
+.pd.p2{background:linear-gradient(180deg,rgba(210,220,232,.22),rgba(210,220,232,.03));animation-delay:.1s}
+.pd.p3{background:linear-gradient(180deg,rgba(214,138,75,.25),rgba(214,138,75,.03));animation-delay:.4s}
+.pd.me{outline:2px solid var(--acc);outline-offset:2px}
+.pd i{font:800 italic 40px/1 var(--num);color:#fff}.pd.p1 i{font-size:56px;color:var(--acc2);text-shadow:0 0 24px rgba(255,197,49,.6)}.pd.p2 i{color:#dfe6ee}.pd.p3 i{color:#e09a5c}
+.pd u{width:36px;height:5px;border-radius:3px}
+.pd b{font:700 italic 16px var(--disp);text-transform:uppercase;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pd span{font-size:12px;color:rgba(255,255,255,.55)}
+.pd em{font:700 15px var(--num);font-style:normal;color:#fff}
+@keyframes pdIn{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+table.res tr.me{background:rgba(255,75,43,.14)}
+table.res td:first-child{font-style:italic}
+/* ── geri sayım: F1 tarzı start ışıkları ── */
+#lights{position:fixed;left:50%;top:clamp(14px,6vh,60px);transform:translateX(-50%);z-index:16;display:flex;gap:clamp(8px,1.2vw,16px);padding:12px 16px;border-radius:14px;background:rgba(8,9,12,.82);border:1px solid rgba(255,255,255,.12);box-shadow:0 12px 40px rgba(0,0,0,.5);pointer-events:none}
+#lights i{width:clamp(28px,3.4vw,46px);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 35% 30%,#3a1010,#170606 70%);border:2px solid #000;box-shadow:inset 0 2px 6px rgba(0,0,0,.8);transition:background .08s,box-shadow .08s}
+#lights i.on{background:radial-gradient(circle at 35% 30%,#ffb4a4,#ff2a12 45%,#a00d00 80%);box-shadow:0 0 22px #ff2a12,0 0 50px rgba(255,42,18,.5)}
+#lights.go i.on{background:radial-gradient(circle at 35% 30%,#d6ffe6,#22e06a 45%,#08872f 80%);box-shadow:0 0 22px #22e06a,0 0 50px rgba(34,224,106,.5)}
+#count{font-size:clamp(70px,12vw,150px);color:#fff;text-shadow:0 8px 40px rgba(0,0,0,.6)}
+#count.go{color:var(--green);text-shadow:0 0 40px rgba(62,224,143,.6)}
+/* ── HUD ── */
+.hud .cap{color:rgba(255,255,255,.55)!important;text-shadow:none!important;letter-spacing:.24em;font-size:9.5px}
+.hud .tl{gap:8px;align-items:flex-start}
+.hud .posbox{background:none;border:0;box-shadow:none;clip-path:none;padding:0 6px 0 2px;display:flex;flex-direction:column;align-items:flex-start}
+.hud .pos{font-size:clamp(54px,6.6vw,92px);line-height:.82}
+.hud .pos b{background:linear-gradient(180deg,#fff 0,#fff 50%,#d9dde4 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 3px 10px rgba(0,0,0,.6))}
+.hud .posbox.r1 .pos b{background:linear-gradient(180deg,#fff3b0,#ffc531 55%,#ff9f1a);-webkit-background-clip:text;background-clip:text}
+.hud .posbox.r2 .pos b{background:linear-gradient(180deg,#fff,#cfd8e3 55%,#9aa6b5);-webkit-background-clip:text;background-clip:text}
+.hud .posbox.r3 .pos b{background:linear-gradient(180deg,#ffd9b8,#e0915a 55%,#a85a2a);-webkit-background-clip:text;background-clip:text}
+.hud .pos i{color:rgba(255,255,255,.75);text-shadow:0 2px 8px rgba(0,0,0,.6)}
+.hud .posbox .cap{margin-top:4px}
+.hud .posbox.pop .pos{animation:posPop .45s cubic-bezier(.2,1.6,.4,1)}
+@keyframes posPop{0%{transform:scale(1.45)}100%{transform:none}}
+.hud .dpos{right:-8px;top:2px;font-size:16px}
+.hud .lapbox{display:block;background:var(--glass);border-radius:10px;clip-path:none;padding:9px 14px 10px;box-shadow:none;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);margin-top:6px}
+.hud .lapn{display:flex;align-items:baseline;gap:2px;margin-top:2px}
+.hud .lapbox b{font:800 italic 30px/1 var(--num)}
+.hud .lapbox i{position:static;margin:0;font:700 italic 17px var(--num);color:rgba(255,255,255,.55)}
+.hud .lapbar{display:flex;gap:3px;margin-top:6px}
+.hud .lapbar u{width:16px;height:4px;border-radius:2px;background:rgba(255,255,255,.18)}
+.hud .lapbar u.done{background:#fff}.hud .lapbar u.cur{background:var(--acc);box-shadow:0 0 8px rgba(255,75,43,.7)}
+.hud .board{position:absolute;left:clamp(10px,1.6vw,22px);top:calc(clamp(10px,1.8vh,20px) + clamp(100px,11vw,140px));display:flex;flex-direction:column;gap:2px;width:clamp(170px,15vw,220px)}
+.hud .board div{display:grid;grid-template-columns:22px 4px 1fr auto;align-items:center;gap:7px;height:24px;padding:0 9px 0 6px;background:rgba(10,12,17,.58);border-radius:5px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);font-size:12px;transition:background .2s}
+.hud .board div.brk{margin-top:6px}
+.hud .board i{font:800 italic 14px var(--num);text-align:center;color:rgba(255,255,255,.75)}
+.hud .board u{height:14px;border-radius:2px}
+.hud .board span{font:600 12px var(--disp);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#e9ebef}
+.hud .board em{font:700 11.5px var(--num);font-style:normal;color:rgba(255,255,255,.55);font-variant-numeric:tabular-nums}
+.hud .board div.me{background:linear-gradient(90deg,rgba(255,75,43,.85),rgba(255,138,31,.75))}
+.hud .board div.me i,.hud .board div.me span,.hud .board div.me em{color:#fff}
+.hud .board div.mate{background:rgba(56,198,255,.32)}
+.hud .trt{position:absolute;right:clamp(10px,1.6vw,22px);top:clamp(10px,1.8vh,20px);display:grid;gap:1px;min-width:170px;padding:9px 14px;background:var(--glass);border:1px solid var(--line);border-radius:10px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.hud .trt>div:not(.dl){display:flex;justify-content:space-between;align-items:baseline;gap:16px}
+.hud .trt b{font:700 17px var(--num);font-variant-numeric:tabular-nums}
+.hud .trt .bl{color:var(--purple)}
+.hud .dl{font:800 italic 20px var(--num);text-align:right;height:0;overflow:hidden;transition:height .2s}
+.hud .dl.fast,.hud .dl.slow{height:24px}
+.hud .dl.fast{color:var(--green)}.hud .dl.slow{color:#ff5a4a}
+.hud .nm{display:none}
+.hud.small .nm{display:block;top:auto;bottom:clamp(6px,1.2vh,14px);left:50%;transform:translateX(-50%)}
+.hud.small .board,.hud.narrow .board{display:none}
+.hud.narrow .trt>div:nth-child(2),.hud.narrow .trt>div:nth-child(3){display:none}
+.hud.small .trt{min-width:120px;padding:6px 10px}.hud.small .trt b{font-size:14px}
+.hud.small .pos{font-size:clamp(38px,4.4vw,56px)}.hud.small .lapbox b{font-size:20px}
+.hud .mmw{perspective:none}
+.hud .mm{transform:none;border-radius:14px;border:1px solid rgba(255,255,255,.14);background:radial-gradient(circle at 50% 66%,rgba(30,36,48,.55),rgba(8,10,14,.82));box-shadow:0 10px 30px rgba(0,0,0,.4);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.hud .msg{top:22%}
+.hud .msg span{--c:var(--acc);--bg:rgba(10,12,17,.82);font-style:italic;border-radius:8px;clip-path:none;background:linear-gradient(90deg,var(--c) 0 6px,var(--bg) 6px);padding:9px 26px 9px 24px;box-shadow:0 10px 30px rgba(0,0,0,.4);backdrop-filter:blur(10px)}
+.hud .msg.gold span{--c:var(--acc2)}.hud .msg.blue span{--c:var(--blue)}.hud .msg.purple span{--c:var(--purple)}
+.hud .banner{position:absolute;left:0;right:0;top:36%;display:flex;justify-content:center;pointer-events:none;opacity:0}
+.hud .banner span{font:900 italic clamp(44px,8vw,110px)/1 var(--disp);letter-spacing:.02em;color:#fff;padding:.06em .5em .1em;background:linear-gradient(100deg,#e8201a,#ff5a1f);transform:skewX(-12deg);box-shadow:0 20px 60px rgba(232,32,26,.5);text-shadow:0 4px 0 rgba(0,0,0,.25)}
+.hud .banner.show{animation:banner 2.2s cubic-bezier(.2,.9,.3,1) forwards}
+@keyframes banner{0%{opacity:0;transform:translateX(-60%) scaleY(.6)}12%{opacity:1;transform:none}82%{opacity:1;transform:none}100%{opacity:0;transform:translateX(40%)}}
+.hud .items{top:auto;bottom:clamp(14px,2.6vh,30px)}
+.hud .slot{border-radius:12px;clip-path:none;background:rgba(10,12,17,.72);border:2px solid rgba(255,255,255,.25);backdrop-filter:blur(10px)}
+.hud .slot.s0{border-color:var(--acc2);box-shadow:0 0 18px rgba(255,197,49,.35)}
+.hud .items .key{border-radius:4px;clip-path:none}
+.hud .wet{border-radius:999px;clip-path:none;bottom:auto;top:clamp(60px,9vh,90px)}
+/* hız göstergesi */
+.hud .gauge::before{inset:7%;background:radial-gradient(circle,rgba(10,12,17,.85) 0,rgba(10,12,17,.7) 60%,rgba(10,12,17,0) 71%)}
+.hud .g-trk{stroke:rgba(255,255,255,.1)}
+.hud .g-tick{stroke:rgba(255,255,255,.45)}
+.hud .g-red{stroke:rgba(255,58,40,.55)}
+.hud .g-rpm{stroke:#fff;filter:drop-shadow(0 0 4px rgba(255,255,255,.5))}
+.hud .gauge.red .g-rpm{stroke:#ff3a28;filter:drop-shadow(0 0 8px rgba(255,58,40,.8))}
+.hud .g-nit{stroke:var(--blue);filter:drop-shadow(0 0 5px rgba(56,198,255,.8))}
+.hud .gauge.non .g-nit{stroke:#bff0ff}
+.hud .spd b{text-shadow:0 3px 14px rgba(0,0,0,.6);font-size:clamp(46px,4.8vw,70px)}
+.hud .spd small{color:rgba(255,255,255,.55)}
+.hud .gear{border-radius:8px;width:38px;height:38px;border:1px solid rgba(255,255,255,.3);background:rgba(10,12,17,.85);box-shadow:none}
+.hud .gear b{text-shadow:none;font-size:24px}
+.hud .gauge.red .gear{border-color:#ff3a28;color:#ff3a28;box-shadow:0 0 12px rgba(255,58,40,.6)}
+.hud .ntl{color:var(--blue)}
+.hud .leds{position:absolute;left:50%;top:-14px;transform:translateX(-50%);display:flex;gap:4px;padding:5px 7px;border-radius:999px;background:rgba(10,12,17,.75)}
+.hud .leds i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.12)}
+.hud .leds i.g{background:#2fe07a;box-shadow:0 0 8px #2fe07a}.hud .leds i.y{background:#ffd12e;box-shadow:0 0 8px #ffd12e}.hud .leds i.r{background:#ff3a28;box-shadow:0 0 8px #ff3a28}
+.hud .leds i.sh{background:#38c6ff;box-shadow:0 0 10px #38c6ff}
+.hud.small .leds{display:none}
+body.touch.racing .hud .board,body.touch.racing .hud .leds{display:none}
+body.touch.racing .hud .trt{top:auto;bottom:8px;right:auto;left:50%;transform:translateX(-50%);min-width:0}
+body.touch.racing .hud .trt>div:nth-child(n+2){display:none}
+/* genel ekranlar */
+.center{background:radial-gradient(ellipse at 50% 40%,rgba(6,7,10,.35),rgba(6,7,10,.75))}
+.sc{border-radius:14px}
+.peer{border-radius:8px;border-left:3px solid var(--line2)}
+.set{border-bottom-color:var(--line)}
+#toast{border-radius:10px;border-left:4px solid var(--acc)}
+#cineTitle b{text-shadow:0 6px 30px rgba(0,0,0,.6)}#cineTitle span{color:var(--acc)}
+#fbBtn{color:#fff;border-color:rgba(255,255,255,.25);background:rgba(14,16,22,.75)}
+#loading{background:radial-gradient(ellipse at 30% 30%,#1a1c22,#060709 70%)}
+#loading .bar{border-radius:3px}#loading .bar i{background:linear-gradient(90deg,var(--acc),var(--acc3));box-shadow:0 0 14px rgba(255,75,43,.6)}
+#loading .tip{border-left-color:var(--acc)}#loading .tip b{color:var(--acc)}
+#touch .tknob{background:rgba(255,255,255,.25);border-color:#fff;box-shadow:none}
+#touch .tsteer .ttrack{border-color:rgba(255,255,255,.25);box-shadow:none}
+#touch [data-t=gas]{border-color:rgba(62,224,143,.7);color:#bff7d8}
+#touch .tb.on{background:rgba(255,75,43,.5);border-color:var(--acc);box-shadow:0 0 14px rgba(255,75,43,.5)}
+#touch [data-t=gas].on{background:rgba(62,224,143,.45);border-color:var(--green);box-shadow:0 0 16px rgba(62,224,143,.5)}
+@media (max-width:760px){#menu .mlist:not(.mrow){grid-template-columns:1fr 1fr}#menu .mi{min-height:84px}#menu .mi .tt small{display:none}.gcat button{padding:7px 6px;font-size:10.5px}}
 </style>
 </head>
 <body>
@@ -377,6 +590,7 @@ body.touch.racing .hud .gear{width:24px;height:24px}body.touch.racing .hud .gear
 <canvas id="fx2d"></canvas>
 <div id="huds"></div>
 <div id="count" class="hidden"></div>
+<div id="lights" class="hidden"><i></i><i></i><i></i><i></i><i></i></div>
 <div id="toast"></div>
 <div id="padhint" class="hidden"></div>
 
@@ -416,11 +630,11 @@ body.touch.racing .hud .gear{width:24px;height:24px}body.touch.racing .hud .gear
   </div>
   <div>
     <div class="mlist">
-      <button class="mi prime hidden" id="qGo"><span class="ix">01</span><span class="tt" id="qGoTxt">HEMEN OYNA<small>Açık bir odaya katıl — 12 kişiye kadar</small></span><span class="ch"></span></button>
-      <button class="mi" data-go="online"><span class="ix">02</span><span class="tt">ARKADAŞLARLA<small>Özel oda kur, linki gönder</small></span><span class="ch"></span></button>
-      <button class="mi" data-go="solo"><span class="ix">03</span><span class="tt">TEK OYUNCU<small>11 rakibe karşı yarış ya da tur rekoru</small></span><span class="ch"></span></button>
-      <button class="mi" data-go="local"><span class="ix">04</span><span class="tt">AYNI EKRAN<small>2–4 kişi bölünmüş ekran</small></span><span class="ch"></span></button>
-      <button class="mi" data-go="garage"><span class="ix">05</span><span class="tt">GARAJ<small>Araç, renk, jant, aksesuar</small></span><span class="ch"></span></button>
+      <button class="mi prime hidden" id="qGo"><span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z" fill="currentColor"/></svg></span><span class="ix">01</span><span class="tt" id="qGoTxt">HEMEN OYNA<small>Açık bir odaya katıl — 12 kişiye kadar</small></span><span class="ch"></span></button>
+      <button class="mi" data-go="online"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.2c3 .2 5.5 2.6 5.5 5.8"/></svg></span><span class="ix">02</span><span class="tt">ARKADAŞLARLA<small>Özel oda kur, linki gönder</small></span><span class="ch"></span></button>
+      <button class="mi" data-go="solo"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 21V4"/><path d="M5 4h13l-2.5 4L18 12H5" fill="currentColor" fill-opacity=".25"/></svg></span><span class="ix">03</span><span class="tt">TEK OYUNCU<small>11 rakibe karşı yarış ya da tur rekoru</small></span><span class="ch"></span></button>
+      <button class="mi" data-go="local"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16M3 12h18"/></svg></span><span class="ix">04</span><span class="tt">AYNI EKRAN<small>2–4 kişi bölünmüş ekran</small></span><span class="ch"></span></button>
+      <button class="mi" data-go="garage"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10l9-6 9 6v10H3z"/><path d="M7 20v-6h10v6"/><path d="M7 17h10"/></svg></span><span class="ix">05</span><span class="tt">GARAJ<small>Araç, renk, jant, aksesuar</small></span><span class="ch"></span></button>
     </div>
     <div class="mrow mlist">
       <button class="ms" data-go="settings">AYARLAR</button>
@@ -449,22 +663,23 @@ body.touch.racing .hud .gear{width:24px;height:24px}body.touch.racing .hud .gear
 </button>
 
 <!-- GARAJ -->
-<div id="garage" class="screen hidden"><div id="carNav"><button id="cnPrev" aria-label="Önceki araç">‹</button><div class="cn"><b id="cnName"></b><span id="cnSub"></span><i id="cnDots"></i></div><button id="cnNext" aria-label="Sonraki araç">›</button></div><div class="side panel cut">
-  <div style="display:flex;align-items:center;justify-content:space-between"><h2>GARAJ</h2><span id="gSlotName" class="hint"></span></div>
-  <div id="gCountBox"><div class="lbl">Oyuncu sayısı</div><div class="chips" id="gCount"></div></div>
-  <div class="tabs" id="gTabs"><button data-slot="0" class="on">1. OYUNCU</button><button data-slot="1">2. OYUNCU</button><button data-slot="2">3. OYUNCU</button><button data-slot="3">4. OYUNCU</button></div>
-  <div id="gBotsBox"><div class="lbl">Rakip sayısı</div><div class="chips" id="gBots"></div></div>
-  <div class="vehbox"><div class="lbl">Araç</div><div class="vehs" id="gVehs"></div></div>
-  <div class="vdesc" id="gDesc"></div>
-  <div class="stats" id="gStats"></div>
-  <div><div class="lbl" id="gPaintLbl">Renk</div><div class="sw" id="gPaint"></div></div>
-  <div id="gRimBox"><div class="lbl">Jant</div><div class="chips" id="gRim"></div></div>
-  <div id="gRimStyleBox"><div class="lbl">Jant modeli</div><div class="chips" id="gRimStyle"></div></div>
-  <div id="gTintBox"><div class="lbl">Cam filmi</div><div class="chips" id="gTint"></div></div>
-  <div><div class="lbl">Alt neon</div><div class="chips" id="gNeon"></div></div>
-  <div><div class="lbl">Korna <span class="hint">(yolda uzun bas: melodi)</span></div><div class="chips" id="gHorn"></div></div>
-  <div><div class="lbl">Aksesuar</div><div class="chips" id="gAcc"></div></div>
-  <div id="gStickBox"><div class="lbl">Arka cam yazısı</div><div class="chips" id="gStick"></div>
+<div id="garage" class="screen hidden"><div id="carNav"><button id="cnPrev" aria-label="Önceki araç">‹</button><div class="cn"><em id="cnClass" class="pclass"></em><b id="cnName"></b><span id="cnSub"></span><i id="cnDots"></i></div><button id="cnNext" aria-label="Sonraki araç">›</button></div><div class="side panel cut">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><h2>GARAJ</h2><span id="gClass" class="pclass"></span><span id="gSlotName" class="hint" style="margin-left:auto"></span></div>
+  <div class="gcat" id="gCat"><button data-cat="arac" class="on">ARAÇ</button><button data-cat="boya">BOYA</button><button data-cat="jant">JANT</button><button data-cat="cam">CAM</button><button data-cat="neon">NEON</button><button data-cat="ses">KORNA</button><button data-cat="ekstra">EKSTRA</button></div>
+  <div data-cat="arac" id="gCountBox"><div class="lbl">Oyuncu sayısı</div><div class="chips" id="gCount"></div></div>
+  <div data-cat="arac" class="tabs" id="gTabs"><button data-slot="0" class="on">1. OYUNCU</button><button data-slot="1">2. OYUNCU</button><button data-slot="2">3. OYUNCU</button><button data-slot="3">4. OYUNCU</button></div>
+  <div data-cat="arac" id="gBotsBox"><div class="lbl">Rakip sayısı</div><div class="chips" id="gBots"></div></div>
+  <div data-cat="arac" class="vehbox"><div class="lbl">Araç</div><div class="vehs" id="gVehs"></div></div>
+  <div data-cat="arac" class="vdesc" id="gDesc"></div>
+  <div data-cat="arac" class="stats" id="gStats"></div>
+  <div data-cat="boya"><div class="lbl" id="gPaintLbl">Renk</div><div class="sw" id="gPaint"></div></div>
+  <div data-cat="jant" id="gRimBox"><div class="lbl">Jant</div><div class="chips" id="gRim"></div></div>
+  <div data-cat="jant" id="gRimStyleBox"><div class="lbl">Jant modeli</div><div class="chips" id="gRimStyle"></div></div>
+  <div data-cat="cam" id="gTintBox"><div class="lbl">Cam filmi</div><div class="chips" id="gTint"></div></div>
+  <div data-cat="neon"><div class="lbl">Alt neon</div><div class="chips" id="gNeon"></div></div>
+  <div data-cat="ses"><div class="lbl">Korna <span class="hint">(yolda uzun bas: melodi)</span></div><div class="chips" id="gHorn"></div></div>
+  <div data-cat="ekstra"><div class="lbl">Aksesuar</div><div class="chips" id="gAcc"></div></div>
+  <div data-cat="cam" id="gStickBox"><div class="lbl">Arka cam yazısı</div><div class="chips" id="gStick"></div>
     <input type="text" id="gStickTxt" maxlength="18" placeholder="Kendi yazın (en çok 18 harf)" style="margin-top:8px"></div>
   <div class="row" style="margin-top:auto;padding-top:6px">
     <button class="btn" id="gBack">GERİ</button>
@@ -563,6 +778,7 @@ body.touch.racing .hud .gear{width:24px;height:24px}body.touch.racing .hud .gear
 <!-- SONUÇ -->
 <div id="results" class="screen center hidden"><div class="sc panel cut" style="width:min(680px,94vw)">
   <h2 id="rTitle">YARIŞ BİTTİ</h2>
+  <div class="podium" id="rPod"></div>
   <table class="res"><thead><tr><th>#</th><th>SÜRÜCÜ</th><th>ARAÇ</th><th>SÜRE</th><th>EN İYİ TUR</th></tr></thead><tbody id="rBody"></tbody></table>
   <div class="row">
     <button class="btn y" id="rAgain" style="flex:1">RÖVANŞ</button>
@@ -6595,9 +6811,12 @@ function makeHud(view, R, nRacers, laps) {
   Object.assign(el.style, { left: r.x * 100 + '%', top: r.y * 100 + '%', width: r.w * 100 + '%', height: r.h * 100 + '%' });
   const key = R.slot === 1 ? 'L' : R.slot === 0 ? 'E' : '●';
   el.innerHTML = `<div class="tl">
-      <div class="posbox"><span class="cap">POZ</span><div class="pos"><b class="p">1</b><i>/${nRacers}</i></div><span class="dpos"></span></div>
-      <div class="lapbox"><div><span class="cap">TUR</span><b class="l">1</b><i>/${laps}</i></div><div><span class="cap">SÜRE</span><b class="t">0:00.00</b></div><div><span class="cap">EN İYİ</span><b class="bl">—</b></div></div>
+      <div class="posbox"><div class="pos"><b class="p">1</b><i>/${nRacers}</i></div><span class="cap">SIRA</span><span class="dpos"></span></div>
+      <div class="lapbox"><span class="cap">TUR</span><div class="lapn"><b class="l">1</b><i>/${laps}</i></div><div class="lapbar">${'<u></u>'.repeat(laps)}</div></div>
     </div>
+    <div class="board"></div>
+    <div class="trt"><div><span class="cap">SÜRE</span><b class="t">0:00.00</b></div><div><span class="cap">BU TUR</span><b class="lt">0:00.00</b></div><div><span class="cap">EN İYİ</span><b class="bl">—</b></div><div class="dl"></div></div>
+    <div class="banner"><span></span></div>
     <div class="mmw"><canvas class="mm"></canvas></div>
     <div class="msg"><span></span></div>
     <div class="items"><div class="slot s0"></div><div class="slot s1"></div><span class="key">${key}</span></div>
@@ -6609,12 +6828,13 @@ function makeHud(view, R, nRacers, laps) {
       <path class="g-rpm" d="${GAUGE_ARC}" pathLength="100" stroke-dasharray="0 100"/>
       <path class="g-ntrk" d="${NIT_ARC}" pathLength="100"/>
       <path class="g-nit" d="${NIT_ARC}" pathLength="100" stroke-dasharray="0 100"/>
-    </svg><div class="spd"><b class="v">000</b><small>KM/S</small></div><div class="gear"><b class="g">N</b></div><div class="ntl">NİTRO</div></div>
+    </svg><div class="leds"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="spd"><b class="v">000</b><small>KM/S</small></div><div class="gear"><b class="g">N</b></div><div class="ntl">NİTRO</div></div>
     <div class="nm"><span class="plate"><span></span></span></div>`;
   $('#huds').appendChild(el);
   el.querySelector('.plate span').textContent = R.name;
   const q = (s) => el.querySelector(s);
-  return { el, items: q('.items'), s0: q('.slot.s0'), s1: q('.slot.s1'), p: q('.p'), dpos: q('.dpos'), l: q('.l'), t: q('.t'), bl: q('.bl'), v: q('.v'), g: q('.g'),
+  return { el, items: q('.items'), s0: q('.slot.s0'), s1: q('.slot.s1'), p: q('.p'), pos: q('.posbox'), dpos: q('.dpos'), l: q('.l'), t: q('.t'), bl: q('.bl'), v: q('.v'), g: q('.g'),
+    lt: q('.lt'), dl: q('.dl'), board: q('.board'), banner: q('.banner'), bannerS: q('.banner span'), leds: [...el.querySelectorAll('.leds i')], lapbar: [...el.querySelectorAll('.lapbar u')],
     rpm: q('.g-rpm'), nit: q('.g-nit'), gauge: q('.gauge'), msg: q('.msg'), msgS: q('.msg span'), wet: q('.wet'), mm: q('.mm'), msgT: 0, last: {} };
 }
 function setItemsHud(R) {
@@ -6639,6 +6859,13 @@ function hudFlash(R, text, ms = 1300, kind = '') {
   const h = R.hud;
   h.msgS.textContent = text; h.msg.className = 'msg show ' + kind; h.msgT = ms / 1000;
   h.msgS.style.animation = 'none'; void h.msgS.offsetWidth; h.msgS.style.animation = '';
+}
+const escapeHtml = (t) => String(t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+// büyük orta afiş (Mario Kart "SON TUR" gibi)
+function hudBanner(R, text, kind = '') {
+  if (!R.hud) return; const h = R.hud;
+  h.bannerS.textContent = text; h.banner.className = 'banner show ' + kind;
+  clearTimeout(h.bannerT); h.bannerT = setTimeout(() => { h.banner.className = 'banner'; }, 2200);
 }
 function setTxt(h, key, el, val) { if (h.last[key] !== val) { h.last[key] = val; el.textContent = val; } }
 // ── Mini harita: sol altta, perspektifli, araç yönü hep yukarı (önümüz görünür) ──
@@ -6779,7 +7006,7 @@ class Race {
     for (const v of this.views) { if (v.composer && v.composer.dispose) v.composer.dispose(); if (v.bloom && v.bloom.dispose) v.bloom.dispose(); }
     $('#huds').innerHTML = '';
     for (const m of WORLD.startLights) m.emissiveIntensity = 0;
-    $('#count').classList.add('hidden');
+    $('#count').classList.add('hidden'); $('#lights').classList.add('hidden');
   }
   // yakındaki en fazla 3 rakibin motor sesi
   manageSounds() {
@@ -6866,7 +7093,9 @@ class Race {
         const lapIdx = Math.max(0, Math.floor(R.phys.dist / L));
         if (lapIdx > R.lapIdx && !R.finished) {
           const lt = t - R.lapStart; R.lapTimes.push(lt); R.lapStart = t; R.lapIdx = lapIdx;
+          if (isFinite(R.bestLap)) { R.delta = lt - R.bestLap; R.deltaT = 5; }
           const best = lt < R.bestLap; if (best) R.bestLap = lt;
+          if (R.local && lapIdx === this.laps - 1) hudBanner(R, 'SON TUR', 'final');
           if (lapIdx >= this.laps) {
             R.finished = true; R.finishT = t;
             const rank = this.racers.filter(o => o.finished && o.finishT <= t).length;
@@ -6935,9 +7164,27 @@ class Race {
       if (done) this.doneAt = t;
     } else if (!this.resultsShown && t - this.doneAt > 2.5) { this.resultsShown = true; showResults(this); }
   }
+  drawBoard(me) {
+    const h = me.hud, ord = [...this.racers].filter(r => !r.gone).sort((a, b) => a.rank - b.rank);
+    const lead = ord[0]; if (!lead) return;
+    const n = ord.length, mi = ord.indexOf(me);
+    let pick;
+    if (n <= 6) pick = ord;
+    else { const a = Math.max(1, Math.min(n - 4, mi - 2)); pick = [ord[0], ...ord.slice(a, a + 4)]; }
+    const sp = Math.max(12, lead.phys.speed());
+    const key = pick.map(r => r.rank + r.name + (r.finished ? 'f' : r.wreck ? 'w' : Math.round((lead.phys.dist - r.phys.dist) / sp * 10))).join('|');
+    if (h.last.board === key) return; h.last.board = key;
+    h.board.innerHTML = pick.map((r, i) => {
+      const gap = r === lead ? 'LİDER' : r.finished ? 'BİTTİ' : r.wreck ? 'KAZA' : '+' + ((lead.phys.dist - r.phys.dist) / sp).toFixed(1);
+      const brk = i > 0 && pick[i - 1].rank !== r.rank - 1 ? ' brk' : '';
+      return `<div class="${r === me ? 'me' : ''}${r.local && r !== me ? ' mate' : ''}${brk}"><i>${r.rank}</i><u style="background:${paintHex(r.custom)}"></u><span>${escapeHtml(r.name)}</span><em>${gap}</em></div>`;
+    }).join('');
+  }
   countdownFx(t) {
-    const el = $('#count');
+    const el = $('#count'), li = $('#lights'), lamps = li.children;
     if (t < 0) {
+      li.classList.remove('hidden', 'go');
+      for (let i = 0; i < 5; i++) lamps[i].className = t > -3 + i * 0.6 ? 'on' : '';
       for (let i = 0; i < 5; i++) { const m = WORLD.startLights[i]; m.emissive.setHex(0xff1a0a); m.emissiveIntensity = t > -3 + i * 0.6 ? 6 : 0; }
       const n = Math.ceil(-t);
       if (n <= 3) {
@@ -6947,8 +7194,9 @@ class Race {
     } else if (t < 1.1) {
       for (const m of WORLD.startLights) { m.emissive.setHex(0x22ff66); m.emissiveIntensity = t < 0.9 ? 6 : 0; }
       el.classList.remove('hidden'); el.classList.add('go'); el.textContent = 'BAŞLA';
+      li.classList.remove('hidden'); li.classList.add('go'); for (const x of lamps) x.className = 'on';
       if (!this.beeped.go) { this.beeped.go = 1; AUDIO.beep(880, 0.45, 0.3); for (const R of this.racers) if (R.local) rumble(R.slot, 0.7, 0.4, 250, true); }
-    } else if (!el.classList.contains('hidden')) el.classList.add('hidden');
+    } else if (!el.classList.contains('hidden')) { el.classList.add('hidden'); li.classList.add('hidden'); }
   }
   // ── MARIO KART TADINDA: roket kalkış, mini turbo, havada gösteri
   fun(R, raw, t, dt, running) {
@@ -7073,15 +7321,27 @@ class Race {
     const h = R.hud; if (!h) return;
     const p = R.phys, sp = p.speed();
     setTxt(h, 'p', h.p, String(R.rank));
+    if (h.last.rk !== R.rank) { h.last.rk = R.rank; h.pos.className = 'posbox r' + Math.min(4, R.rank); }
     if (R.prevRank && R.rank !== R.prevRank && this.time > 2) {
       const up = R.rank < R.prevRank;
       h.dpos.textContent = up ? '▲' : '▼'; h.dpos.className = 'dpos ' + (up ? 'up' : 'down');
+      h.pos.classList.remove('pop'); void h.pos.offsetWidth; h.pos.classList.add('pop');
       clearTimeout(h.dposT); h.dposT = setTimeout(() => { h.dpos.className = 'dpos'; }, 1400);
     }
     R.prevRank = R.rank;
-    setTxt(h, 'l', h.l, String(Math.min(this.laps, R.lapIdx + 1)));
+    const lapN = Math.min(this.laps, R.lapIdx + 1);
+    setTxt(h, 'l', h.l, String(lapN));
+    if (h.last.lapN !== lapN) { h.last.lapN = lapN; h.lapbar.forEach((u, i) => { u.className = i < lapN - 1 ? 'done' : i === lapN - 1 ? 'cur' : ''; }); }
     setTxt(h, 't', h.t, fmtTime(R.finished ? R.finishT : Math.max(0, this.time)).replace('—', '0:00.00'));
+    setTxt(h, 'lt', h.lt, fmtTime(R.finished ? (R.lapTimes[R.lapTimes.length - 1] || 0) : Math.max(0, this.time - R.lapStart)).replace('—', '0:00.00'));
     setTxt(h, 'bl', h.bl, fmtTime(R.bestLap));
+    // tur farkı (GT7 gibi): tur bitince en iyiye göre +/− birkaç saniye görünür
+    const dk = R.deltaT > 0 ? R.delta : null;
+    if (R.deltaT > 0) R.deltaT -= dt;
+    if (h.last.dk !== dk) { h.last.dk = dk; h.dl.textContent = dk == null ? '' : (dk > 0 ? '+' : '−') + Math.abs(dk).toFixed(2); h.dl.className = 'dl' + (dk == null ? '' : dk > 0 ? ' slow' : ' fast'); }
+    // canlı sıralama listesi (4 Hz)
+    h.bT = (h.bT || 0) - dt;
+    if (h.bT <= 0 && h.board.offsetParent !== null) { h.bT = 0.25; this.drawBoard(R); }
     setTxt(h, 'v', h.v, String(Math.round(sp * 3.6)).padStart(3, '0'));
     setTxt(h, 'g', h.g, p.gear === 0 ? 'R' : sp < 0.5 && p.throttle < 0.1 ? 'N' : String(p.gear));
     const rk = clamp((p.rpm - p.st.idle) / (p.st.redline - p.st.idle), 0, 1);
@@ -7089,6 +7349,10 @@ class Race {
     if (h.last.rpm !== rv) { h.last.rpm = rv; h.rpm.setAttribute('stroke-dasharray', rv + ' 100'); }
     const nv = (p.nitro * 100).toFixed(1);
     if (h.last.nit !== nv) { h.last.nit = nv; h.nit.setAttribute('stroke-dasharray', nv + ' 100'); }
+    // vites ışıkları: yeşil → sarı → kırmızı, vites zamanı hepsi mavi yanıp söner
+    const nl = rk < 0.55 ? 0 : Math.min(7, Math.floor((rk - 0.55) / 0.055) + 1), shift = rk > 0.94 && p.gear > 0;
+    const lk = nl + (shift ? (performance.now() % 160 < 80 ? 'a' : 'b') : '');
+    if (h.last.leds !== lk) { h.last.leds = lk; h.leds.forEach((e, i) => { e.className = shift ? (lk.endsWith('a') ? 'sh' : '') : i < nl ? (i < 3 ? 'g' : i < 5 ? 'y' : 'r') : ''; }); }
     const red = rk > 0.86, non = !!p.nitroOn;
     if (h.last.red !== red) { h.last.red = red; h.gauge.classList.toggle('red', red); }
     if (h.last.non !== non) { h.last.non = non; h.gauge.classList.toggle('non', non); }
@@ -8053,6 +8317,12 @@ function localRacers(mode) {
   // botların yarısı önden başlasın (heyecan)
   return [...bots.slice(0, Math.ceil(nb / 2)), ...humans, ...bots.slice(Math.ceil(nb / 2))];
 }
+// Forza tarzı performans sınıfı: D C B A S1 S2
+function perfClass(bars) {
+  const n = Math.round(clamp(bars.reduce((a, [, v]) => a + clamp(v, 0.05, 1), 0) / bars.length, 0, 1) * 640 + 300);
+  const c = n < 500 ? 'D' : n < 600 ? 'C' : n < 700 ? 'B' : n < 800 ? 'A' : n < 900 ? 'S1' : 'S2';
+  return { n, c };
+}
 function showResults(race) {
   const rows = [...race.racers].sort((a, b) => (a.finished && b.finished) ? a.finishT - b.finishT : a.finished ? -1 : b.finished ? 1 : b.phys.dist - a.phys.dist);
   const tb = $('#rBody'); tb.innerHTML = '';
@@ -8066,6 +8336,15 @@ function showResults(race) {
     td(R.finished ? fmtTime(R.finishT) : R.gone ? 'ayrıldı' : R.wreck ? 'kaza · elendi' : 'bitiremedi');
     td(fmtTime(R.bestLap));
     tb.appendChild(tr);
+  });
+  const pod = $('#rPod'); pod.innerHTML = '';
+  if (rows.length > 1) [1, 0, 2].forEach((i) => {
+    const R = rows[i]; if (!R) return;
+    const c = document.createElement('div'); c.className = 'pd p' + (i + 1) + (R.local ? ' me' : '');
+    c.innerHTML = `<i>${i + 1}</i><u style="background:${paintHex(R.custom)}"></u><b></b><span></span><em></em>`;
+    c.querySelector('b').textContent = R.name; c.querySelector('span').textContent = R.def.name;
+    c.querySelector('em').textContent = R.finished ? fmtTime(R.finishT) : R.wreck ? 'KAZA' : '—';
+    pod.appendChild(c);
   });
   const w = rows[0];
   $('#rTitle').textContent = race.racers.length > 1 ? (w.name.toLocaleUpperCase('tr') + ' KAZANDI') : 'ANTRENMAN BİTTİ';
@@ -8096,7 +8375,7 @@ function garagePick(delta) {
   const sv = LS.get('vc_' + id, null);
   setGarageCustom(sv ? sanitizeCustom(sv) : defaultCustom(id));
 }
-const GAR = { slot: 0, slots: 1, purpose: 'edit' };
+const GAR = { slot: 0, slots: 1, purpose: 'edit', cat: 'arac' };
 function openGarage(purpose) {
   GAR.purpose = purpose; GAR.slots = purpose === 'local' ? clamp(SETTINGS.localPlayers, 2, 4) : 1; GAR.slot = 0;
   $('#gTabs').classList.toggle('hidden', GAR.slots < 2);
@@ -8147,11 +8426,14 @@ function renderGarage() {
     vs.appendChild(b);
   }
   $('#gDesc').textContent = d.desc;
+  // performans sınıfı (Forza tarzı rozet): çubukların ortalamasından 100–999 puan
   const st = Object.assign({}, BASE_STATS, d.stats);
   const top = estimateTop(st), acc = st.torque * st.gears[0] * st.final * st.eff / st.wheelR / st.mass;
   const drift = st.drive === 'rwd' ? (st.kind === 'bike' ? 0.35 : 0.85) : st.drive === 'fwd' ? 0.35 : st.kind === 'horse' ? 0.2 : 0.5;
   const bars = [['Azami hız', top / 62], ['Hızlanma', acc / 16], ['Yol tutuş', st.mu * (st.rearGrip || 1) / 2.0], ['Çeviklik', (st.steerMax / st.wheelbase) / 0.6], ['Islak zemin', st.wetGrip], ['Drift', drift]];
-  $('#gStats').innerHTML = bars.map(([n, v]) => `<span>${n}</span><i><u style="width:${Math.round(clamp(v, 0.05, 1) * 100)}%"></u></i>`).join('');
+  $('#gStats').innerHTML = bars.map(([n, v]) => `<span>${n}</span><i><u style="width:${Math.round(clamp(v, 0.05, 1) * 100)}%"></u></i><b>${(clamp(v, 0.05, 1) * 10).toFixed(1)}</b>`).join('');
+  const pi = perfClass(bars);
+  for (const el of [$('#gClass'), $('#cnClass')]) if (el) { el.className = 'pclass c' + pi.c; el.innerHTML = `<b>${pi.c}</b><span>${pi.n}</span>`; }
   $('#gPaintLbl').textContent = d.paintLabel || 'Renk';
   const pw = $('#gPaint'); pw.innerHTML = '';
   for (const p of PAINTS) {
@@ -8180,6 +8462,14 @@ function renderGarage() {
   chipRow($('#gStick'), sts, it => it.id === c.sticker, it => setGarageCustom(Object.assign({}, c, { sticker: it.id })));
   const inp = $('#gStickTxt');
   if (document.activeElement !== inp) inp.value = STICKERS.includes(c.sticker) || !c.sticker ? '' : c.sticker;
+  // kategori sekmeleri: içi tamamen gizli olan sekme görünmez
+  for (const b of $$('#gCat button')) {
+    const secs = $$(`#garage .side [data-cat="${b.dataset.cat}"]`);
+    b.classList.toggle('hidden', !secs.some(x => !x.classList.contains('hidden')));
+  }
+  if ($(`#gCat button[data-cat="${GAR.cat}"]`)?.classList.contains('hidden')) GAR.cat = 'arac';
+  for (const b of $$('#gCat button')) b.classList.toggle('on', b.dataset.cat === GAR.cat);
+  for (const x of $$('#garage .side [data-cat]')) x.classList.toggle('catoff', x.dataset.cat !== GAR.cat);
   // tek oyuncu: tüm araçlar yan yana dizilir, ekran aralarında kayar
   const row = GAR.slots === 1;
   $('#garage .vehbox').classList.toggle('carousel', row);
@@ -8296,6 +8586,7 @@ function setupUI() {
   $('#settings [data-go=menu]').dataset.back = '1';
   $('#help [data-go=menu]').dataset.back = '1';
   $$('#gTabs button').forEach(b => b.onclick = () => { GAR.slot = +b.dataset.slot; renderGarage(); });
+  $$('#gCat button').forEach(b => b.onclick = () => { GAR.cat = b.dataset.cat; renderGarage(); });
   $('#gStickTxt').addEventListener('input', (e) => {
     const v = e.target.value.toLocaleUpperCase('tr');
     clearTimeout(renderGarage._t);
