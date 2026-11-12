@@ -501,10 +501,10 @@ table.res td:first-child{font-style:italic}
 @keyframes posPop{0%{transform:scale(1.45)}100%{transform:none}}
 .hud .dpos{right:-8px;top:2px;font-size:16px}
 .hud .lapbox{display:block;background:var(--glass);border-radius:10px;clip-path:none;padding:9px 14px 10px;box-shadow:none;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);margin-top:6px}
-.hud .lapn{display:flex;align-items:baseline;gap:2px;margin-top:2px}
+.hud .lapbox>.lapn{display:flex;align-items:baseline;gap:2px;margin-top:2px}
 .hud .lapbox b{font:800 italic 30px/1 var(--num)}
 .hud .lapbox i{position:static;margin:0;font:700 italic 17px var(--num);color:rgba(255,255,255,.55)}
-.hud .lapbar{display:flex;gap:3px;margin-top:6px}
+.hud .lapbox>.lapbar{display:flex;gap:3px;margin-top:6px}
 .hud .lapbar u{width:16px;height:4px;border-radius:2px;background:rgba(255,255,255,.18)}
 .hud .lapbar u.done{background:#fff}.hud .lapbar u.cur{background:var(--acc);box-shadow:0 0 8px rgba(255,75,43,.7)}
 .hud .board{position:absolute;left:clamp(10px,1.6vw,22px);top:calc(clamp(10px,1.8vh,20px) + clamp(100px,11vw,140px));display:flex;flex-direction:column;gap:2px;width:clamp(170px,15vw,220px)}
@@ -6937,12 +6937,7 @@ function drawMinimap(h, race, me) {
   cone.addColorStop(0, 'rgba(255,255,255,.22)'); cone.addColorStop(1, 'rgba(255,255,255,0)');
   g.fillStyle = cone; g.beginPath(); g.moveTo(cx, cy); g.arc(cx, cy, 70 * dpr, -Math.PI / 2 - 0.45, -Math.PI / 2 + 0.45); g.closePath(); g.fill();
   g.beginPath(); g.moveTo(cx, cy - a); g.lineTo(cx + a * 0.72, cy + a * 0.8); g.lineTo(cx, cy + a * 0.35); g.lineTo(cx - a * 0.72, cy + a * 0.8); g.closePath();
-  g.fillStyle = '#fff'; g.fill(); g.lineWidth = 2 * dpr; g.strokeStyle = '#9dff00'; g.stroke();
-  // dört köşede neon köşebent
-  const W2 = c.width, H2 = c.height, L2 = 22 * dpr, m2 = 3 * dpr;
-  g.strokeStyle = '#9dff00'; g.lineWidth = 3 * dpr; g.shadowColor = '#9dff00'; g.shadowBlur = 8 * dpr;
-  for (const [x, y, sx, sy] of [[m2, m2, 1, 1], [W2 - m2, m2, -1, 1], [m2, H2 - m2, 1, -1], [W2 - m2, H2 - m2, -1, -1]]) { g.beginPath(); g.moveTo(x, y + sy * L2); g.lineTo(x, y); g.lineTo(x + sx * L2, y); g.stroke(); }
-  g.shadowBlur = 0;
+  g.fillStyle = '#fff'; g.fill(); g.lineWidth = 2 * dpr; g.strokeStyle = '#ff4b2b'; g.stroke();
 }
 
 // ── Yarış ──────────────────────────────────────────────────────────
