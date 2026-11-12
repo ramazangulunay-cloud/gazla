@@ -386,7 +386,7 @@ h2::before{width:6px;height:26px;background:linear-gradient(180deg,var(--acc),va
 .lbl{color:rgba(255,255,255,.5);letter-spacing:.2em}
 /* logo */
 .logo .r{background:none;-webkit-text-fill-color:#fff;color:#fff;filter:none;text-shadow:0 6px 30px rgba(0,0,0,.5)}
-.logo .n{background:linear-gradient(180deg,#ff6a3d,#ff3b1f);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;filter:drop-shadow(0 4px 18px rgba(255,75,43,.45))}
+.logo .n{text-shadow:none;background:linear-gradient(180deg,#ff6a3d,#ff3b1f);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;filter:drop-shadow(0 4px 18px rgba(255,75,43,.45))}
 .logo .n::after{background:linear-gradient(90deg,var(--acc),var(--acc3));box-shadow:none}
 .sub{color:rgba(255,255,255,.55)}.sub b{color:#fff;text-shadow:none}
 /* düğmeler */
@@ -428,7 +428,7 @@ input[type=text]:focus{border-color:var(--acc)}
 #menu .mi.prime .tt small,#menu .mi.prime .ix{color:rgba(255,255,255,.85)}
 #menu .mi.prime:hover,#menu .mi.prime:focus-visible{background:radial-gradient(ellipse at 85% 0%,rgba(255,255,255,.45),transparent 55%),linear-gradient(115deg,#ff4a2a,#ff7a33 55%,#ffbc45);border-color:transparent;box-shadow:0 20px 50px rgba(255,75,43,.55)}
 #menu .mi.prime::after{background:#fff}
-#menu .mrow{display:flex;gap:8px;margin-top:10px}
+#menu .mrow{display:flex;flex-direction:row;gap:8px;margin-top:10px;width:min(600px,94vw)}
 #menu .ms{border-radius:8px;background:rgba(14,16,22,.66);border:1px solid var(--line);color:rgba(255,255,255,.7);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
 #menu .ms:hover,#menu .ms:focus-visible{color:#fff;border-color:rgba(255,255,255,.35);background:rgba(255,255,255,.12)}
 .who{border-radius:999px;clip-path:none;background:rgba(14,16,22,.7);border:1px solid var(--line);padding:5px 6px 5px 16px;backdrop-filter:blur(12px)}
@@ -458,6 +458,7 @@ kbd{border-radius:5px;clip-path:none;background:rgba(255,255,255,.1)}
 #carNav button:hover{background:var(--acc);border-color:transparent;box-shadow:0 8px 24px rgba(255,75,43,.45)}
 #carNav .cn{background:none;min-width:260px}
 #carNav .cn .pclass{margin-bottom:6px;font-size:14px}
+#carNav .cn .pclass span{color:#111;letter-spacing:.04em;margin:0;font:800 14px/1 var(--num)}#carNav .cn .pclass b{background:var(--pc);-webkit-text-fill-color:#fff;filter:none;font:800 14px/1 var(--num)}
 #carNav .cn b{background:none;-webkit-text-fill-color:#fff;color:#fff;filter:drop-shadow(0 4px 20px rgba(0,0,0,.6));font-size:clamp(30px,3.4vw,46px)}
 #carNav .cn span{color:rgba(255,255,255,.7);letter-spacing:.2em}
 #carNav .cn i u{width:18px;height:4px;border-radius:2px;transform:none}
@@ -8464,12 +8465,12 @@ function renderGarage() {
   if (document.activeElement !== inp) inp.value = STICKERS.includes(c.sticker) || !c.sticker ? '' : c.sticker;
   // kategori sekmeleri: içi tamamen gizli olan sekme görünmez
   for (const b of $$('#gCat button')) {
-    const secs = $$(`#garage .side [data-cat="${b.dataset.cat}"]`);
+    const secs = [...$$(`#garage .side div[data-cat="${b.dataset.cat}"]`)];
     b.classList.toggle('hidden', !secs.some(x => !x.classList.contains('hidden')));
   }
   if ($(`#gCat button[data-cat="${GAR.cat}"]`)?.classList.contains('hidden')) GAR.cat = 'arac';
   for (const b of $$('#gCat button')) b.classList.toggle('on', b.dataset.cat === GAR.cat);
-  for (const x of $$('#garage .side [data-cat]')) x.classList.toggle('catoff', x.dataset.cat !== GAR.cat);
+  for (const x of $$('#garage .side div[data-cat]')) x.classList.toggle('catoff', x.dataset.cat !== GAR.cat);
   // tek oyuncu: tüm araçlar yan yana dizilir, ekran aralarında kayar
   const row = GAR.slots === 1;
   $('#garage .vehbox').classList.toggle('carousel', row);
