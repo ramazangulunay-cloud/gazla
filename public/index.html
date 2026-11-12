@@ -505,6 +505,9 @@ body.touch.racing .hud .gear{width:24px;height:24px}body.touch.racing .hud .gear
   <div>
     <div class="set"><span class="lbl">Tur sayısı</span><div class="chips" id="sLaps"></div></div>
     <div class="set"><span class="lbl">Grafik</span><div class="chips" id="sQual"></div></div>
+    <div class="set" style="margin-top:-6px"><span class="lbl"></span><div id="sGpu" style="font-size:11px;opacity:.6"></div></div>
+    <div class="set"><span class="lbl">Görünüm</span><div class="chips" id="sLook"></div></div>
+    <div class="set"><span class="lbl">Yarışta tam ekran</span><div class="chips" id="sFs"></div></div>
     <div class="set"><span class="lbl">Dinamik çözünürlük</span><div class="chips" id="sDyn"></div></div>
     <div class="set"><span class="lbl">Bölünmüş ekran</span><div class="chips" id="sSplit"></div></div>
     <div class="set"><span class="lbl">Bot zorluğu</span><div class="chips" id="sBotLv"></div></div>
@@ -603,10 +606,25 @@ const IS_TOUCH = (() => {
   return mm('(pointer: coarse)') && !mm('(any-pointer: fine)') && (navigator.maxTouchPoints || 0) > 0;
 })();
 const STRONG_PC = !IS_TOUCH && (navigator.hardwareConcurrency || 8) >= 8 && (navigator.deviceMemory || 8) >= 8;
-const SETTINGS = Object.assign({ laps: 3, quality: IS_TOUCH ? 'low' : (navigator.hardwareConcurrency || 8) <= 4 ? 'mid' : STRONG_PC ? 'max' : 'high', dynRes: true, split: 'v', sound: true, music: true, padSwap: false, rumble: true, localPlayers: 2, bots: 7, botLevel: 'orta' }, LS.get('settings', {}));
-// tek seferlik: güçlü masaüstünde grafik kalitesini en üste çek
-if (STRONG_PC && !SETTINGS.q3 && (SETTINGS.quality === 'high' || SETTINGS.quality === 'ultra')) SETTINGS.quality = 'max';
-SETTINGS.q3 = 1;
+// ekran kartı: harici (NVIDIA/AMD RX/Intel Arc) mı, işlemciye gömülü mü?
+const GPU = (() => {
+  try {
+    const c = document.createElement('canvas'), gl = c.getContext('webgl2') || c.getContext('webgl');
+    if (!gl) return { name: '', tier: 'soft' };
+    const ext = gl.getExtension('WEBGL_debug_renderer_info');
+    const n = String((ext && gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) || gl.getParameter(gl.RENDERER) || '');
+    try { const l = gl.getExtension('WEBGL_lose_context'); l && l.loseContext(); } catch (e) { }
+    const tier = /swiftshader|llvmpipe|software|basic render|microsoft basic/i.test(n) ? 'soft'
+      : /nvidia|geforce|quadro|rtx|gtx|radeon\s*(\(tm\)\s*)?(rx|pro|r9|vii)|intel.*\barc\b|\barc\s*a\d/i.test(n) ? 'discrete'
+        : /apple/i.test(n) ? 'apple' : 'integrated';
+    return { name: n.replace(/^ANGLE \(|\)$/g, '').replace(/\s*Direct3D.*$/i, '').replace(/,\s*vs_\d.*$/i, ''), tier };
+  } catch (e) { return { name: '', tier: 'integrated' }; }
+})();
+// önerilen grafik: yalnız harici ekran kartında en üst seviye; gömülüde orta
+const QUAL_AUTO = IS_TOUCH || GPU.tier === 'soft' ? 'low' : GPU.tier === 'discrete' ? (STRONG_PC ? 'max' : 'ultra') : GPU.tier === 'apple' ? 'high' : 'mid';
+const SETTINGS = Object.assign({ laps: 3, quality: QUAL_AUTO, dynRes: true, split: 'v', sound: true, music: true, padSwap: false, rumble: true, localPlayers: 2, bots: 7, botLevel: 'orta', autoFs: true, look: 'gun' }, LS.get('settings', {}));
+// oyuncu grafiği elle seçmediyse her açılışta ekran kartına göre önerilen seviye
+if (!SETTINGS.qUser) SETTINGS.quality = QUAL_AUTO;
 const saveSettings = () => LS.set('settings', SETTINGS);
 
 function rng(seed) {
@@ -1424,8 +1442,14 @@ const SUN_DIR = new THREE.Vector3(0.72, 0.46, -0.42).normalize();
 const FOG_COL = new THREE.Color(0.62, 0.74, 0.88);
 scene.fog = new THREE.FogExp2(FOG_COL, 0.00028);
 // Atmosferik pus: yüksekliğe göre yoğunlaşan, güneş yönünde ısınıp parlayan sis (tüm malzemelere uygulanır)
-{
-  const sd = `vec3(${SUN_DIR.x.toFixed(4)}, ${SUN_DIR.y.toFixed(4)}, ${SUN_DIR.z.toFixed(4)})`;
+// Görünüm (gün/günbatımı/gece) değişince güneş yönü ve rengi yeniden yazılır; program anahtarı görünüme bağlıdır.
+const LOOK_CUR = { id: 'gun' };
+if (THREE.Material && THREE.Material.prototype && THREE.Material.prototype.customProgramCacheKey) {
+  const _ck = THREE.Material.prototype.customProgramCacheKey;
+  THREE.Material.prototype.customProgramCacheKey = function () { return _ck.call(this) + '|' + LOOK_CUR.id; };
+}
+function setFogChunk(dir, glow) {
+  const sd = `vec3(${dir.x.toFixed(4)}, ${dir.y.toFixed(4)}, ${dir.z.toFixed(4)})`, gc = `vec3(${glow.map(v => v.toFixed(3)).join(', ')})`;
   THREE.ShaderChunk.fog_pars_vertex = `#ifdef USE_FOG
     varying float vFogDepth; varying vec3 vFogDir;
   #endif`;
@@ -1451,10 +1475,11 @@ scene.fog = new THREE.FogExp2(FOG_COL, 0.00028);
     float fogH = exp(-max(fogWy, 0.0) * 0.015);
     float fogFactor = (1.0 - exp(-fogL * fogD * (0.25 + 0.75 * fogH))) * 0.6;
     float fogSun = pow(max(dot(fogN, ${sd}), 0.0), 10.0);
-    vec3 fogC = mix(fogColor, vec3(1.05, 0.92, 0.74), fogSun * 0.7);
+    vec3 fogC = mix(fogColor, ${gc}, fogSun * 0.7);
     gl_FragColor.rgb = mix(gl_FragColor.rgb, fogC, fogFactor);
   #endif`;
 }
+setFogChunk(SUN_DIR, [1.05, 0.92, 0.74]);
 
 const SKY_UNI = {
   sunDir: { value: SUN_DIR.clone() },
@@ -1463,12 +1488,15 @@ const SKY_UNI = {
   groundC: { value: new THREE.Color(0.42, 0.40, 0.36) },
   sunInt: { value: 60.0 },
   time: { value: 0 },
+  glowC: { value: new THREE.Color(1.0, 0.86, 0.66) },
+  cloudC: { value: new THREE.Color(1, 1, 1) },
+  stars: { value: 0 },
 };
 function makeSkyMesh(radius) {
   const m = new THREE.ShaderMaterial({
     uniforms: SKY_UNI, side: THREE.BackSide, depthWrite: false,
     vertexShader: `varying vec3 vW; void main(){ vec4 wp = modelMatrix * vec4(position,1.0); vW = wp.xyz; gl_Position = projectionMatrix * viewMatrix * wp; }`,
-    fragmentShader: `uniform vec3 sunDir; uniform vec3 zenith; uniform vec3 horizon; uniform vec3 groundC; uniform float sunInt; uniform float time; varying vec3 vW;
+    fragmentShader: `uniform vec3 sunDir; uniform vec3 zenith; uniform vec3 horizon; uniform vec3 groundC; uniform float sunInt; uniform float time; uniform vec3 glowC; uniform vec3 cloudC; uniform float stars; varying vec3 vW;
       float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
       float vnoise(vec2 p){ vec2 i = floor(p), f = fract(p); vec2 u = f * f * (3.0 - 2.0 * f);
         return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y); }
@@ -1479,8 +1507,9 @@ function makeSkyMesh(radius) {
         vec3 col = mix(horizon, zenith, pow(clamp(h,0.0,1.0), 0.5));
         col = mix(col, groundC, smoothstep(0.0, -0.12, h));
         float sd = max(dot(d, normalize(sunDir)), 0.0);
-        col += vec3(1.0,0.86,0.66) * (pow(sd, 6.0) * 0.22 + pow(sd, 64.0) * 0.6);
-        col += vec3(0.95,0.97,1.0) * 0.10 * pow(1.0 - abs(h), 6.0);
+        col += glowC * (pow(sd, 6.0) * 0.22 + pow(sd, 64.0) * 0.6);
+        col += vec3(0.95,0.97,1.0) * 0.10 * pow(1.0 - abs(h), 6.0) * (1.0 - stars * 0.9);
+        if (stars > 0.0 && h > 0.02) { vec3 q = floor(d * 380.0); float st = hash(q.xy + q.z * 7.13); float tw = 0.6 + 0.4 * sin(time * 3.0 + st * 60.0); col += vec3(0.85, 0.9, 1.0) * smoothstep(0.9965, 1.0, st) * stars * tw * smoothstep(0.02, 0.25, h) * 2.5; }
         // kümülüs bulutlar
         if (h > 0.0) {
           vec2 uv = d.xz / (h + 0.1) * 0.9 + vec2(time * 0.006, time * 0.003);
@@ -1489,7 +1518,7 @@ function makeSkyMesh(radius) {
           float cov = smoothstep(0.6, 0.82, c + c2 * 0.12) * smoothstep(0.0, 0.16, h) * 0.8;
           float shade = smoothstep(0.45, 0.95, c);
           vec3 cc = mix(vec3(0.62, 0.68, 0.78), vec3(1.0, 0.99, 0.97), shade) * (0.95 + 0.45 * pow(sd, 4.0));
-          col = mix(col, cc * 1.08, cov * 0.92);
+          col = mix(col, cc * 1.08 * cloudC, cov * 0.92);
         }
         col += vec3(1.0,0.96,0.86) * pow(sd, 1600.0) * sunInt;
         gl_FragColor = vec4(col, 1.0);
@@ -1534,13 +1563,53 @@ Object.assign(sun.shadow.camera, { left: -SH, right: SH, top: SH, bottom: -SH, n
 sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.04;
 sun.shadow.camera.updateProjectionMatrix();
 scene.add(sun, sun.target);
+const _sR = new THREE.Vector3(), _sU = new THREE.Vector3(), _sF = new THREE.Vector3();
 function aimSun(x, z) {
-  // gölge kamerasını teksel ızgarasına oturt (titremeyi önler)
+  // gölge kamerasını IŞIK uzayındaki teksel ızgarasına oturt: araç ilerlerken gölge kenarları kaymaz/titremez
   const step = (SH * 2) / sun.shadow.mapSize.x;
-  x = Math.round(x / step) * step; z = Math.round(z / step) * step;
-  sun.position.set(x + SUN_DIR.x * 200, SUN_DIR.y * 200, z + SUN_DIR.z * 200);
-  sun.target.position.set(x, 0, z);
+  _sF.copy(SUN_DIR).negate(); _sR.set(0, 1, 0).cross(_sF).normalize(); _sU.copy(_sF).cross(_sR).normalize();
+  const u = Math.round((x * _sR.x + z * _sR.z) / step) * step, v = Math.round((x * _sU.x + z * _sU.z) / step) * step, w = x * _sF.x + z * _sF.z;
+  x = _sR.x * u + _sU.x * v + _sF.x * w; z = _sR.z * u + _sU.z * v + _sF.z * w;
+  const y = _sR.y * u + _sU.y * v + _sF.y * w;
+  sun.position.set(x + SUN_DIR.x * 200, y + SUN_DIR.y * 200, z + SUN_DIR.z * 200);
+  sun.target.position.set(x, y, z);
   sun.target.updateMatrixWorld();
+}
+
+// ── GÖRÜNÜMLER: her oyuncu kendi ekranında seçtiğini görür (çevrim içinde de yalnız yerel)
+const LOOKS = {
+  gun: { name: 'Gündüz (varsayılan)', dir: [0.72, 0.46, -0.42], sunC: [1.0, 0.9, 0.76], sunI: 4.6, hemiS: 0xbcd0e6, hemiG: 0x5a4e40, hemiI: 0.22, fog: [0.62, 0.74, 0.88], fogD: 0.00028, glow: [1.05, 0.92, 0.74],
+    zen: [0.13, 0.32, 0.68], hor: [0.7, 0.74, 0.78], gnd: [0.42, 0.40, 0.36], disk: 60, skyGlow: [1.0, 0.86, 0.66], cloud: [1, 1, 1], stars: 0, exp: 1.0, clear: 0x9fc6e6, lamp: 0, win: 0, head: 1.2, glowK: 1, envI: 1 },
+  gunbatimi: { name: 'Günbatımı', dir: [0.86, 0.11, -0.5], sunC: [1.0, 0.52, 0.26], sunI: 3.6, hemiS: 0xf2a77c, hemiG: 0x45363c, hemiI: 0.32, fog: [0.86, 0.56, 0.44], fogD: 0.00034, glow: [1.35, 0.72, 0.36],
+    zen: [0.16, 0.18, 0.4], hor: [1.0, 0.52, 0.3], gnd: [0.3, 0.22, 0.22], disk: 40, skyGlow: [1.3, 0.6, 0.3], cloud: [1.05, 0.72, 0.6], stars: 0, exp: 1.05, clear: 0xe09a72, lamp: 0.45, win: 0.5, head: 2.2, glowK: 1.6, envI: 0.85 },
+  gece: { name: 'Gece', dir: [-0.42, 0.52, 0.5], sunC: [0.55, 0.66, 1.0], sunI: 0.5, hemiS: 0x34466e, hemiG: 0x111116, hemiI: 0.34, fog: [0.045, 0.06, 0.1], fogD: 0.00045, glow: [0.25, 0.3, 0.45],
+    zen: [0.006, 0.01, 0.03], hor: [0.05, 0.07, 0.12], gnd: [0.025, 0.025, 0.03], disk: 9, skyGlow: [0.25, 0.3, 0.45], cloud: [0.09, 0.1, 0.14], stars: 1, exp: 1.35, clear: 0x0b1020, lamp: 1, win: 1, head: 4.5, glowK: 3.2, envI: 0.6 },
+};
+const LOOK_LIST = Object.keys(LOOKS).map(id => ({ id, name: LOOKS[id].name }));
+const lookStart = () => applyLook(SETTINGS.look, false);
+// world/vehicles hazır olunca tekrar çağrılır; değişimde tüm malzemeler yeniden derlenir ve yansıma haritası yenilenir
+function applyLook(id, rebuild = true) {
+  const L = LOOKS[id] || LOOKS.gun; id = LOOKS[id] ? id : 'gun';
+  const changed = LOOK_CUR.id !== id;
+  LOOK_CUR.id = id; LOOK_CUR.L = L;
+  SUN_DIR.set(L.dir[0], L.dir[1], L.dir[2]).normalize();
+  SKY_UNI.sunDir.value.copy(SUN_DIR);
+  SKY_UNI.zenith.value.setRGB(...L.zen); SKY_UNI.horizon.value.setRGB(...L.hor); SKY_UNI.groundC.value.setRGB(...L.gnd);
+  SKY_UNI.sunInt.value = L.disk; SKY_UNI.glowC.value.setRGB(...L.skyGlow); SKY_UNI.cloudC.value.setRGB(...L.cloud); SKY_UNI.stars.value = L.stars;
+  sun.color.setRGB(...L.sunC); sun.intensity = L.sunI;
+  hemi.color.setHex(L.hemiS); hemi.groundColor.setHex(L.hemiG); hemi.intensity = L.hemiI;
+  FOG_COL.setRGB(...L.fog); scene.fog.color.copy(FOG_COL); scene.fog.density = L.fogD;
+  renderer.toneMappingExposure = L.exp; renderer.setClearColor(L.clear, 1);
+  setFogChunk(SUN_DIR, L.glow);
+  if (typeof MATS !== 'undefined' && MATS.glow) MATS.glow.color.setScalar(L.glowK);
+  if (typeof MATS !== 'undefined' && MATS.facade) { MATS.facade.emissive.setRGB(1.0, 0.78, 0.48); MATS.facade.emissiveIntensity = L.win * 1.6; }
+  if (typeof WORLD !== 'undefined' && WORLD.lampPools) { WORLD.lampPools.visible = L.lamp > 0; WORLD.lampPools.material.opacity = L.lamp * 0.85; }
+  if (scene.environment) scene.environmentIntensity = L.envI;
+  if (rebuild && changed) {
+    scene.traverse(o => { const m = o.material; if (!m) return; for (const mm of Array.isArray(m) ? m : [m]) mm.needsUpdate = true; });
+    renderer.shadowMap.needsUpdate = true;
+    if (typeof buildCityEnv === 'function' && typeof WORLD !== 'undefined' && WORLD.ready) buildCityEnv();
+  }
 }
 
 // Hız efekti: radyal bulanıklık + vinyet
@@ -1879,6 +1948,22 @@ function buildTextures() {
   };
   TEX.facade = canvasTex(1024, 1024, (g, w, h) => drawFacade(g, w, h, false), { repeat: true });
   TEX.facadeR = canvasTex(256, 256, (g, w, h) => drawFacade(g, w, h, true), { repeat: true, linear: true });
+  // gece: yanan pencereler (cephe dokusuyla aynı yerleşim; yalnız ışıklı camlar)
+  TEX.facadeNight = canvasTex(512, 512, (g, w, h) => {
+    g.fillStyle = '#000'; g.fillRect(0, 0, w, h);
+    const r = rng(23);
+    for (let my = 0; my < 2; my++) for (let mx = 0; mx < 2; mx++) {
+      const ox = mx * w / 2, oy = my * h / 2, S = w / 2, ww = S * 0.92, wh = S * 0.66, wx = ox + (S - ww) / 2, wy = oy + S * 0.14;
+      for (let k = 0; k < 3; k++) {
+        if (r() > 0.55) continue;
+        const warm = r(), c = warm < 0.7 ? [255, 200 + r() * 40, 130 + r() * 50] : [190, 215, 255];
+        const gr = g.createLinearGradient(0, wy, 0, wy + wh); const a = 0.55 + r() * 0.45;
+        gr.addColorStop(0, `rgba(${c[0]},${c[1] | 0},${c[2] | 0},${a * 0.7})`); gr.addColorStop(1, `rgba(${c[0]},${c[1] | 0},${c[2] | 0},${a})`);
+        g.fillStyle = gr; g.fillRect(wx + ww * k / 3 + 3, wy + 3, ww / 3 - 6, wh - 6);
+        if (r() < 0.3) { g.fillStyle = 'rgba(0,0,0,.6)'; g.fillRect(wx + ww * k / 3 + 3, wy + 3, ww / 3 - 6, wh * r.range(0.2, 0.6)); } // perde
+      }
+    }
+  }, { repeat: true });
   // yaprak kartı (alfa)
   TEX.leaf = canvasTex(256, 256, (g, w, h) => {
     g.clearRect(0, 0, w, h);
@@ -2069,7 +2154,7 @@ function buildMaterials() {
   MATS.gloss = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.3, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.08 });
   MATS.cloth = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, side: THREE.DoubleSide });
   MATS.glow = new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: true });
-  MATS.facade = new THREE.MeshStandardMaterial({ vertexColors: true, map: TEX.facade, roughnessMap: TEX.facadeR, roughness: 1, metalness: 0.05, envMapIntensity: 1.1 });
+  MATS.facade = new THREE.MeshStandardMaterial({ vertexColors: true, map: TEX.facade, roughnessMap: TEX.facadeR, roughness: 1, metalness: 0.05, envMapIntensity: 1.1, emissiveMap: TEX.facadeNight, emissive: 0x000000 });
   MATS.leaf = new THREE.MeshStandardMaterial({ vertexColors: true, map: TEX.leaf, alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.75 });
   MATS.tower = new THREE.MeshStandardMaterial({ vertexColors: true, map: TEX.tower, roughnessMap: TEX.towerR, metalnessMap: TEX.towerR, roughness: 1, metalness: 1, envMapIntensity: 1.3 });
   MATS.klima = new THREE.MeshStandardMaterial({ vertexColors: true, map: TEX.klima, roughness: 0.6 });
@@ -2495,14 +2580,14 @@ async function buildWorld(progress) {
     gGeo.setAttribute('color', new THREE.BufferAttribute(cols, 3));
   }
   const ground = new THREE.Mesh(gGeo, groundMat);
-  ground.rotation.x = -Math.PI / 2; ground.position.set(0, -0.09, GZ); ground.receiveShadow = true; scene.add(ground); WORLD.noReflect.push(ground);
+  ground.rotation.x = -Math.PI / 2; ground.position.set(0, -0.42, GZ); // arazi ızgarasının altında kalsın (üst üste binip titremesin) ground.receiveShadow = true; scene.add(ground); WORLD.noReflect.push(ground);
   {
     const Gd = GROUND, n = Gd.nx * Gd.nz, pos = new Float32Array(n * 3), cols = new Float32Array(n * 3), uv = new Float32Array(n * 2), idx = [];
     for (let iz = 0; iz < Gd.nz; iz++) for (let ix = 0; ix < Gd.nx; ix++) {
       const i = iz * Gd.nx + ix, x = Gd.x0 + ix * Gd.step, z = Gd.z0 + iz * Gd.step;
       const h = Gd.h[i];
       // yol ve kaldırımın altında arazi biraz gömülür (yolu delmesin)
-      const sink = h > 0.05 && distToTrack(x, z) < 22 ? 0.3 : 0;
+      const dT = distToTrack(x, z), sink = dT < W - 0.5 || (h > 0.05 && dT < 22) ? 0.3 : 0; // yolun altında hep gömülü (5 cm'lik üst üste binme titriyordu)
       pos[i * 3] = x; pos[i * 3 + 1] = h - 0.03 - sink; pos[i * 3 + 2] = z;
       const yl = -(z - GZ);
       uv[i * 2] = (x + 2200) / 4400; uv[i * 2 + 1] = (yl + 1117) / 2234;
@@ -2788,6 +2873,7 @@ async function buildWorld(progress) {
     const x = p.x + p.rx * sg * (W + 1.1), z = p.z + p.rz * sg * (W + 1.1);
     if (sg > 0 && z > 10 && Math.abs(x) < 700) { /* sahil tarafında da lamba */ }
     lamp(b, M(x, 0.08, z, Math.atan2(sg * p.rz, -sg * p.rx)), 1);
+    (WORLD.lamps || (WORLD.lamps = [])).push([p.x + p.rx * sg * (W - 1.6), trackElev(T, s), p.z + p.rz * sg * (W - 1.6)]);
   }
   for (let s = 17; s < L; s += r.range(20, 30)) {
     const sg = r() < 0.5 ? -1 : 1;
@@ -3073,6 +3159,15 @@ async function buildWorld(progress) {
       g.userData = { lp, rp, cx: r.range(-300, 300), cz: r.range(20, 90), rad: r.range(20, 60), y: r.range(14, 30), sp: r.range(0.2, 0.45) * (r() < 0.5 ? -1 : 1), ph: r() * 6 };
       scene.add(g); WORLD.gulls.push(g);
     }
+  }
+  // GECE: sokak lambalarının yola düşen ışık havuzları (gündüz gizli)
+  if (WORLD.lamps) {
+    const tex = canvasTex(128, 128, (g, w, h) => { const gr = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.35, 'rgba(255,255,255,.55)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
+    const geo = new THREE.PlaneGeometry(15, 15); geo.rotateX(-Math.PI / 2);
+    const mat = new THREE.MeshBasicMaterial({ map: tex, color: new THREE.Color(1.0, 0.72, 0.4), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -8, fog: true });
+    const im = new THREE.InstancedMesh(geo, mat, WORLD.lamps.length); const m4 = new THREE.Matrix4();
+    WORLD.lamps.forEach(([x, e, z], i) => { m4.makeTranslation(x, e + 0.07, z); im.setMatrixAt(i, m4); });
+    im.renderOrder = 4; im.visible = false; im.frustumCulled = false; scene.add(im); WORLD.lampPools = im; WORLD.noReflect.push(im);
   }
   // HIZ ŞERİTLERİ
   {
@@ -4006,7 +4101,7 @@ function buildCar(spec, ctx) {
     // sürücü (kasketli)
     // sürücü kabinin içinde: kafa tavanın altında kalır
     const dr = new THREE.Group(); dr.position.set(0.36, Math.min(belt - 0.22, C.roof - 0.86), seatZ + 0.12); body.add(dr); dr.userData.keep = true;
-    body.userData.driver = dr; body.userData.eye = vec(0.36, dr.position.y + 0.71, seatZ + 0.2);
+    body.userData.driver = dr; body.userData.eye = vec(0.36, dr.position.y + 0.68, seatZ + 0.08); // direksiyondan ~0.5 m geride, tavandan ~18 cm aşağıda
     part(dr, rbox(0.38, 0.5, 0.24, 0.08), mats.shirt, 0, 0.28, 0);
     part(dr, new THREE.SphereGeometry(0.11, 14, 10), mats.skin, 0, 0.64, 0.02);
     part(dr, new THREE.CylinderGeometry(0.12, 0.12, 0.05, 14), mats.cap, 0, 0.73, 0.02);
@@ -4023,8 +4118,8 @@ function buildCar(spec, ctx) {
     }
     if (has('puskul')) {
       const cols = [0xe63946, 0xffd60a, 0x2a9d8f, 0xffffff, 0x1f5fe0].map(c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.9 }));
-      const ty = C.roof - 0.06, tz = C.zWf - 0.06;
-      for (let i = 0; i < 16; i++) part(inner, new THREE.BoxGeometry(0.02, 0.08, 0.02), cols[i % 5], -C.hwR + 0.12 + i * (C.hwR * 2 - 0.24) / 15, ty - 0.04, tz);
+      const ty = C.roof - 0.03, tz = C.zWf - 0.04;
+      for (let i = 0; i < 16; i++) part(inner, new THREE.BoxGeometry(0.012, 0.055, 0.012), cols[i % 5], -C.hwR + 0.12 + i * (C.hwR * 2 - 0.24) / 15, ty - 0.04, tz);
       if (S.shelf) for (let i = 0; i < 18; i++) part(inner, new THREE.BoxGeometry(0.022, 0.08, 0.022), cols[(i + 2) % 5], -C.hwB + 0.12 + i * (C.hwB * 2 - 0.24) / 17, belt - 0.02, rz + 0.01);
     }
     if (has('kopek') && S.shelf) {
@@ -4378,7 +4473,7 @@ function vcolPaintMat(p) {
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform vec3 uPaint;\nvarying float vPm;')
       .replace('#include <color_fragment>', '#include <color_fragment>\n{ float l = dot(vColor.rgb, vec3(0.2126, 0.7152, 0.0722)); diffuseColor.rgb = mix(diffuseColor.rgb, uPaint * clamp(l * 1.45, 0.2, 1.25), vPm); }');
   };
-  m.customProgramCacheKey = () => 'vcolpaint';
+  m.customProgramCacheKey = () => 'vcolpaint|' + LOOK_CUR.id;
   m.userData.cast = true;
   return m;
 }
@@ -4453,7 +4548,7 @@ function buildModelCar(def, ctx, M, ML) {
   const G = def.geo, box = M.box;
   const ex = MD.ex ? vec(MD.ex[0], MD.ex[1], MD.ex[2]) : vec(0.45, 0.3, box.min.z + 0.05);
   const eye = MD.eye ? vec(MD.eye[0], MD.eye[1], MD.eye[2]) : null;
-  return { root, body, wheels, brakeMats, exhausts: [ex], len: (box.max.z - box.min.z) * SC[2], wid: G ? G.W : (box.max.x - box.min.x) * SC[0], headMat: mats.head, revMat: mats.revlight, drop, eye, driver: null, needles: null, model: MD.file };
+  return { root, body, wheels, brakeMats, exhausts: [ex], len: (box.max.z - box.min.z) * SC[2], wid: G ? G.W : (box.max.x - box.min.x) * SC[0], headMat: mats.head, revMat: mats.revlight, drop, eye, hood: !!MD.hood, driver: null, needles: null, model: MD.file };
 }
 
 // ── kayıtlı araçlar ────────────────────────────────────────────────
@@ -4469,7 +4564,7 @@ registerVehicle('sahin', {
 registerVehicle('toros', {
   name: 'Toros', drive: 'Önden çekiş', desc: 'Pazarın, düğünün, yaylanın emektarı. Önden çekişli: virajda burnu dışa kaçar ama asla şaşırtmaz.',
   kind: 'car', spec: CAR_SPECS.toros,
-  model: { file: 'toros', ex: [-0.5, 0.3, -2.12] },
+  model: { file: 'toros', eye: [0, 1.23, 1.03], hood: true, ex: [-0.5, 0.3, -2.12] },
   geo: { W: 1.7, zf: 2.17, zr: -2.17, botY: 0.32, wheel: { x: 0.807, fz: 1.443, rz: -1.218, w: 0.2, r: 0.309 } },
   stats: { mass: 1060, wheelbase: 2.54, frontW: 0.58, drive: 'fwd', torque: 225, gears: [3.6, 2.2, 1.5, 1.12, 0.92], final: 3.8, wheelR: 0.29, cd: 0.41, rearGrip: 1.05, radius: 0.92, axle: 1.25 },
   suspension: 1.2,
@@ -4503,7 +4598,7 @@ registerVehicle('transit', {
 registerVehicle('egea', {
   name: 'Egea', drive: 'Önden çekiş', desc: 'Filonun, taksinin, kurumsalın gözdesi. Önden çekişli ve dengeli: hata affeder, düz yolda şaşırtıcı hızlı.',
   kind: 'car', spec: CAR_SPECS.egea,
-  model: { file: 'egea', eye: [0.4, 1.17, -0.08], ex: [-0.55, 0.24, -2.22] },
+  model: { file: 'egea', eye: [0.4, 1.13, 0.16], ex: [-0.55, 0.24, -2.22] },
   geo: { W: 1.79, zf: 2.26, zr: -2.26, botY: 0.27, wheel: { x: 0.728, fz: 1.378, rz: -1.246, w: 0.23, r: 0.279 } },
   stats: { mass: 1240, wheelbase: 2.64, frontW: 0.6, drive: 'fwd', torque: 262, gears: [3.9, 2.2, 1.45, 1.08, 0.86], final: 3.7, wheelR: 0.32, cd: 0.4, rearGrip: 1.08, radius: 0.95, axle: 1.3 },
   suspension: 1.0,
@@ -4514,7 +4609,7 @@ registerVehicle('scania', {
   name: 'Tır', drive: 'Arkadan itiş', desc: 'MAN TGS yarış çekicisi. Yavaş ivmelenir ama 7 tonluk kütlesiyle önüne çıkanı biçer; virajda erken fren şart.',
   kind: 'car', spec: CAR_SPECS.scania,
   // model gerçek bir çekiciye göre basık/küçük: kabin ~3.45 m yüksekliğe, 6.7 m boya getirilir
-  model: { file: 'man', eye: [0.69, 2.81, 1.74], ex: [-1.18, 0.85, -0.34], scale: [1.12, 1.25, 1.12], wscale: 1.15 },
+  model: { file: 'man', eye: [0.69, 2.44, 1.97], ex: [-1.18, 0.85, -0.34], scale: [1.12, 1.25, 1.12], wscale: 1.15 },
   geo: { W: 2.76, zf: 3.36, zr: -3.36, botY: 0.75, wheel: { x: 1.11, fz: 1.71, rz: -2.29, w: 0.55, r: 0.57 } },
   stats: { mass: 7200, wheelbase: 4.0, frontW: 0.55, drive: 'rwd', torque: 1500, peakRpm: 1400, idle: 650, redline: 2500, gears: [6.0, 4.4, 3.2, 2.4, 1.8, 1.35, 1.0], final: 3.6, wheelR: 0.52, cd: 2.2, rr: 60, brake: 70000, mu: 1.25, cgH: 1.2, radius: 1.45, axle: 2.0 },
   suspension: 1.5,
@@ -4524,7 +4619,7 @@ registerVehicle('scania', {
 registerVehicle('accent', {
   name: 'Accent', drive: 'Önden çekiş', desc: "99 model Hyundai Accent. Hafif ve tepkili: virajı içten keser, düz yolda Egea'yı kovalar.",
   kind: 'car', spec: CAR_SPECS.egea,
-  model: { file: 'accent', ex: [-0.5, 0.26, -2.03] },
+  model: { file: 'accent', eye: [0, 1.09, 1.08], hood: true, ex: [-0.5, 0.26, -2.03] },
   geo: { W: 1.65, zf: 2.06, zr: -2.06, botY: 0.27, wheel: { x: 0.692, fz: 1.244, rz: -1.138, w: 0.22, r: 0.277 } },
   stats: { mass: 1030, wheelbase: 2.38, frontW: 0.61, drive: 'fwd', torque: 238, gears: [3.5, 2.05, 1.42, 1.07, 0.87], final: 3.84, wheelR: 0.28, cd: 0.37, rearGrip: 1.07, radius: 0.9, axle: 1.2 },
   suspension: 1.05,
@@ -4534,7 +4629,7 @@ registerVehicle('accent', {
 registerVehicle('h100', {
   name: 'H100', drive: 'Arkadan itiş', desc: 'Kasası boş Hyundai H100 kamyonet. Arkası hafif, kuyruğu kolay kayar; dizel torkuyla rampada bile durmaz.',
   kind: 'car', spec: CAR_SPECS.transit,
-  model: { file: 'h100', ex: [-0.7, 0.4, -1.55] },
+  model: { file: 'h100', eye: [0, 1.52, 2.3], hood: true, ex: [-0.7, 0.4, -1.55] },
   geo: { W: 1.78, zf: 2.35, zr: -2.35, botY: 0.45, wheel: { x: 0.816, fz: 1.098, rz: -1.024, w: 0.29, r: 0.362 } },
   stats: { mass: 1580, wheelbase: 2.12, frontW: 0.6, drive: 'rwd', torque: 345, peakRpm: 2400, idle: 750, redline: 4600, gears: [4.1, 2.35, 1.5, 1.0, 0.8], final: 3.9, wheelR: 0.36, cd: 0.64, cgH: 0.78, rearGrip: 1.0, radius: 1.05, axle: 1.35 },
   suspension: 1.45,
@@ -4544,7 +4639,7 @@ registerVehicle('h100', {
 registerVehicle('carry', {
   name: 'Carry', drive: 'Arkadan itiş', desc: 'Suzuki Carry minivan: pazarın, kargonun, mahallenin kurtarıcısı. Kısa ve dar — trafikte arada kaybolur ama virajda dikkat, yatar.',
   kind: 'car', spec: CAR_SPECS.transit,
-  model: { file: 'carry', eye: [0.28, 1.55, 0.72], ex: [-0.45, 0.27, -1.66] },
+  model: { file: 'carry', eye: [0.28, 1.48, 0.78], ex: [-0.45, 0.27, -1.66] },
   geo: { W: 1.48, zf: 1.7, zr: -1.7, botY: 0.36, wheel: { x: 0.615, fz: 0.95, rz: -0.945, w: 0.2, r: 0.304 } },
   stats: { mass: 880, wheelbase: 1.9, frontW: 0.55, drive: 'rwd', torque: 196, gears: [3.8, 2.2, 1.45, 1.05, 0.84], final: 4.5, wheelR: 0.3, cd: 0.52, cgH: 0.72, radius: 0.85, axle: 1.1, steerMax: 0.66 },
   suspension: 1.5,
@@ -4615,6 +4710,7 @@ function buildVehicle(custom, opts = {}) {
 
 // Görsel güncelleme (fizik → model)
 function updateVehicleVisual(v, ph, dt) {
+  if (v.headMat && LOOK_CUR.L) v.headMat.emissiveIntensity = LOOK_CUR.L.head; // gece farlar daha parlak
   const S = v.state;
   // yükseklik + yokuş eğimi (havadayken burun yörüngeyi izler)
   const py = ph.y || 0, air = !!ph.air;
@@ -5788,12 +5884,7 @@ function setupTouch() {
   });
   window.addEventListener('deviceorientation', onOri);
   if (LS.get('tilt', 0) && !(typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function')) setTilt(true);
-  // yarış başlarken tam ekran + yatay kilit (destekleyen tarayıcılarda)
-  document.addEventListener('pointerdown', () => {
-    if (!document.body.classList.contains('racing') || document.fullscreenElement) return;
-    const el = document.documentElement;
-    try { const p = el.requestFullscreen && el.requestFullscreen({ navigationUI: 'hide' }); if (p && p.then) p.then(() => { try { screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => { }); } catch (e) { } }).catch(() => { }); } catch (e) { }
-  }, { passive: true });
+  // tam ekran: 52_ui tryFullscreen (her cihazda)
 }
 
 const _prev = [{}, {}, {}, {}];
@@ -6436,12 +6527,23 @@ class Racer {
       const old = this.vis;
       nv.state = old.state; nv.root.visible = old.root.visible;
       scene.add(nv.root); this.vis = nv;
+      if (this.headSpot) this.attachHeadlight();
       updateVehicleVisual(nv, this.phys, 0.016);
       disposeVehicle(old);
       if (this.swapAgain) { this.swapAgain = false; if (nv.modelPending) this.swapVis(); }
     });
   }
-  dispose() { if (this.snd) this.snd.stop(); if (this.melody) { this.melody.stop(); this.melody = null; } disposeVehicle(this.vis); if (this.hud) this.hud.el.remove(); scene.remove(this.label); this.label.material.map.dispose(); this.label.material.dispose(); }
+  attachHeadlight() {
+    if (!this.headSpot) {
+      const k = LOOK_CUR.id === 'gece' ? 1 : 0.45;
+      const sp = new THREE.SpotLight(0xfff1dc, 170 * k, 95, 0.5, 0.65, 1.7); sp.castShadow = false;
+      this.headSpot = sp;
+    }
+    const sp = this.headSpot, G = this.def.kind === 'car' ? vehGeo(this.def) : null, zf = G ? G.zf : 1, y = G ? Math.max(0.6, G.botY + 0.25) : 1.0;
+    sp.position.set(0, y, zf - 0.1); sp.target.position.set(0, -0.6, zf + 22);
+    this.vis.body.add(sp); this.vis.body.add(sp.target);
+  }
+  dispose() { if (this.headSpot) { this.headSpot.removeFromParent(); this.headSpot.target.removeFromParent(); this.headSpot.dispose(); this.headSpot = null; } if (this.snd) this.snd.stop(); if (this.melody) { this.melody.stop(); this.melody = null; } disposeVehicle(this.vis); if (this.hud) this.hud.el.remove(); scene.remove(this.label); this.label.material.map.dispose(); this.label.material.dispose(); }
   netUpdate(dt) {
     const s = NET.snapshot(this.id);
     if (!s) return;
@@ -6649,6 +6751,8 @@ class Race {
     for (const R of locals) { R.snd = new EngineSound(R.def, R.pan); R.snd.local = true; R.snd.panV = R.pan; }
     this.items = new ItemSystem(this);
     $('#huds').classList.remove('hidden');
+    // akşam/gece: yerel oyuncuların farları yolu gerçekten aydınlatır
+    if (LOOK_CUR.id !== 'gun') for (const R of locals) R.attachHeadlight();
     // tüm araç/sahne gölgelendiricilerini sinematik giriş sırasında arka planda derle (ilk saniyelerde takılma olmasın)
     if (this.views[0]) { try { const p = renderer.compileAsync && renderer.compileAsync(scene, this.views[0].cam); if (p && p.catch) p.catch(() => { }); } catch (e) { } }
   }
@@ -6701,7 +6805,7 @@ class Race {
         const raw = readControls(R.slot, this.racers.filter(r => r.local).length === 1);
         if (raw.pause) onPauseKey();
         if (this.paused) continue;
-        if (raw.cam) { R.camMode = (R.camMode + 1) % 4; LS.set('cam' + R.slot, R.camMode); hudFlash(R, ['TAKİP KAMERASI', 'UZAK KAMERA', 'TAMPON KAMERASI', 'İÇ KAMERA'][R.camMode], 900); }
+        if (raw.cam) { R.camMode = (R.camMode + 1) % 4; LS.set('cam' + R.slot, R.camMode); hudFlash(R, ['TAKİP KAMERASI', 'UZAK KAMERA', 'TAMPON KAMERASI', R.vis && R.vis.hood ? 'KAPUT KAMERASI' : 'İÇ KAMERA'][R.camMode], 900); }
         if (raw.horn) AUDIO.horn(R.def.kind, R.pan, R.custom.horn);
         // uzun basış: melodi
         if (raw.hornHeld && R.def.kind !== 'horse') { R.hornT = (R.hornT || 0) + dt; if (R.hornT > 0.45 && !R.melody) R.melody = AUDIO.hornMelody(R.custom.horn || 'disk', R.pan); }
@@ -7197,7 +7301,7 @@ function updateCamera(view, R, dt, spectator) {
     C.hx = smooth(C.hx || 0, clamp(aLat * 0.0035, -0.06, 0.06), 7, dt);
     C.hz = smooth(C.hz || 0, clamp(-aLong * 0.003, -0.05, 0.05), 7, dt);
     const e = V.eye.clone(); e.x -= C.hx; e.z += C.hz; e.y += shY * 0.25;
-    const tgt = V.eye.clone().add(new THREE.Vector3(Math.sin(oy) * 10, -0.9 + view.orbitPitch * 8 + shY * 2, Math.cos(oy) * 10));
+    const tgt = V.eye.clone().add(new THREE.Vector3(Math.sin(oy) * 10, (V.hood ? -0.75 : -0.6) + view.orbitPitch * 8 + shY * 2, Math.cos(oy) * 10));
     V.body.localToWorld(e); V.body.localToWorld(tgt);
     cam.position.copy(e);
     cam.up.set(0, 1, 0).transformDirection(V.body.matrixWorld).lerp(new THREE.Vector3(0, 1, 0), 0.5).normalize();
@@ -7888,8 +7992,18 @@ function showScreen(id) {
   const first = id && $('#' + id + ' button:not([disabled]):not(.hidden)');
   if (first && PADS.length) first.focus();
 }
+// yarış başlarken tam ekran (oyuncu Esc ile çıkarsa o yarışta bir daha zorlanmaz)
+const FS = { userExit: false, want: false };
+function tryFullscreen() {
+  if (!SETTINGS.autoFs || FS.userExit || document.fullscreenElement) return;
+  const el = document.documentElement;
+  try { const p = el.requestFullscreen && el.requestFullscreen({ navigationUI: 'hide' }); if (p && p.then) p.then(() => { FS.want = true; try { screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => { }); } catch (e) { } }).catch(() => { }); } catch (e) { }
+}
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && FS.want && MODE === 'race') FS.userExit = true; if (!document.fullscreenElement) FS.want = false; });
+for (const ev of ['pointerdown', 'keydown']) document.addEventListener(ev, (e) => { if (MODE === 'race' && !(e.key === 'Escape')) tryFullscreen(); }, { passive: true });
 function startRace(mode, o) {
   AUDIO.init();
+  FS.userExit = false; tryFullscreen();
   if (RACE) { RACE.dispose(); RACE = null; }
   clearShowcase();
   RACE = new Race(mode, o);
@@ -8072,7 +8186,10 @@ function renderGarage() {
 function renderSettings() {
   const row = (sel, items, key, after) => chipRow($(sel), items, it => SETTINGS[key] === it.id, it => { SETTINGS[key] = it.id; saveSettings(); after && after(); renderSettings(); });
   row('#sLaps', [1, 2, 3, 5].map(n => ({ id: n, name: n + ' tur' })), 'laps');
-  row('#sQual', [{ id: 'max', name: 'Maksimum' }, { id: 'ultra', name: 'Ultra' }, { id: 'high', name: 'Yüksek' }, { id: 'mid', name: 'Orta' }, { id: 'low', name: 'Düşük' }], 'quality', () => { applyQuality(); menuView.setupPost(); onResize(); });
+  row('#sQual', [{ id: 'max', name: 'Maksimum' }, { id: 'ultra', name: 'Ultra' }, { id: 'high', name: 'Yüksek' }, { id: 'mid', name: 'Orta' }, { id: 'low', name: 'Düşük' }], 'quality', () => { SETTINGS.qUser = 1; saveSettings(); applyQuality(); menuView.setupPost(); onResize(); });
+  { const QN = { max: 'Maksimum', ultra: 'Ultra', high: 'Yüksek', mid: 'Orta', low: 'Düşük' }; const el = $('#sGpu'); if (el) el.textContent = (GPU.name ? 'Ekran kartı: ' + GPU.name.slice(0, 60) + ' · ' : '') + (GPU.tier === 'discrete' ? 'harici' : GPU.tier === 'integrated' ? 'gömülü' : GPU.tier === 'apple' ? 'Apple' : 'yazılım') + ' · önerilen: ' + QN[QUAL_AUTO] + (SETTINGS.qUser ? ' (elle seçildi)' : ''); }
+  row('#sFs', [{ id: true, name: 'Otomatik' }, { id: false, name: 'Kapalı' }], 'autoFs');
+  row('#sLook', LOOK_LIST, 'look', () => applyLook(SETTINGS.look));
   row('#sDyn', [{ id: true, name: 'Açık (akıcı)' }, { id: false, name: 'Kapalı (keskin)' }], 'dynRes', () => { DYN.scale = 1; applyQuality(); onResize(); });
   row('#sSplit', [{ id: 'v', name: 'Yan yana' }, { id: 'h', name: 'Üst üste' }], 'split');
   row('#sBotLv', [{ id: 'kolay', name: 'Kolay' }, { id: 'orta', name: 'Orta' }, { id: 'zor', name: 'Zor' }], 'botLevel');
@@ -8274,6 +8391,7 @@ async function boot() {
     setLoad(0.04, 'Yazı tipleri');
     await loadFonts();
     setLoad(0.08, 'Dokular'); await nextFrame();
+    lookStart(); // görünüm: malzemeler derlenmeden önce
     buildTextures(); buildSignAtlas(); buildMaterials(); buildGeos();
     MODELS.wantAll(PLAYER.custom[0] && PLAYER.custom[0].veh); // 3B araç modelleri arka planda iner
     applyQuality(); onResize();
@@ -8281,7 +8399,8 @@ async function boot() {
     await buildWorld(async (p, txt) => { setLoad(0.1 + p * 0.85, txt); await nextFrame(); });
     PARTICLES.init();
     setLoad(0.96, 'Yansımalar'); await nextFrame();
-    buildCityEnv();
+    applyLook(SETTINGS.look, false); // dünya hazır: lambalar, pencereler
+    buildCityEnv(); WORLD.ready = true;
     await aoP;
     menuView.setupPost(); menuView.resize();
     setShowcase([PLAYER.custom[0]]);
