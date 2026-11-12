@@ -4054,7 +4054,7 @@ function buildCar(spec, ctx) {
     if (S.shelf) part(inner, new THREE.BoxGeometry(C.hwB * 2 - 0.15, 0.03, 0.42), mats.interior, 0, belt + 0.03, rz + 0.2);
     // direksiyon (döner): araca özel çap, kol sayısı, eğim
     const IN = Object.assign({ cluster: 'round2', spokes: 3, wheelR: 0.17, wheelTilt: -0.4, glow: 0xffffff }, S.inside || {});
-    const sw = new THREE.Group(); sw.position.set(0.36, belt + 0.16, swZ); sw.rotation.x = IN.wheelTilt; sw.userData.keep = true; body.add(sw);
+    const sw = new THREE.Group(); sw.position.set(0.36, belt + 0.07, swZ); sw.rotation.x = IN.wheelTilt; sw.userData.keep = true; body.add(sw); // yolu kapatmasın: göz hizasının ~30 cm altında
     part(sw, new THREE.TorusGeometry(IN.wheelR, 0.021, 10, 32), mats.trim);
     part(sw, new THREE.CylinderGeometry(0.05, 0.055, 0.05, 16), mats.trim, 0, 0, -0.01, Math.PI / 2);
     const spA = IN.spokes === 2 ? [0, Math.PI] : IN.spokes === 4 ? [0.5, Math.PI - 0.5, Math.PI + 0.9, -0.9] : [0, Math.PI, -Math.PI / 2];
@@ -4072,7 +4072,7 @@ function buildCar(spec, ctx) {
       const nm = new THREE.Mesh(new THREE.BoxGeometry(0.004, r * 0.85, 0.003), glowM); nm.position.y = r * 0.38; ng.add(nm);
       needles.push({ g: ng, kind });
     };
-    const cy = belt + 0.13, cz = Math.min(swZ + 0.2, zWs(belt + 0.25) - 0.13), cx = 0.36;
+    const cy = belt + 0.07, cz = Math.min(swZ + 0.2, zWs(belt + 0.25) - 0.13), cx = 0.36;
     const big = IN.cluster === 'truck';
     part(body, rbox(big ? 0.62 : 0.4, 0.15, 0.14, 0.04), mats.interior, cx, cy + 0.02, cz + 0.04);
     if (IN.cluster === 'square') {
@@ -4101,7 +4101,7 @@ function buildCar(spec, ctx) {
     // sürücü (kasketli)
     // sürücü kabinin içinde: kafa tavanın altında kalır
     const dr = new THREE.Group(); dr.position.set(0.36, Math.min(belt - 0.22, C.roof - 0.86), seatZ + 0.12); body.add(dr); dr.userData.keep = true;
-    body.userData.driver = dr; body.userData.eye = vec(0.36, dr.position.y + 0.68, seatZ + 0.08); // direksiyondan ~0.5 m geride, tavandan ~18 cm aşağıda
+    body.userData.driver = dr; body.userData.eye = vec(0.36, Math.min(dr.position.y + 0.72, C.roof - 0.14), seatZ + 0.08); // direksiyondan ~0.5 m geride, tavandan ~18 cm aşağıda
     part(dr, rbox(0.38, 0.5, 0.24, 0.08), mats.shirt, 0, 0.28, 0);
     part(dr, new THREE.SphereGeometry(0.11, 14, 10), mats.skin, 0, 0.64, 0.02);
     part(dr, new THREE.CylinderGeometry(0.12, 0.12, 0.05, 14), mats.cap, 0, 0.73, 0.02);
@@ -4502,7 +4502,7 @@ function buildModelCar(def, ctx, M, ML) {
   const pick = (src, isBody) => {
     const key = src.uuid + (isBody ? 'b' : 'w');
     if (cache.has(key)) return cache.get(key);
-    const nm = (MD.matMap && MD.matMap[src.name]) || src.name;
+    const nm = (isBody && MD.bodyMap && MD.bodyMap[src.name]) || (MD.matMap && MD.matMap[src.name]) || src.name;
     let m = src;
     if (nm === 'paint') m = pc.livery && src.map ? own(new THREE.MeshPhysicalMaterial({ map: src.map, roughness: 0.4, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.04, envMapIntensity: 1.3 })) : mats.paint;
     else if (nm === 'vcol' || nm === 'lodp') {
@@ -4516,6 +4516,7 @@ function buildModelCar(def, ctx, M, ML) {
     else if (nm === 'rev') m = mats.revlight;
     else if (nm === 'chrome') m = withMap(mats.chrome, src);
     else if (nm === 'rim') m = mats.rim;
+    else if (nm === 'dark') m = mats.interior;
     else if (nm === 'tire') m = src.map ? src : mats.tire;
     cache.set(key, m);
     return m;
@@ -4602,7 +4603,7 @@ registerVehicle('transit', {
 registerVehicle('egea', {
   name: 'Egea', drive: 'Önden çekiş', desc: 'Filonun, taksinin, kurumsalın gözdesi. Önden çekişli ve dengeli: hata affeder, düz yolda şaşırtıcı hızlı.',
   kind: 'car', spec: CAR_SPECS.egea,
-  model: { file: 'egea', eye: [0.4, 1.13, 0.16], ex: [-0.55, 0.24, -2.22] },
+  model: { file: 'egea', eye: [0.4, 1.13, 0.16], bodyMap: { metal: 'dark' }, ex: [-0.55, 0.24, -2.22] },
   geo: { W: 1.79, zf: 2.26, zr: -2.26, botY: 0.27, wheel: { x: 0.728, fz: 1.378, rz: -1.246, w: 0.23, r: 0.279 } },
   stats: { mass: 1240, wheelbase: 2.64, frontW: 0.6, drive: 'fwd', torque: 262, gears: [3.9, 2.2, 1.45, 1.08, 0.86], final: 3.7, wheelR: 0.32, cd: 0.4, rearGrip: 1.08, radius: 0.95, axle: 1.3 },
   suspension: 1.0,
