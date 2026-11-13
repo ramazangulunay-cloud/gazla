@@ -4414,7 +4414,7 @@ function buildCar(spec, ctx) {
     part(inner, rbox(C.hwB * 2 - 0.22, 0.52, 0.12, 0.05), mats.seat, 0, belt + 0.02, S.rearSeatZ ?? (rz + 0.42), -0.12);
     if (S.shelf) part(inner, new THREE.BoxGeometry(C.hwB * 2 - 0.15, 0.03, 0.42), mats.interior, 0, belt + 0.03, rz + 0.2);
     // direksiyon (döner): deri kaplı kalın simit, göbekte korna yastığı + amblem
-    const sw = new THREE.Group(); sw.position.set(0.36, belt + 0.07, swZ); sw.rotation.x = IN.wheelTilt; sw.userData.keep = true; body.add(sw); // yolu kapatmasın: göz hizasının ~30 cm altında
+    const sw = new THREE.Group(); sw.position.set(0.36, belt + 0.07, swZ); sw.rotation.x = -IN.wheelTilt; sw.userData.keep = true; body.add(sw); // üst kenarı ileri yatık, yüzü sürücüye bakar; göz hizasının ~30 cm altında
     part(sw, new THREE.TorusGeometry(IN.wheelR, 0.022, 12, 40), mats.wheelLeather);
     part(sw, new THREE.CylinderGeometry(0.062, 0.068, 0.05, 20), mats.trim, 0, 0, -0.01, Math.PI / 2);
     part(sw, new THREE.CylinderGeometry(0.02, 0.02, 0.006, 16), mats.chrome, 0, 0, -0.037, Math.PI / 2);
@@ -7013,7 +7013,7 @@ function ensureTwin(R) {
   try {
     const tw = buildVehicle(R.custom, { proc: true });
     for (const c of tw.root.children) if (c !== tw.body) c.visible = false;
-    tw.body.position.y = 0; tw.root.visible = false;
+    tw.body.position.y = 0; tw.root.visible = false; if (tw.driver) tw.driver.visible = false;
     V.body.add(tw.root); V.twin = tw;
   } catch (e) { console.warn('[kokpit] ikiz kurulamadı', e); V.hood = false; }
 }
@@ -8113,7 +8113,7 @@ function frame(now) {
       if (R2.vis.driver) R2.vis.driver.visible = !me;
       const ck = R2.vis.cockpit; if (ck && ck.arms) ck.arms.g.visible = me;
       // içi boş (taranmış) modellerde kokpit ikizi: yalnız bu oyuncunun iç kamerasında görünür
-      if (R2.vis.twin) { R2.vis.twin.root.visible = me; if (R2.vis.modelMesh) R2.vis.modelMesh.visible = !me; }
+      if (R2.vis.twin) { R2.vis.twin.root.visible = me; if (R2.vis.modelMesh) R2.vis.modelMesh.visible = !me; const tc = R2.vis.twin.cockpit; if (tc && tc.arms) tc.arms.g.visible = me; }
     }
 
     // iç kamerada kendi camların neredeyse şeffaf (cam filmi ve yansıma yolu kapatmasın)
