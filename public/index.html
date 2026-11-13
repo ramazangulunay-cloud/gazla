@@ -2249,6 +2249,30 @@ function buildTextures() {
   });
   TEX.dialS = dialTex(240, 40, 0, 'km/sa');
   TEX.dialR = dialTex(8, 1, 0.78, 'x1000 d/d');
+  // küçük yakıt/hararet kadranları
+  const miniDial = (lab, lo, hi, redHi) => canvasTex(128, 128, (g, w, h) => {
+    g.fillStyle = '#07090c'; g.fillRect(0, 0, w, h); const cx = w / 2, cy = h / 2 + 8, R = w * 0.4, a0 = Math.PI * 1.15, a1 = Math.PI * 1.85;
+    g.strokeStyle = '#f2f4f6'; g.lineWidth = 4; for (let i = 0; i <= 4; i++) { const a = a0 + (a1 - a0) * i / 4; g.beginPath(); g.moveTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R); g.lineTo(cx + Math.cos(a) * (R - 12), cy + Math.sin(a) * (R - 12)); g.stroke(); }
+    g.strokeStyle = '#e0261a'; g.lineWidth = 6; g.beginPath(); redHi ? g.arc(cx, cy, R - 4, a1 - 0.25, a1) : g.arc(cx, cy, R - 4, a0, a0 + 0.25); g.stroke();
+    g.fillStyle = '#c9d0d8'; g.font = '700 22px "Saira Condensed", sans-serif'; g.textAlign = 'center'; g.fillText(lo, cx - R * 0.75, cy + 18); g.fillText(hi, cx + R * 0.75, cy + 18); g.font = '600 18px "Saira", sans-serif'; g.fillText(lab, cx, cy + 34);
+  });
+  TEX.dialF = miniDial('YAKIT', 'E', 'F', false); TEX.dialT = miniDial('°C', 'C', 'H', true);
+  // radyo ekranı (kehribar LCD)
+  TEX.radio = canvasTex(256, 64, (g, w, h) => {
+    g.fillStyle = '#120a02'; g.fillRect(0, 0, w, h); g.fillStyle = '#ffb02a'; g.font = '700 38px "Saira Condensed", monospace'; g.textBaseline = 'middle';
+    g.fillText('FM 98.5', 14, h / 2 + 2); g.font = '600 20px "Saira Condensed", monospace'; g.fillText('RAPID55', 160, h / 2 + 2);
+  });
+  // koltuk kumaşı (çizgili kadife) ve ahşap kaplama
+  TEX.seatFab = canvasTex(128, 128, (g, w, h) => {
+    const r = rng(9); g.fillStyle = '#9a9a9a'; g.fillRect(0, 0, w, h);
+    for (let x = 0; x < w; x += 8) { g.fillStyle = x % 16 ? '#a8a8a8' : '#8a8a8a'; g.fillRect(x, 0, 6, h); }
+    for (let i = 0; i < 1600; i++) { g.fillStyle = `rgba(${r() < 0.5 ? 0 : 255},${r() < 0.5 ? 0 : 255},${r() < 0.5 ? 0 : 255},.05)`; g.fillRect(r() * w, r() * h, 1, 1); }
+  }, { repeat: true });
+  TEX.seatFab.repeat.set(3, 3);
+  TEX.wood = canvasTex(256, 64, (g, w, h) => {
+    const r = rng(4); g.fillStyle = '#6a3b1a'; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 40; i++) { g.strokeStyle = `rgba(${r() < 0.5 ? '40,18,6' : '150,90,45'},${0.15 + r() * 0.25})`; g.lineWidth = 1 + r() * 2; g.beginPath(); const y0 = r() * h; g.moveTo(0, y0); for (let x = 0; x <= w; x += 16) g.lineTo(x, y0 + Math.sin(x * 0.03 + i) * 4 + (r() - 0.5) * 2); g.stroke(); }
+  }, { repeat: true });
   TEX.screen = canvasTex(256, 160, (g, w, h) => {
     const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#0c1c2c'); gr.addColorStop(1, '#050b14'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
     g.strokeStyle = 'rgba(24,214,255,.55)'; g.lineWidth = 6; g.beginPath(); g.moveTo(30, h - 20); g.bezierCurveTo(90, h - 60, 120, 40, 230, 30); g.stroke();
@@ -3451,7 +3475,7 @@ const CAR_SPECS = {
     cladding: { y: 0.5, h: 0.09 }, strip: null, doors: [0.83, -0.36, -1.32], handleY: 0.84, shelf: true, spoiler: { z: -1.95, y: 0.965 }, antenna: true,
     hood: { z0: 2.02, z1: 0.92 }, trunk: { z0: -1.38, z1: -2.06 }, mirror: 'black',
     gutter: 'chrome',
-    inside: { dash: 0x3b2a20, seat: 0x6b4a32, cluster: 'square', spokes: 2, wheelR: 0.19, glow: 0x9dff70 },
+    inside: { dash: 0x3b2a20, seat: 0x6b4a32, cluster: 'square', spokes: 2, wheelR: 0.19, glow: 0x9dff70, wood: true, crank: true },
   },
   // 70'ler/90'lar Fransız kökenli station wagon: uzun tavan, dik bagaj kapağı, çift yuvarlak far, siyah ön bant, tavan barı
   toros: {
@@ -3466,7 +3490,7 @@ const CAR_SPECS = {
     strip: { y: 0.6, mat: 'trim' }, doors: [0.78, -0.42, -1.4], handleY: 0.84, shelf: false, rack: true, spoiler: null, rearSeatZ: -0.95,
     hood: { z0: 2.08, z1: 0.88 }, mirror: 'black',
     gutter: 'chrome',
-    inside: { dash: 0x2a2a2c, seat: 0x5a4a3a, cluster: 'square', spokes: 2, wheelR: 0.19, glow: 0x9dff70 },
+    inside: { dash: 0x2a2a2c, seat: 0x5a4a3a, cluster: 'square', spokes: 2, wheelR: 0.19, glow: 0x9dff70, wood: true, crank: true },
   },
   // kısa, uzun boylu 3 kapı 4x4: tam genişlik ızgara paneli, yuvarlak farlar, üst köşede sinyal, siyah çamurluk dudakları
   niva: {
@@ -3482,7 +3506,7 @@ const CAR_SPECS = {
     archTrim: true, strip: null, doors: [0.5, -0.62], handleY: 1.02, shelf: false, rack: false, spoiler: null, spare: true,
     hood: { z0: 1.8, z1: 0.6 }, mirror: 'black',
     gutter: 'trim',
-    inside: { dash: 0x1d1d1f, seat: 0x3c3a36, cluster: 'round4', spokes: 3, wheelR: 0.19, glow: 0xffd27a },
+    inside: { dash: 0x1d1d1f, seat: 0x3c3a36, cluster: 'round4', spokes: 3, wheelR: 0.19, glow: 0xffd27a, crank: true },
   },
   // 80'ler Alman spor coupe (DTM tarzı): köşeli kabarık çamurluklar, gövde renkli tampon + siyah dudak, dörtlü yuvarlak far, büyük arka kanat
   e30: {
@@ -3832,6 +3856,17 @@ function vehicleMats(custom, lite) {
   m.interior = new THREE.MeshStandardMaterial({ color: IN.dash ?? 0x24211e, roughness: 0.82 });
   m.seat = new THREE.MeshStandardMaterial({ color: IN.seat ?? 0x4d3627, roughness: 0.8 });
   m.liner = new THREE.MeshStandardMaterial({ color: IN.liner ?? 0x5f5a53, roughness: 0.95, side: THREE.BackSide });
+  if (!lite) {
+    if (TEX.seatFab) { m.seat.map = TEX.seatFab; m.seat.color.offsetHSL(0, 0, 0.08); }
+    m.soft = new THREE.MeshStandardMaterial({ color: new THREE.Color(IN.dash ?? 0x24211e).offsetHSL(0, -0.05, 0.06), roughness: 0.9 });
+    m.wood = new THREE.MeshPhysicalMaterial({ color: 0x5a3216, roughness: 0.45, clearcoat: 0.8, map: TEX.wood || null });
+    m.vent = new THREE.MeshStandardMaterial({ color: 0x08090a, roughness: 0.85 });
+    m.carpet = new THREE.MeshStandardMaterial({ color: 0x17171a, roughness: 1 });
+    m.boot = new THREE.MeshStandardMaterial({ color: 0x111112, roughness: 0.7, side: THREE.DoubleSide });
+    m.wheelLeather = new THREE.MeshStandardMaterial({ color: 0x141414, roughness: 0.62 });
+    m.glove = new THREE.MeshStandardMaterial({ color: 0x1b1b1d, roughness: 0.55 });
+    m.sleeve = new THREE.MeshStandardMaterial({ color: 0x23272e, roughness: 0.8 });
+  }
   m.coat = new THREE.MeshPhysicalMaterial({ color: rim.c, roughness: 0.55, sheen: 0.6, sheenRoughness: 0.5, sheenColor: new THREE.Color(rim.c).lerp(new THREE.Color(1, 1, 1), 0.4) });
   m.leather = new THREE.MeshStandardMaterial({ color: 0x5b3a1e, roughness: 0.55 });
   m.skin = new THREE.MeshStandardMaterial({ color: 0xd4a07a, roughness: 0.75 });
@@ -4258,26 +4293,46 @@ function buildCar(spec, ctx) {
     // ön camın verilen yükseklikteki z'si (loftCabin ile aynı eğri)
     const zWs = (y) => lerp(C.zB, C.zWf, Math.pow(clamp((y - belt) / (C.roof - belt), 0, 1), 0.92));
     const inner = new THREE.Group(); body.add(inner);
-    part(inner, rbox(C.hwB * 2 - 0.12, 0.22, 0.4, 0.06), mats.interior, 0, belt - 0.04, zWs(belt + 0.07) - 0.24);
-    part(inner, new THREE.BoxGeometry(C.hwB * 2 - 0.15, 0.06, fz - rz), mats.interior, 0, belt - 0.3, (fz + rz) / 2);
+    // ═══ KOKPİT (iç kameradan yakından bakılır): torpido, gösterge kümesi, orta konsol, kapı döşemeleri,
+    //     koltuklar, vites/el freni, canlı dikiz aynası, direksiyonu tutan eller ═══
+    const IN = Object.assign({ cluster: 'round2', spokes: 3, wheelR: 0.17, wheelTilt: -0.4, glow: 0xffffff }, S.inside || {});
+    const hwI = C.hwB - 0.05;                                   // kapı döşemesi iç yüzü
     const swZ = Math.min(fz - 0.42, zWs(belt + 0.33) - 0.1);
     const seatZ = Math.min(fz - 0.95, swZ - 0.58);
-    const backTop = Math.min(belt + 0.35, C.roof - 0.2), rest = Math.min(belt + 0.4, C.roof - 0.17);
-    for (const sx of [-0.36, 0.36]) {
-      part(inner, rbox(0.46, backTop - belt + 0.25, 0.12, 0.05), mats.seat, sx, (backTop + belt - 0.25) / 2, seatZ, -0.15);
-      part(inner, rbox(0.24, 0.14, 0.1, 0.04), mats.seat, sx, rest, seatZ - 0.03, -0.1);
+    const dashBack = swZ + 0.13, zf0 = zWs(belt + 0.02) - 0.02;  // torpido arka yüzü / cam dibi
+    const dd = Math.max(0.25, zf0 - dashBack);
+    {
+      // torpido: yanlardan bakınca yuvarlak hatlı profil, tüm genişlik boyunca uzatılmış (yumuşak kenarlı)
+      const sh = new THREE.Shape();
+      sh.moveTo(zf0, belt + 0.02);
+      sh.lineTo(zf0 - dd * 0.5, belt + 0.07);
+      sh.quadraticCurveTo(dashBack - 0.01, belt + 0.075, dashBack, belt - 0.02);
+      sh.quadraticCurveTo(dashBack - 0.005, belt - 0.14, dashBack + 0.09, belt - 0.27);
+      sh.lineTo(zf0 - 0.05, belt - 0.36); sh.lineTo(zf0, belt - 0.2); sh.closePath();
+      const wd = hwI * 2 - 0.02;
+      const g = new THREE.ExtrudeGeometry(sh, { depth: wd, bevelEnabled: true, bevelThickness: 0.012, bevelSize: 0.012, bevelSegments: 2, curveSegments: 8 });
+      g.applyMatrix4(new THREE.Matrix4().set(0, 0, -1, wd / 2, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1)); g.computeVertexNormals();
+      part(inner, g, mats.interior);
+      // yüz şeridi: eski arabalarda ahşap, yenilerde parlak siyah / krom
+      part(inner, rbox(wd - 0.08, 0.035, 0.012, 0.005), IN.wood ? mats.wood : mats.trim, 0, belt - 0.07, dashBack + 0.003);
+      // ön cam dibinde koyu havalandırma ızgarası
+      part(inner, new THREE.BoxGeometry(wd - 0.2, 0.004, 0.06), mats.vent, 0, belt + 0.03, zf0 - 0.05, -0.08);
+      // torpido gözü (yolcu tarafı) ve ek yerleri
+      part(inner, rbox(0.42, 0.16, 0.012, 0.01), mats.soft, -0.36, belt - 0.17, dashBack + 0.06, -0.45);
+      part(inner, rbox(0.07, 0.012, 0.02, 0.005), mats.chrome, -0.36, belt - 0.105, dashBack + 0.035, -0.45);
+      // yan havalandırmalar (yuvarlak) + orta havalandırmalar (dikdörtgen kanatçıklı)
+      for (const sx of [-1, 1]) {
+        const vx = sx * (hwI - 0.12);
+        part(inner, new THREE.TorusGeometry(0.042, 0.009, 8, 20), mats.chrome, vx, belt - 0.02, dashBack - 0.002);
+        part(inner, new THREE.CircleGeometry(0.04, 18), mats.vent, vx, belt - 0.02, dashBack + 0.004, 0, Math.PI, 0);
+        for (let i = -1; i <= 1; i++) part(inner, new THREE.BoxGeometry(0.07, 0.006, 0.01), mats.trim, vx, belt - 0.02 + i * 0.018, dashBack - 0.004);
+      }
+      for (const sx of [-1, 1]) {
+        part(inner, rbox(0.1, 0.05, 0.02, 0.006), mats.vent, sx * 0.065, belt + 0.0, dashBack + 0.0);
+        for (let i = 0; i < 3; i++) part(inner, new THREE.BoxGeometry(0.09, 0.005, 0.012), mats.trim, sx * 0.065, belt - 0.015 + i * 0.015, dashBack - 0.006);
+      }
     }
-    part(inner, rbox(C.hwB * 2 - 0.22, 0.52, 0.12, 0.05), mats.seat, 0, belt + 0.02, S.rearSeatZ ?? (rz + 0.42), -0.12);
-    if (S.shelf) part(inner, new THREE.BoxGeometry(C.hwB * 2 - 0.15, 0.03, 0.42), mats.interior, 0, belt + 0.03, rz + 0.2);
-    // direksiyon (döner): araca özel çap, kol sayısı, eğim
-    const IN = Object.assign({ cluster: 'round2', spokes: 3, wheelR: 0.17, wheelTilt: -0.4, glow: 0xffffff }, S.inside || {});
-    const sw = new THREE.Group(); sw.position.set(0.36, belt + 0.07, swZ); sw.rotation.x = IN.wheelTilt; sw.userData.keep = true; body.add(sw); // yolu kapatmasın: göz hizasının ~30 cm altında
-    part(sw, new THREE.TorusGeometry(IN.wheelR, 0.021, 10, 32), mats.trim);
-    part(sw, new THREE.CylinderGeometry(0.05, 0.055, 0.05, 16), mats.trim, 0, 0, -0.01, Math.PI / 2);
-    const spA = IN.spokes === 2 ? [0, Math.PI] : IN.spokes === 4 ? [0.5, Math.PI - 0.5, Math.PI + 0.9, -0.9] : [0, Math.PI, -Math.PI / 2];
-    for (const a of spA) { const k = new THREE.Mesh(rbox(IN.wheelR, 0.03, 0.014, 0.006), mats.trim); k.position.set(Math.cos(a) * IN.wheelR / 2, Math.sin(a) * IN.wheelR / 2, -0.005); k.rotation.z = a; k.castShadow = true; sw.add(k); }
-    body.userData.steeringWheel = sw;
-    // ── kokpit: gösterge kümesi (canlı ibreler), orta konsol, vites, ayna, güneşlikler, ekran
+    // gösterge kümesi: siperlik + kadranlar (canlı ibreler) + uyarı lambaları + yakıt/hararet
     const glowM = new THREE.MeshStandardMaterial({ color: IN.glow, emissive: IN.glow, emissiveIntensity: 1.6, roughness: 0.4 });
     const needles = [];
     const dial = (x, y, z, r, kind, tex) => {
@@ -4287,31 +4342,112 @@ function buildCar(spec, ctx) {
       if (!kind) return;
       const ng = new THREE.Group(); ng.position.set(x, y, z - 0.006); ng.userData.keep = true; body.add(ng);
       const nm = new THREE.Mesh(new THREE.BoxGeometry(0.004, r * 0.85, 0.003), glowM); nm.position.y = r * 0.38; ng.add(nm);
+      part(ng, new THREE.CylinderGeometry(0.008, 0.008, 0.006, 10), mats.trim, 0, 0, -0.002, Math.PI / 2);
       needles.push({ g: ng, kind });
     };
-    const cy = belt + 0.07, cz = Math.min(swZ + 0.2, zWs(belt + 0.25) - 0.13), cx = 0.36;
+    const cy = belt + 0.07, cz = dashBack + 0.04, cx = 0.36;
     const big = IN.cluster === 'truck';
-    part(body, rbox(big ? 0.62 : 0.4, 0.15, 0.14, 0.04), mats.interior, cx, cy + 0.02, cz + 0.04);
+    const cw = big ? 0.62 : 0.42;
+    part(body, rbox(cw, 0.17, 0.12, 0.03), mats.interior, cx, cy + 0.0, cz + 0.03);           // küme yuvası
+    part(body, rbox(cw + 0.04, 0.035, 0.16, 0.015), mats.interior, cx, cy + 0.095, cz - 0.0, -0.18); // siperlik
+    part(body, new THREE.PlaneGeometry(cw - 0.03, 0.14), mats.vent, cx, cy, cz - 0.031, 0, Math.PI, 0); // koyu kadran tabanı
     if (IN.cluster === 'square') {
       part(body, rbox(0.34, 0.11, 0.01, 0.01), mats.trim, cx, cy, cz - 0.03);
       dial(cx - 0.075, cy, cz - 0.04, 0.05, 'spd', TEX.dialS); dial(cx + 0.075, cy, cz - 0.04, 0.05, 'rpm', TEX.dialR);
     } else {
       const r = big ? 0.08 : 0.062, dx = big ? 0.2 : 0.085;
       dial(cx - dx, cy, cz - 0.04, r, 'spd', TEX.dialS); dial(cx + dx, cy, cz - 0.04, r, 'rpm', TEX.dialR);
-      if (IN.cluster === 'round4') { dial(cx - 0.17, cy - 0.02, cz - 0.03, 0.034, null, TEX.dialS); dial(cx + 0.17, cy - 0.02, cz - 0.03, 0.034, null, TEX.dialR); }
+      if (IN.cluster === 'round4') { dial(cx - 0.17, cy - 0.02, cz - 0.03, 0.034, 'fuel', TEX.dialF); dial(cx + 0.17, cy - 0.02, cz - 0.03, 0.034, 'temp', TEX.dialT); }
       if (big) { const sc = new THREE.Mesh(new THREE.PlaneGeometry(0.16, 0.1), new THREE.MeshStandardMaterial({ map: TEX.screen, emissive: 0xffffff, emissiveMap: TEX.screen, emissiveIntensity: 0.8 })); sc.rotation.y = Math.PI; sc.position.set(cx, cy, cz - 0.045); sc.userData.keep = true; body.add(sc); }
     }
+    if (IN.cluster !== 'round4' && !big) { dial(cx + 0.165, cy - 0.025, cz - 0.03, 0.028, 'fuel', TEX.dialF); dial(cx - 0.165, cy - 0.025, cz - 0.03, 0.028, 'temp', TEX.dialT); }
+    // uyarı lambaları: sinyal (yeşil), uzun far (mavi), yağ (kırmızı), akü (kırmızı)
+    const lamps = [[0x2bff6a, -0.04], [0x2a8bff, -0.013], [0xff2a1a, 0.013], [0xffb000, 0.04]];
+    for (const [c, ox] of lamps) part(body, new THREE.CircleGeometry(0.0055, 10), new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: c === 0x2a8bff ? 0.3 : 1.4 }), cx + ox, cy - 0.055, cz - 0.033, 0, Math.PI, 0);
     body.userData.needles = needles;
-    // orta konsol + vites kolu
-    part(inner, rbox(0.24, 0.32, Math.max(0.4, swZ - seatZ + 0.1), 0.05), mats.interior, 0.02, belt - 0.24, (swZ + seatZ) / 2 + 0.05);
-    part(inner, new THREE.CylinderGeometry(0.012, 0.014, 0.2, 8), mats.trim, 0.1, belt - 0.02, seatZ + 0.32, -0.25);
-    part(inner, new THREE.SphereGeometry(0.03, 12, 8), mats.trim, 0.1, belt + 0.08, seatZ + 0.29);
-    if (IN.screen) { const sc = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.12), new THREE.MeshStandardMaterial({ map: TEX.screen, emissive: 0xffffff, emissiveMap: TEX.screen, emissiveIntensity: 0.9 })); sc.rotation.set(-0.2, Math.PI, 0); sc.position.set(0.02, belt + (big ? 0.0 : 0.1), zWs(belt + 0.1) - (big ? 0.42 : 0.3)); sc.userData.keep = true; body.add(sc); }
-    // iç dikiz aynası + güneşlikler
-    const my = C.roof - C.rr - 0.12;
-    part(body, rbox(0.22, 0.06, 0.025, 0.012), mats.trim, 0, my, zWs(my) - 0.07);
-    part(body, new THREE.BoxGeometry(0.01, 0.08, 0.01), mats.trim, 0, my + 0.05, zWs(my + 0.05) - 0.05);
-    for (const sx of [-1, 1]) part(body, rbox(0.38, 0.016, 0.17, 0.008), mats.liner.clone ? new THREE.MeshStandardMaterial({ color: 0x5f5a53, roughness: 0.95 }) : mats.interior, sx * 0.36, C.roof - C.rr - 0.03, zWs(C.roof - C.rr - 0.03) - 0.11, 0.25);
+    // orta konsol: radyo (yanan ekran), düğmeler, vites körüğü, el freni
+    const stackZ = dashBack + 0.02;
+    part(inner, rbox(0.28, 0.34, 0.09, 0.03), mats.interior, 0.0, belt - 0.16, stackZ + 0.03, 0.12);
+    part(inner, rbox(0.22, 0.07, 0.012, 0.008), mats.trim, 0.0, belt - 0.1, stackZ - 0.02, 0.12);
+    if (!IN.screen) {
+      const rd = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.028), new THREE.MeshStandardMaterial({ map: TEX.radio, emissive: 0xffffff, emissiveMap: TEX.radio, emissiveIntensity: 1.1, color: 0x000000 }));
+      rd.position.set(0.0, belt - 0.1, stackZ - 0.027); rd.rotation.set(-0.12, Math.PI, 0); rd.userData.keep = true; body.add(rd);
+      for (const sx of [-1, 1]) part(inner, new THREE.CylinderGeometry(0.014, 0.014, 0.02, 14), mats.chrome, sx * 0.085, belt - 0.1, stackZ - 0.03, Math.PI / 2 - 0.12);
+    }
+    for (let i = 0; i < 3; i++) part(inner, new THREE.CylinderGeometry(0.018, 0.018, 0.016, 14), mats.trim, (i - 1) * 0.07, belt - 0.21, stackZ - 0.01, Math.PI / 2 - 0.12);
+    part(inner, rbox(0.24, Math.max(0.2, belt - 0.33 - (belt - 0.5)), Math.max(0.4, swZ - seatZ + 0.1), 0.05), mats.interior, 0.0, belt - 0.4, (swZ + seatZ) / 2 + 0.02);
+    // vites kolu (vitese göre H deseninde oynar)
+    const gl = new THREE.Group(); gl.position.set(0.02, belt - 0.29, seatZ + 0.4); gl.userData.keep = true; body.add(gl);
+    part(gl, new THREE.CylinderGeometry(0.022, 0.06, 0.09, 12, 1, true), mats.boot, 0, 0.045, 0);
+    part(gl, new THREE.CylinderGeometry(0.008, 0.009, 0.2, 8), mats.chrome, 0, 0.14, 0);
+    const knob = part(gl, new THREE.SphereGeometry(0.03, 14, 10), IN.wood ? mats.wood : mats.trim, 0, 0.25, 0);
+    body.userData.gearLever = gl; body.userData.gearKnob = knob;
+    // el freni
+    part(inner, rbox(0.04, 0.035, 0.24, 0.015), mats.trim, 0.02, belt - 0.29, seatZ + 0.06, 0.18);
+    part(inner, new THREE.BoxGeometry(0.012, 0.012, 0.03), mats.chrome, 0.02, belt - 0.255, seatZ - 0.055);
+    // zemin halısı
+    part(inner, new THREE.BoxGeometry(hwI * 2, 0.02, fz - rz), mats.carpet, 0, belt - 0.5, (fz + rz) / 2);
+    // kapı döşemeleri: kolçak, kapı kolu, (eski arabalarda) cam kolu, hoparlör
+    for (const sx of [-1, 1]) {
+      const dz0 = seatZ - 0.35, dz1 = fz - 0.04, dzc = (dz0 + dz1) / 2, xi = sx * (hwI + 0.005);
+      part(inner, rbox(0.03, 0.46, dz1 - dz0, 0.012), mats.soft, xi, belt - 0.22, dzc);
+      part(inner, rbox(0.035, 0.03, dz1 - dz0 - 0.04, 0.01), mats.interior, xi - sx * 0.01, belt - 0.015, dzc);
+      part(inner, rbox(0.07, 0.04, 0.34, 0.015), mats.interior, xi - sx * 0.04, belt - 0.2, seatZ + 0.24);
+      part(inner, rbox(0.016, 0.022, 0.09, 0.006), mats.chrome, xi - sx * 0.02, belt - 0.07, seatZ + 0.5);
+      part(inner, new THREE.CircleGeometry(0.06, 18), mats.vent, xi - sx * 0.017, belt - 0.36, dz1 - 0.14, 0, sx * -Math.PI / 2, 0);
+      if (IN.crank) {
+        part(inner, new THREE.CylinderGeometry(0.015, 0.015, 0.02, 10), mats.chrome, xi - sx * 0.02, belt - 0.26, seatZ + 0.5, 0, 0, Math.PI / 2);
+        part(inner, rbox(0.012, 0.012, 0.08, 0.005), mats.chrome, xi - sx * 0.03, belt - 0.26, seatZ + 0.54);
+        part(inner, new THREE.CylinderGeometry(0.01, 0.01, 0.035, 8), mats.trim, xi - sx * 0.045, belt - 0.26, seatZ + 0.58, 0, 0, Math.PI / 2);
+      }
+    }
+    // ön koltuklar: oturak + yan destekli sırt + başlık (kumaş dokulu)
+    const backTop = Math.min(belt + 0.35, C.roof - 0.2), rest = Math.min(belt + 0.4, C.roof - 0.17);
+    for (const sx of [-0.36, 0.36]) {
+      part(inner, rbox(0.48, 0.12, 0.5, 0.05), mats.seat, sx, belt - 0.36, seatZ + 0.26, 0.06);
+      const bh = backTop - belt + 0.28;
+      part(inner, rbox(0.44, bh, 0.11, 0.05), mats.seat, sx, (backTop + belt - 0.28) / 2, seatZ - 0.01, -0.2);
+      for (const bx of [-1, 1]) part(inner, rbox(0.07, bh * 0.8, 0.15, 0.03), mats.seat, sx + bx * 0.21, (backTop + belt - 0.28) / 2 - 0.03, seatZ + 0.01, -0.2);
+      part(inner, rbox(0.25, 0.15, 0.09, 0.04), mats.seat, sx, rest, seatZ - 0.085, -0.12);
+      for (const hx of [-0.07, 0.07]) part(inner, new THREE.CylinderGeometry(0.006, 0.006, 0.06, 6), mats.chrome, sx + hx, rest - 0.1, seatZ - 0.075);
+    }
+    part(inner, rbox(C.hwB * 2 - 0.22, 0.52, 0.12, 0.05), mats.seat, 0, belt + 0.02, S.rearSeatZ ?? (rz + 0.42), -0.12);
+    if (S.shelf) part(inner, new THREE.BoxGeometry(C.hwB * 2 - 0.15, 0.03, 0.42), mats.interior, 0, belt + 0.03, rz + 0.2);
+    // direksiyon (döner): deri kaplı kalın simit, göbekte korna yastığı + amblem
+    const sw = new THREE.Group(); sw.position.set(0.36, belt + 0.07, swZ); sw.rotation.x = IN.wheelTilt; sw.userData.keep = true; body.add(sw); // yolu kapatmasın: göz hizasının ~30 cm altında
+    part(sw, new THREE.TorusGeometry(IN.wheelR, 0.022, 12, 40), mats.wheelLeather);
+    part(sw, new THREE.CylinderGeometry(0.062, 0.068, 0.05, 20), mats.trim, 0, 0, -0.01, Math.PI / 2);
+    part(sw, new THREE.CylinderGeometry(0.02, 0.02, 0.006, 16), mats.chrome, 0, 0, -0.037, Math.PI / 2);
+    part(sw, new THREE.CylinderGeometry(0.03, 0.035, 0.2, 10), mats.trim, 0, 0, 0.1, Math.PI / 2); // direksiyon mili
+    const spA = IN.spokes === 2 ? [0, Math.PI] : IN.spokes === 4 ? [0.5, Math.PI - 0.5, Math.PI + 0.9, -0.9] : [0, Math.PI, -Math.PI / 2];
+    for (const a of spA) { const k = new THREE.Mesh(rbox(IN.wheelR, 0.034, 0.016, 0.007), mats.trim); k.position.set(Math.cos(a) * IN.wheelR / 2, Math.sin(a) * IN.wheelR / 2, -0.005); k.rotation.z = a; k.castShadow = true; sw.add(k); }
+    body.userData.steeringWheel = sw;
+    // sinyal ve silecek kolları
+    for (const sx of [-1, 1]) part(body, rbox(0.12, 0.014, 0.014, 0.006), mats.trim, 0.36 + sx * 0.1, belt + 0.05, swZ + 0.07, 0, 0, sx * 0.2);
+    // iç dikiz aynası (canlı görüntü) + güneşlikler + tavan lambası + tutamaklar
+    const my = C.roof - C.rr - 0.12, mz = zWs(my) - 0.07;
+    part(body, rbox(0.25, 0.075, 0.03, 0.014), mats.trim, 0, my, mz);
+    part(body, new THREE.BoxGeometry(0.012, 0.09, 0.012), mats.trim, 0, my + 0.055, zWs(my + 0.055) - 0.05);
+    const mirror = new THREE.Mesh(new THREE.PlaneGeometry(0.225, 0.058), new THREE.MeshBasicMaterial({ color: 0x1b2028 }));
+    mirror.position.set(0, my, mz - 0.016); mirror.rotation.y = Math.PI; mirror.userData.keep = true; body.add(mirror);
+    body.userData.mirror = mirror;
+    const visorM = new THREE.MeshStandardMaterial({ color: IN.liner ?? 0x5f5a53, roughness: 0.95 });
+    for (const sx of [-1, 1]) part(body, rbox(0.38, 0.016, 0.17, 0.008), visorM, sx * 0.36, C.roof - C.rr - 0.03, zWs(C.roof - C.rr - 0.03) - 0.11, 0.25);
+    part(body, rbox(0.12, 0.012, 0.06, 0.006), new THREE.MeshStandardMaterial({ color: 0xf4efe2, emissive: 0xfff3d6, emissiveIntensity: 0.15, roughness: 0.6 }), 0, C.roof - C.rr - 0.01, (seatZ + swZ) / 2);
+    for (const sx of [-1, 1]) part(inner, rbox(0.02, 0.02, 0.16, 0.008), mats.interior, sx * (C.hwR - 0.03), C.roof - C.rr - 0.06, seatZ + 0.1);
+    // eller ve kollar: yalnız iç kamerada görünür (sürücü gövdesi gizlenince)
+    {
+      const arms = new THREE.Group(); arms.visible = false; arms.userData.keep = true; body.add(arms);
+      const mk = () => {
+        const sl = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.042, 1, 12), mats.sleeve); sl.castShadow = true;
+        const gv = new THREE.Group();
+        part(gv, rbox(0.06, 0.05, 0.095, 0.022), mats.glove, 0, 0, 0);
+        part(gv, rbox(0.03, 0.02, 0.05, 0.009), mats.glove, 0.0, 0.025, 0.035, 0.6);
+        arms.add(sl); arms.add(gv); return { sl, gv };
+      };
+      const eye = vec(0.36, 0, seatZ + 0.08);
+      body.userData.arms = { g: arms, L: mk(), R: mk(), shL: vec(0.36 + 0.24, 0, seatZ + 0.24), shR: vec(0.36 - 0.24, 0, seatZ + 0.24), gripR: IN.wheelR, eyeRef: eye }; // dirsekler (önkol görünür)
+    }
     // içeriden bakınca gövde ve tavan kaplaması (dışarısı görünmesin)
     part(body, arraysGeo(B.pos.slice(0), B.idx.slice(0, B.capStart), B.uv), mats.liner).castShadow = false;
     part(body, arraysGeo(K.paint.pos, K.paint.idx), mats.liner).castShadow = false;
@@ -4319,6 +4455,8 @@ function buildCar(spec, ctx) {
     // sürücü kabinin içinde: kafa tavanın altında kalır
     const dr = new THREE.Group(); dr.position.set(0.36, Math.min(belt - 0.22, C.roof - 0.86), seatZ + 0.12); body.add(dr); dr.userData.keep = true;
     body.userData.driver = dr; body.userData.eye = vec(0.36, Math.min(dr.position.y + 0.72, C.roof - 0.14), seatZ + 0.08); // direksiyondan ~0.5 m geride, tavandan ~18 cm aşağıda
+    { const A = body.userData.arms; A.shL.y = A.shR.y = body.userData.eye.y - 0.5; }
+    body.userData.hoodEye = vec(0, F.top(C.zB + 0.32) + S.crown * 0.6 + 0.13, C.zB + 0.32);
     part(dr, rbox(0.38, 0.5, 0.24, 0.08), mats.shirt, 0, 0.28, 0);
     part(dr, new THREE.SphereGeometry(0.11, 14, 10), mats.skin, 0, 0.64, 0.02);
     part(dr, new THREE.CylinderGeometry(0.12, 0.12, 0.05, 14), mats.cap, 0, 0.73, 0.02);
@@ -4378,7 +4516,9 @@ function buildCar(spec, ctx) {
     for (const sx of [-1, 1]) for (const zz of [S.wheel.rz]) wheels.push(makeWheel(root, mats, S.wheel.r, S.wheel.w, sx * (S.wheel.x - S.wheel.w - 0.04), S.wheel.r, zz, false, style));
   }
   mergeStatic(body);
-  return { root, body, wheels, brakeMats, exhausts: [ex], len: zf - zr, wid: W, headMat: mats.head, revMat: mats.revlight, drop, eye: body.userData.eye, driver: body.userData.driver, needles: body.userData.needles };
+  const U = body.userData;
+  return { root, body, wheels, brakeMats, exhausts: [ex], len: zf - zr, wid: W, headMat: mats.head, revMat: mats.revlight, drop, eye: U.eye, driver: U.driver, needles: U.needles,
+    hoodEye: U.hoodEye, cockpit: U.steeringWheel ? { sw: U.steeringWheel, arms: U.arms, lever: U.gearLever, knob: U.gearKnob, mirror: U.mirror } : null };
 }
 
 // ── CG motor ───────────────────────────────────────────────────────
@@ -4770,7 +4910,15 @@ function buildModelCar(def, ctx, M, ML) {
   const G = def.geo, box = M.box;
   const ex = MD.ex ? vec(MD.ex[0], MD.ex[1], MD.ex[2]) : vec(0.45, 0.3, box.min.z + 0.05);
   const eye = MD.eye ? vec(MD.eye[0], MD.eye[1], MD.eye[2]) : null;
-  return { root, body, wheels, brakeMats, exhausts: [ex], len: (box.max.z - box.min.z) * SC[2], wid: G ? G.W : (box.max.x - box.min.x) * SC[0], headMat: mats.head, revMat: mats.revlight, drop, eye, hood: !!MD.hood, driver: null, needles: null, model: MD.file };
+  const hoodEye = MD.hoodEye ? vec(MD.hoodEye[0], MD.hoodEye[1], MD.hoodEye[2]) : MD.hood && eye ? eye.clone() : null;
+  let mirror = null;
+  if (MD.mirror) {
+    const [mx, my, mz] = MD.mirror;
+    part(body, rbox(0.25, 0.075, 0.03, 0.014), mats.trim, mx, my, mz + 0.016);
+    mirror = new THREE.Mesh(new THREE.PlaneGeometry(0.225, 0.058), new THREE.MeshBasicMaterial({ color: 0x1b2028 }));
+    mirror.position.set(mx, my, mz); mirror.rotation.y = Math.PI; body.add(mirror);
+  }
+  return { root, body, wheels, brakeMats, exhausts: [ex], len: (box.max.z - box.min.z) * SC[2], wid: G ? G.W : (box.max.x - box.min.x) * SC[0], headMat: mats.head, revMat: mats.revlight, drop, eye, hood: !!MD.hood, hoodEye, cockpit: mirror ? { mirror } : null, modelMesh: body.children[0], driver: null, needles: null, model: MD.file };
 }
 
 // ── kayıtlı araçlar ────────────────────────────────────────────────
@@ -4820,7 +4968,7 @@ registerVehicle('transit', {
 registerVehicle('egea', {
   name: 'Egea', drive: 'Önden çekiş', desc: 'Filonun, taksinin, kurumsalın gözdesi. Önden çekişli ve dengeli: hata affeder, düz yolda şaşırtıcı hızlı.',
   kind: 'car', spec: CAR_SPECS.egea,
-  model: { file: 'egea', eye: [0.4, 1.13, 0.16], bodyMap: { metal: 'dark' }, ex: [-0.55, 0.24, -2.22] },
+  model: { file: 'egea', eye: [0.4, 1.13, 0.16], hoodEye: [0, 1.12, 1.02], mirror: [0.0, 1.3, 0.5], bodyMap: { metal: 'dark' }, ex: [-0.55, 0.24, -2.22] },
   geo: { W: 1.79, zf: 2.26, zr: -2.26, botY: 0.27, wheel: { x: 0.728, fz: 1.378, rz: -1.246, w: 0.23, r: 0.279 } },
   stats: { mass: 1240, wheelbase: 2.64, frontW: 0.6, drive: 'fwd', torque: 262, gears: [3.9, 2.2, 1.45, 1.08, 0.86], final: 3.7, wheelR: 0.32, cd: 0.4, rearGrip: 1.08, radius: 0.95, axle: 1.3 },
   suspension: 1.0,
@@ -4831,7 +4979,7 @@ registerVehicle('scania', {
   name: 'Tır', drive: 'Arkadan itiş', desc: 'MAN TGS yarış çekicisi. Yavaş ivmelenir ama 7 tonluk kütlesiyle önüne çıkanı biçer; virajda erken fren şart.',
   kind: 'car', spec: CAR_SPECS.scania,
   // model gerçek bir çekiciye göre basık/küçük: kabin ~3.45 m yüksekliğe, 6.7 m boya getirilir
-  model: { file: 'man', eye: [0.69, 2.44, 1.97], ex: [-1.18, 0.85, -0.34], scale: [1.12, 1.25, 1.12], wscale: 1.15 },
+  model: { file: 'man', eye: [0.69, 2.44, 1.97], hoodEye: [0, 3.55, 2.55], ex: [-1.18, 0.85, -0.34], scale: [1.12, 1.25, 1.12], wscale: 1.15 },
   geo: { W: 2.76, zf: 3.36, zr: -3.36, botY: 0.75, wheel: { x: 1.11, fz: 1.71, rz: -2.29, w: 0.55, r: 0.57 } },
   stats: { mass: 7200, wheelbase: 4.0, frontW: 0.55, drive: 'rwd', torque: 1500, peakRpm: 1400, idle: 650, redline: 2500, gears: [6.0, 4.4, 3.2, 2.4, 1.8, 1.35, 1.0], final: 3.6, wheelR: 0.52, cd: 2.2, rr: 60, brake: 70000, mu: 1.25, cgH: 1.2, radius: 1.45, axle: 2.0 },
   suspension: 1.5,
@@ -4861,7 +5009,7 @@ registerVehicle('h100', {
 registerVehicle('carry', {
   name: 'Carry', drive: 'Arkadan itiş', desc: 'Suzuki Carry minivan: pazarın, kargonun, mahallenin kurtarıcısı. Kısa ve dar — trafikte arada kaybolur ama virajda dikkat, yatar.',
   kind: 'car', spec: CAR_SPECS.transit,
-  model: { file: 'carry', eye: [0.28, 1.48, 0.78], ex: [-0.45, 0.27, -1.66] },
+  model: { file: 'carry', eye: [0.28, 1.48, 0.78], hoodEye: [0, 1.98, 0.95], mirror: [0.0, 1.7, 1.25], ex: [-0.45, 0.27, -1.66] },
   geo: { W: 1.48, zf: 1.7, zr: -1.7, botY: 0.36, wheel: { x: 0.615, fz: 0.95, rz: -0.945, w: 0.2, r: 0.304 } },
   stats: { mass: 880, wheelbase: 1.9, frontW: 0.55, drive: 'rwd', torque: 196, gears: [3.8, 2.2, 1.45, 1.05, 0.84], final: 4.5, wheelR: 0.3, cd: 0.52, cgH: 0.72, radius: 0.85, axle: 1.1, steerMax: 0.66 },
   suspension: 1.5,
@@ -4892,7 +5040,7 @@ function buildVehicle(custom, opts = {}) {
   const mats = vehicleMats(custom, lite);
   const ctx = { mats, custom, lite };
   let v = null;
-  const mf = def.model && !lite ? def.model.file : null;
+  const mf = def.model && !lite && !opts.proc ? def.model.file : null;
   const MH = mf && MODELS.get(mf), ML = mf && MODELS.get(mf + '_lo');
   if (MH || ML) { try { v = buildModelCar(def, ctx, MH, ML); } catch (e) { console.warn('[model] kurulamadı: ' + mf, e); v = null; } }
   if (!v) v = def.kind === 'car' ? buildCar(def.spec, ctx) : def.build(ctx);
@@ -4931,6 +5079,48 @@ function buildVehicle(custom, opts = {}) {
 }
 
 // Görsel güncelleme (fizik → model)
+// kokpit canlandırma: direksiyon, ibreler, vites kolu (H deseni), eller (vites değiştirirken sağ el vitese gider)
+const _ck = { a: new THREE.Vector3(), b: new THREE.Vector3(), d: new THREE.Vector3(), up: new THREE.Vector3(0, 1, 0), q: new THREE.Quaternion() };
+function updateCockpit(v, ph, dt) {
+  const spd = Math.abs(ph.vF || 0);
+  const sw = v.body.userData.steeringWheel; if (sw) sw.rotation.z = -(ph.steer || 0) * 2.1;
+  if (v.needles) for (const n of v.needles) {
+    let k;
+    if (n.kind === 'spd') k = clamp(spd * 3.6 / 240, 0, 1);
+    else if (n.kind === 'rpm') k = clamp((ph.rpm || 900) / 8000, 0, 1);
+    else if (n.kind === 'fuel') k = 0.15 + 0.8 * clamp(ph.nitro ?? 0.6, 0, 1); // yakıt göstergesi nitro deposunu gösterir
+    else { v._temp = smooth(v._temp ?? 0.35, 0.45 + clamp((ph.rpm || 900) / 8000, 0, 1) * 0.3, 0.15, dt); k = v._temp; }
+    n.g.rotation.z = n.kind === 'fuel' || n.kind === 'temp' ? -1.0 + 2.0 * k : -2.36 + 4.72 * k;
+  }
+  const K = v.cockpit; if (!K) return;
+  // vites kolu
+  if (K.lever) {
+    const g = ph.gear, idle = spd < 0.5 && (ph.throttle || 0) < 0.1;
+    const col = idle ? 0 : g === 0 ? -1 : g <= 2 ? 1 : g <= 4 ? 0 : -1, row = idle ? 0 : g === 0 ? -1 : g % 2 ? 1 : -1;
+    K.lever.rotation.z = smooth(K.lever.rotation.z, -col * 0.2, 16, dt); K.lever.rotation.x = smooth(K.lever.rotation.x, row * 0.32, 16, dt);
+    if (v._pg !== undefined && v._pg !== g && K.arms && K.arms.g.visible) v.shiftT = 0.42;
+    v._pg = g;
+  }
+  // eller (yalnız iç kamerada görünür)
+  const A = K.arms; if (!A || !A.g.visible || !sw) return;
+  sw.updateMatrix(); if (K.lever) K.lever.updateMatrix();
+  if (v.shiftT > 0) v.shiftT -= dt;
+  const r = A.gripR;
+  for (const side of ['L', 'R']) {
+    const H = A[side], sx = side === 'L' ? 1 : -1;
+    const hp = _ck.a.set(sx * r * 0.94, r * 0.3, -0.012).applyMatrix4(sw.matrix);
+    let blend = 0;
+    if (side === 'R' && v.shiftT > 0 && K.knob) { blend = Math.sin(Math.PI * clamp(1 - v.shiftT / 0.42, 0, 1)); hp.lerp(_ck.b.set(0, 0.26, 0).applyMatrix4(K.lever.matrix), blend); }
+    H.gv.position.copy(hp);
+    H.gv.quaternion.copy(sw.quaternion); if (blend > 0) H.gv.quaternion.slerp(_ck.q.identity(), blend);
+    const sh = side === 'L' ? A.shL : A.shR;
+    const d = _ck.d.subVectors(hp, sh), len = Math.max(0.05, Math.hypot(d.x, d.y, d.z) - 0.04);
+    d.normalize();
+    H.sl.position.copy(sh).addScaledVector(d, len / 2);
+    H.sl.quaternion.setFromUnitVectors(_ck.up, d);
+    H.sl.scale.set(1, len, 1);
+  }
+}
 function updateVehicleVisual(v, ph, dt) {
   if (v.headMat && LOOK_CUR.L) v.headMat.emissiveIntensity = LOOK_CUR.L.head; // gece farlar daha parlak
   const S = v.state;
@@ -5032,8 +5222,8 @@ function updateVehicleVisual(v, ph, dt) {
     v.body.position.y = (v.drop || 0) + S.heave + Math.sin(S.t * 31) * 0.0012 * clamp(spd / 30, 0, 1);
     const nz = v.body.userData.nazarMesh; if (nz) nz.rotation.z = Math.sin(S.t * 3) * 0.2 + S.roll * 5;
     const dh = v.body.userData.dogHead; if (dh) { dh.rotation.x = Math.sin(S.t * 9) * 0.25 + S.pitch * 6; dh.rotation.z = S.roll * 6; }
-    const sw = v.body.userData.steeringWheel; if (sw) sw.rotation.z = -(ph.steer || 0) * 1.6;
-    if (v.needles) for (const n of v.needles) { const k = n.kind === 'spd' ? clamp(spd * 3.6 / 240, 0, 1) : clamp((ph.rpm || 900) / 8000, 0, 1); n.g.rotation.z = -2.36 + 4.72 * k; }
+    updateCockpit(v, ph, dt);
+    if (v.twin && v.twin.root.visible) updateCockpit(v.twin, ph, dt);
   }
   for (const m of v.brakeMats) m.emissiveIntensity = ph.braking ? 4.5 : 0.55;
   if (v.revMat) v.revMat.emissiveIntensity = (ph.vF || 0) < -0.5 ? 2.5 : 0.1;
@@ -5051,6 +5241,7 @@ function updateVehicleVisual(v, ph, dt) {
   }
 }
 function disposeVehicle(v) {
+  if (v.twin) { disposeVehicle(v.twin); v.twin = null; }
   const shared = new Set(Object.values(RBOX));
   for (const c of Object.values(_wheelCache)) { for (const k of ['tire', 'rim', 'hub', 'disc', 'cal']) { shared.add(c[k]); shared.add(c.L[k]); } }
   v.root.traverse(o => { if (o.isMesh && !o.userData.shared && !shared.has(o.geometry)) o.geometry.dispose(); });
@@ -6031,8 +6222,8 @@ class EngineSound {
 // ════════════════════════════════════════════════════════════════════
 const KEYS = new Set();
 const KB = [
-  { up: ['KeyW'], down: ['KeyS'], left: ['KeyA'], right: ['KeyD'], hb: ['Space'], nitro: ['ShiftLeft'], horn: ['KeyQ'], reset: ['KeyR'], cam: ['KeyC'], item: ['KeyE'] },
-  { up: ['ArrowUp'], down: ['ArrowDown'], left: ['ArrowLeft'], right: ['ArrowRight'], hb: ['ControlRight', 'Period', 'Slash'], nitro: ['ShiftRight', 'Enter', 'NumpadEnter'], horn: ['Comma'], reset: ['Backspace'], cam: ['Backslash', 'IntlBackslash'], item: ['KeyL', 'Numpad1', 'Quote'] },
+  { up: ['KeyW'], down: ['KeyS'], left: ['KeyA'], right: ['KeyD'], hb: ['Space'], nitro: ['ShiftLeft'], horn: ['KeyQ'], reset: ['KeyR'], cam: ['KeyC'], item: ['KeyE'], look: ['KeyB'] },
+  { up: ['ArrowUp'], down: ['ArrowDown'], left: ['ArrowLeft'], right: ['ArrowRight'], hb: ['ControlRight', 'Period', 'Slash'], nitro: ['ShiftRight', 'Enter', 'NumpadEnter'], horn: ['Comma'], reset: ['Backspace'], cam: ['Backslash', 'IntlBackslash'], item: ['KeyL', 'Numpad1', 'Quote'], look: ['Numpad0'] },
 ];
 const GAME_KEYS = new Set(['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Backspace', 'Slash', 'Period', 'Comma', 'Backslash']);
 window.addEventListener('keydown', (e) => {
@@ -6117,7 +6308,7 @@ function readControls(slot, shared) {
   let steer = (K('right') ? 1 : 0) - (K('left') ? 1 : 0);
   let throttle = K('up') ? 1 : 0, brake = K('down') ? 1 : 0;
   let hb = K('hb'), nitro = K('nitro');
-  let horn = K('horn'), reset = K('reset'), cam = K('cam'), item = K('item'), pause = false, rx = 0, ry = 0;
+  let horn = K('horn'), reset = K('reset'), cam = K('cam'), item = K('item'), pause = false, rx = 0, ry = 0, look = K('look');
   if (p) {
     const ax = dz(p.axes[0] || 0);
     if (Math.abs(ax) > Math.abs(steer)) steer = ax;
@@ -6130,6 +6321,7 @@ function readControls(slot, shared) {
     horn = horn || btn(p, 10);
     rx = dz(p.axes[2] || 0, 0.18); ry = dz(p.axes[3] || 0, 0.18);
     cam = cam || btn(p, 3);
+    look = look || btn(p, 11);
     reset = reset || btn(p, 8);
     pause = btn(p, 9);
   }
@@ -6143,7 +6335,7 @@ function readControls(slot, shared) {
   const pr = _prev[slot];
   const out = {
     steer, throttle, brake, handbrake: hb, nitro,
-    horn: horn && !pr.horn, hornHeld: !!horn, reset: reset && !pr.reset, cam: cam && !pr.cam, pause: pause && !pr.pause, item: item && !pr.item, rx, ry,
+    horn: horn && !pr.horn, hornHeld: !!horn, look: !!look, reset: reset && !pr.reset, cam: cam && !pr.cam, pause: pause && !pr.pause, item: item && !pr.item, rx, ry,
   };
   pr.horn = horn; pr.reset = reset; pr.cam = cam; pr.pause = pause; pr.item = item;
   return out;
@@ -6727,7 +6919,7 @@ class Racer {
     scene.add(this.vis.root);
     this.lapIdx = 0; this.lapStart = 0; this.lapTimes = []; this.bestLap = Infinity;
     this.finished = false; this.finishT = 0; this.rank = 1;
-    this.camMode = LS.get('cam' + (this.slot < 0 ? 0 : this.slot), 0); this.shake = 0; this.camDir = null;
+    this.camMode = camLoad(this.slot < 0 ? 0 : this.slot); this.shake = 0; this.camDir = null;
     this.skid = [null, null]; this.driftT = 0; this.draftT = 0; this.wasDrift = false;
     this.pan = 0; this.snd = null; this.gone = false; this.hud = null; this.netInit = false;
     this.rumbleT = 0; this.prevRank = 0; this.item = null; this.item2 = null;
@@ -6806,6 +6998,60 @@ function trackMiniPath() {
   return TRACK_PATH;
 }
 const GAUGE_ARC = 'M39.2 160.8 A86 86 0 1 1 160.8 160.8', NIT_ARC = 'M49.1 150.9 A72 72 0 1 1 150.9 150.9';
+// ── KAMERALAR ──
+const CAM_NAMES = ['TAKİP KAMERASI', 'UZAK TAKİP', 'KAPUT KAMERASI', 'TAMPON KAMERASI', 'KOKPİT', 'TV YAYINI'];
+const COCKPIT = 4;
+function camLoad(slot) {
+  const v = LS.get('camv2_' + slot, null);
+  if (v !== null && v >= 0 && v < CAM_NAMES.length) return v;
+  const old = LS.get('cam' + slot, 0); return [0, 1, 3, 4][old] ?? 0; // eski 4'lü düzenden taşı
+}
+const inCockpit = (R) => !!R && R.camMode === COCKPIT;
+// içi boş (taranmış) modeller için iç kamera: aynı aracın prosedürel kabini gövdenin içine kurulur
+function ensureTwin(R) {
+  const V = R.vis;
+  try {
+    const tw = buildVehicle(R.custom, { proc: true });
+    for (const c of tw.root.children) if (c !== tw.body) c.visible = false;
+    tw.body.position.y = 0; tw.root.visible = false;
+    V.body.add(tw.root); V.twin = tw;
+  } catch (e) { console.warn('[kokpit] ikiz kurulamadı', e); V.hood = false; }
+}
+// canlı iç dikiz aynası: küçük bir arka kamera görüntüsü (iki karede bir)
+const MIR = { rt: null, cam: null, mat: null, n: 0, ok: false };
+const _mw = new THREE.Vector3(), _md = new THREE.Vector3();
+function renderMirror(view) {
+  const R = view.racer, V = R.vis, ck = (V.twin && V.twin.cockpit) || V.cockpit, m = ck && ck.mirror;
+  if (!m || SETTINGS.quality === 'low') return;
+  if (!MIR.rt) {
+    MIR.rt = new THREE.WebGLRenderTarget(384, 104, { type: THREE.HalfFloatType });
+    MIR.cam = new THREE.PerspectiveCamera(26, 384 / 104, 0.3, 300);
+    const tx = MIR.rt.texture; tx.repeat.set(-1, 1); tx.offset.set(1, 0);
+    MIR.mat = new THREE.MeshBasicMaterial({ map: tx });
+  }
+  if (m.material !== MIR.mat) m.material = MIR.mat;
+  if ((MIR.n++ & 1) && MIR.ok) return;
+  m.updateMatrixWorld(); m.getWorldPosition(_mw);
+  _md.set(0, 0.04, -1).transformDirection(V.body.matrixWorld);
+  MIR.cam.position.copy(_mw).addScaledVector(_md, 0.06);
+  MIR.cam.up.set(0, 1, 0); MIR.cam.lookAt(_mw.x + _md.x * 20, _mw.y + _md.y * 20 - 0.6, _mw.z + _md.z * 20);
+  m.visible = false; REFLECT.busy = true;
+  const prev = renderer.getRenderTarget();
+  try { renderer.setScissorTest(false); renderer.setRenderTarget(MIR.rt); renderer.clear(); renderer.render(scene, MIR.cam); MIR.ok = true; }
+  catch (e) { console.warn('ayna', e); }
+  finally { renderer.setRenderTarget(prev); REFLECT.busy = false; m.visible = true; }
+}
+// TV yayını: pist kenarına dizilmiş sabit kameralar; araç yaklaşınca sıradakine kesilir
+function tvCams() {
+  if (TRACK._tv) return TRACK._tv;
+  const T = TRACK, out = [], r = rng(77);
+  for (let s = 20, k = 0, L = T.length; s < L; s += 95 + r() * 40, k++) {
+    const p = trackAt(T, s), side = k % 2 ? 1 : -1, lat = side * (T.half + T.kerb + 7 + r() * 9), e = trackElev(T, s);
+    const x = p.x + p.rx * lat, z = p.z + p.rz * lat;
+    out.push({ s, x, y: Math.max(e, groundH(x, z)) + 2.2 + r() * 5.5, z, crane: r() < 0.3 });
+  }
+  return (TRACK._tv = out);
+}
 function makeHud(view, R, nRacers, laps) {
   const el = document.createElement('div'); el.className = 'hud' + (view.rect.w < 0.6 && view.rect.h < 0.6 ? ' small' : '') + (view.rect.w < 0.6 ? ' narrow' : '');
   const r = view.rect;
@@ -7033,7 +7279,8 @@ class Race {
         const raw = readControls(R.slot, this.racers.filter(r => r.local).length === 1);
         if (raw.pause) onPauseKey();
         if (this.paused) continue;
-        if (raw.cam) { R.camMode = (R.camMode + 1) % 4; LS.set('cam' + R.slot, R.camMode); hudFlash(R, ['TAKİP KAMERASI', 'UZAK KAMERA', 'TAMPON KAMERASI', R.vis && R.vis.hood ? 'KAPUT KAMERASI' : 'İÇ KAMERA'][R.camMode], 900); }
+        if (raw.cam) { R.camMode = (R.camMode + 1) % CAM_NAMES.length; LS.set('camv2_' + R.slot, R.camMode); hudFlash(R, CAM_NAMES[R.camMode], 900); }
+        R.lookBack = !!raw.look;
         if (raw.horn) AUDIO.horn(R.def.kind, R.pan, R.custom.horn);
         // uzun basış: melodi
         if (raw.hornHeld && R.def.kind !== 'horse') { R.hornT = (R.hornT || 0) + dt; if (R.hornT > 0.45 && !R.melody) R.melody = AUDIO.hornMelody(R.custom.horn || 'disk', R.pan); }
@@ -7525,11 +7772,15 @@ function updateCamera(view, R, dt, spectator) {
   const aLong = C.ax * cx + C.az * cz, aLat = C.ax * rX + C.az * rZ;
   const nitroK = p.nitroOn ? 1 : 0;
   let mode = spectator ? 1 : R.camMode;
-  if (mode === 3 && !(R.vis && R.vis.eye)) mode = 2;
+  // içi boş modelde kokpit için prosedürel ikiz kabin kur (yalnız yerel oyuncu, bir kez)
+  if (mode === COCKPIT && R.vis && R.vis.hood && !R.vis.twin && R.def.spec && R.local) ensureTwin(R);
+  if (mode === COCKPIT && !(R.vis && (R.vis.eye || R.vis.twin))) mode = 2;
+  if (mode === 2 && !(R.vis && (R.vis.hoodEye || R.vis.eye))) mode = 3;
   // sağ çubuk / fare ile araç etrafında bakınma; bırakınca yumuşakça geri döner
   const st = view.stick || { x: 0, y: 0 };
   let yawT = 0, pitT = 0;
   if (view.drag) { yawT = view.drag.yaw; pitT = view.drag.pitch; }
+  else if (R && R.lookBack && !spectator) yawT = Math.PI;
   else if (Math.hypot(st.x, st.y) > 0.05) { yawT = st.x * Math.PI * 0.98; pitT = clamp(-st.y, -0.4, 1) * 0.55; }
   const held = !!view.drag || Math.hypot(st.x, st.y) > 0.05;
   view.orbitYaw = smooth(view.orbitYaw || 0, yawT, held ? 14 : 4.5, dt);
@@ -7550,8 +7801,9 @@ function updateCamera(view, R, dt, spectator) {
   const shZ = sAmp * Math.sin(t * 37 + 2.1) * 0.6;
   // FOV: hız + nitro + ani ivme vuruşu
   C.fovK = smooth(C.fovK, clamp(aLong * 0.35, -2.5, 5), 3, dt);
-  const fovT = (mode === 3 ? 70 : mode === 2 ? 72 : 63) + clamp(sp / 58, 0, 1.25) * (mode === 3 ? 7 : 12) + nitroK * (mode === 3 ? 5 : 9) + C.fovK * (mode === 3 ? 0.5 : 1);
-  const near = mode === 3 ? 0.05 : mode === 2 ? 0.2 : 0.4; if (cam.near !== near) cam.near = near; // yakın düzlem ileride: uzak yolda derinlik titremesi olmasın
+  const ck = mode === COCKPIT, inside = ck || mode === 2 || mode === 3;
+  let fovT = (ck ? 74 : inside ? 72 : 63) + clamp(sp / 58, 0, 1.25) * (ck ? 6 : inside ? 10 : 12) + nitroK * (ck ? 4 : 9) + C.fovK * (ck ? 0.4 : 1);
+  const near = ck ? 0.03 : inside ? 0.2 : 0.4; if (cam.near !== near) cam.near = near; // yakın düzlem ileride: uzak yolda derinlik titremesi olmasın
   // yüksek hızda rüzgar çizgileri
   if (!spectator && sp > 26 && PARTICLES.wind && !p.air) {
     let n = (sp - 26) * (1.4 + nitroK * 1.6) * dt; const ux = p.vx / sp, uz = p.vz / sp, by = p.y || 0;
@@ -7560,19 +7812,70 @@ function updateCamera(view, R, dt, spectator) {
       PARTICLES.wind.spawn(p.x + ux * ah - uz * side, by + 0.3 + Math.random() * 3.4, p.z + uz * ah + ux * side, ux, 0, uz, sp * (0.045 + nitroK * 0.03), 0.3 + Math.random() * 0.3, (0.18 + Math.random() * 0.3) * (0.7 + nitroK * 0.8) * clamp((sp - 26) / 20, 0.2, 1));
     }
   }
-  if (mode === 3) {
-    // iç kamera: sürücü gözünden; baş G kuvvetiyle hafifçe sallanır, gövdeyle birlikte yatar
-    const V = R.vis; V.body.updateMatrixWorld(true);
-    C.hx = smooth(C.hx || 0, clamp(aLat * 0.0035, -0.06, 0.06), 7, dt);
-    C.hz = smooth(C.hz || 0, clamp(-aLong * 0.003, -0.05, 0.05), 7, dt);
-    const e = V.eye.clone(); e.x -= C.hx; e.z += C.hz; e.y += shY * 0.25;
-    const tgt = V.eye.clone().add(new THREE.Vector3(Math.sin(oy) * 10, (V.hood ? -0.75 : -0.6) + view.orbitPitch * 8 + shY * 2, Math.cos(oy) * 10));
+  if (mode === COCKPIT) {
+    // ── KOKPİT: sürücünün başı yaylı bir kütle gibi davranır. Yanal G'de dışa, gazda geriye, frende öne
+    // kayar; tümsek/iniş başı oynatır, vites atınca hafifçe öne iner. Baş virajın içine (apekse) bakar,
+    // ufku kısmen sabit tutar (gerçek sürücüler gibi), B / sağ çubuk basılı: arkaya bakış.
+    const V = R.vis, src = V.twin || V; V.body.updateMatrixWorld(true);
+    const eye0 = src.eye;
+    const H = C.head || (C.head = { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, yaw: 0, pitch: 0, pg: p.gear, py: null, pvy: 0 });
+    if (!view.camInit) { H.x = H.y = H.z = H.vx = H.vy = H.vz = 0; H.py = null; }
+    const wy = V.body.matrixWorld.elements[13];
+    let ay = 0;
+    if (H.py !== null && dt > 0) { const vy = (wy - H.py) / dt; ay = clamp((vy - H.pvy) / dt, -60, 60); H.pvy = vy; }
+    H.py = wy;
+    if (p.gear !== H.pg) { if (p.gear > H.pg && H.pg > 0) H.vz += 0.28; H.pg = p.gear; }
+    const tx = clamp(aLat * 0.0042, -0.075, 0.075), tz = clamp(-aLong * 0.0034, -0.06, 0.05);
+    const k = 70, c = 2 * 0.55 * Math.sqrt(k), n = Math.max(1, Math.ceil(dt / 0.008)), h = dt / n;
+    for (let i = 0; i < n; i++) {
+      H.vx += (k * (tx - H.x) - c * H.vx) * h; H.x += H.vx * h;
+      H.vz += (k * (tz - H.z) - c * H.vz) * h; H.z += H.vz * h;
+      H.vy += (-k * 1.6 * H.y - c * 1.2 * H.vy - ay * 0.32) * h; H.y += H.vy * h;
+    }
+    H.y = clamp(H.y, -0.06, 0.05);
+    // bakış: virajın içine + arkaya bakış + serbest bakınma
+    const apex = clamp((p.steer || 0) * 0.17 + (p.w || 0) * 0.05, -0.3, 0.3) * clamp(sp / 12, 0, 1);
+    const back = R.lookBack && !spectator;
+    H.yaw = smooth(H.yaw, back ? Math.PI * 0.97 : apex + oy, back ? 9 : 5, dt);
+    H.pitch = smooth(H.pitch, view.orbitPitch * 0.8 + clamp(-aLong * 0.0012, -0.03, 0.03), 6, dt);
+    const lean = Math.abs(H.yaw) > 1.4 ? 0.12 : 0; // arkaya bakarken koltuk arasından bakar
+    const e = eye0.clone(); e.x += H.x - Math.sign(eye0.x) * lean; e.y += H.y + shY * 0.18 + lean * 0.05; e.z += H.z;
+    const dirL = new THREE.Vector3(Math.sin(H.yaw), -0.07 + H.pitch + shY * 0.2, Math.cos(H.yaw));
+    const tgt = e.clone().addScaledVector(dirL, 10);
     V.body.localToWorld(e); V.body.localToWorld(tgt);
     cam.position.copy(e);
-    cam.up.set(0, 1, 0).transformDirection(V.body.matrixWorld).lerp(new THREE.Vector3(0, 1, 0), 0.5).normalize();
+    // ufuk dengesi: gövde yatışının %35'i kameraya geçer, baş G'ye karşı hafif yatar
+    cam.up.set(0, 1, 0).transformDirection(V.body.matrixWorld).lerp(new THREE.Vector3(0, 1, 0), 0.65).normalize();
+    cam.lookAt(tgt);
+    cam.rotateZ(clamp(-aLat * 0.0016, -0.03, 0.03));
+    view.camInit = true;
+  } else if (mode === 2) {
+    // KAPUT: motor kaputunun üstünde, gövdeyle birlikte yatar/sallanır (yarı sabitlenmiş ufuk)
+    const V = R.vis; V.body.updateMatrixWorld(true);
+    const he = (V.hoodEye || V.eye).clone(), S = V.state || {};
+    he.y += shY * 0.3;
+    const tgt = he.clone().add(new THREE.Vector3(Math.sin(oy) * 20, -0.9 + view.orbitPitch * 14, Math.cos(oy) * 20));
+    V.body.localToWorld(he); V.body.localToWorld(tgt);
+    cam.position.copy(he);
+    cam.up.set(0, 1, 0).transformDirection(V.body.matrixWorld).lerp(new THREE.Vector3(0, 1, 0), 0.4).normalize();
     cam.lookAt(tgt);
     view.camInit = false;
-  } else if (mode === 2) {
+  } else if (mode === 5 && !spectator) {
+    // TV YAYINI: pist kenarı kameraları; aracı yakın plan izler, operatör gibi hafif gecikmeli çevirir
+    const cams = tvCams(), L = TRACK.length, sCar = ((p.s % L) + L) % L;
+    let best = cams[0], bd = 1e9;
+    for (const q of cams) { const ds = ((q.s - sCar + 45) % L + L) % L; if (ds < bd) { bd = ds; best = q; } }
+    if (view.tvCam !== best) { view.tvCam = best; view.tvT = 0; C.tvx = p.x; C.tvy = by; C.tvz = p.z; }
+    view.tvT += dt;
+    C.tvx = smooth(C.tvx, p.x + p.vx * 0.08, 7, dt); C.tvy = smooth(C.tvy, by + 0.8, 7, dt); C.tvz = smooth(C.tvz, p.z + p.vz * 0.08, 7, dt);
+    const wob = Math.sin(C.t * 0.9) * 0.15;
+    cam.position.set(best.x + (best.crane ? Math.sin(view.tvT * 0.4) * 3 : 0), best.y + (best.crane ? Math.sin(view.tvT * 0.3) * 1.5 : 0) + wob * 0.2, best.z);
+    cam.lookAt(C.tvx, C.tvy + wob * 0.1, C.tvz);
+    const dist = cam.position.distanceTo(new THREE.Vector3(p.x, by, p.z));
+    fovT = clamp(2 * Math.atan(5.5 / Math.max(dist, 1)) * 180 / Math.PI, 7, 62); // aracı kadrajda sabit boyda tut
+    if (view.tvT === dt) cam.fov = fovT; // kesmede anında
+    view.camInit = false;
+  } else if (mode === 3) {
     const k = R.def.kind, S = R.vis && R.vis.state || {};
     const fwdOff = k === 'car' ? vehGeo(R.def).zf + 0.2 : k === 'bike' ? 0.2 : 0.4;
     const hh = (k === 'car' ? 0.62 : k === 'bike' ? 1.75 : 2.95) + (S.heave || 0);
@@ -7804,11 +8107,20 @@ function frame(now) {
   HID.update(dt);
   for (const v of views) {
     // iç kamerada kendi sürücünü gizle (bölünmüş ekranda diğer görünümlerde görünür kalır)
-    if (MODE === 'race' && RACE) for (const R2 of RACE.racers) if (R2.vis && R2.vis.driver) R2.vis.driver.visible = !(v.racer === R2 && R2.camMode === 3);
+    if (MODE === 'race' && RACE) for (const R2 of RACE.racers) {
+      if (!R2.vis) continue;
+      const me = v.racer === R2 && inCockpit(R2);
+      if (R2.vis.driver) R2.vis.driver.visible = !me;
+      const ck = R2.vis.cockpit; if (ck && ck.arms) ck.arms.g.visible = me;
+      // içi boş (taranmış) modellerde kokpit ikizi: yalnız bu oyuncunun iç kamerasında görünür
+      if (R2.vis.twin) { R2.vis.twin.root.visible = me; if (R2.vis.modelMesh) R2.vis.modelMesh.visible = !me; }
+    }
+
     // iç kamerada kendi camların neredeyse şeffaf (cam filmi ve yansıma yolu kapatmasın)
-    const gm = MODE === 'race' && v.racer && v.racer.camMode === 3 && v.racer.vis && v.racer.vis.eye && v.racer.vis.mats ? v.racer.vis.mats.glass : null;
+    const gm = MODE === 'race' && v.racer && inCockpit(v.racer) && v.racer.vis && v.racer.vis.mats ? (v.racer.vis.twin ? v.racer.vis.twin.mats.glass : v.racer.vis.mats.glass) : null;
     let go = 0, ge = 0, gc = 0;
     if (gm) { go = gm.opacity; ge = gm.envMapIntensity; gc = gm.clearcoat || 0; gm.opacity = Math.min(go, 0.12); gm.envMapIntensity = 0.25; if (gm.clearcoat !== undefined) gm.clearcoat = 0.15; }
+    if (MODE === 'race' && v.racer && inCockpit(v.racer)) renderMirror(v);
     v.render();
     if (gm) { gm.opacity = go; gm.envMapIntensity = ge; if (gm.clearcoat !== undefined) gm.clearcoat = gc; }
   }
