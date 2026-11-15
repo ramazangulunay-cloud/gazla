@@ -263,6 +263,7 @@ html,body{overscroll-behavior:none;touch-action:manipulation}
 .hud .items.roll .slot.s0{animation:roll .14s linear infinite}
 @keyframes roll{50%{transform:translateY(-3px) scale(1.06)}}
 .splat{position:absolute;inset:0;pointer-events:none;z-index:3;animation:splat 1.8s ease-out forwards}
+.juice{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3}
 .splat.karpuz{background:radial-gradient(circle at 38% 42%,rgba(230,40,60,.75) 0 9%,transparent 10%),radial-gradient(circle at 60% 55%,rgba(230,40,60,.7) 0 13%,transparent 14%),radial-gradient(circle at 48% 70%,rgba(40,120,30,.65) 0 6%,transparent 7%),radial-gradient(circle at 70% 30%,rgba(230,40,60,.6) 0 5%,transparent 6%),radial-gradient(circle at 30% 65%,rgba(20,10,10,.8) 0 1%,transparent 1.3%),radial-gradient(circle at 55% 40%,rgba(20,10,10,.8) 0 1%,transparent 1.3%)}
 .splat.terlik::after{content:'ŞAAP!';position:absolute;left:50%;top:38%;transform:translate(-50%,-50%) rotate(-8deg);font:900 italic clamp(60px,12vw,150px)/1 var(--disp);color:#ffd60a;-webkit-text-stroke:4px #1d2a66;text-shadow:0 0 30px rgba(255,214,10,.6)}
 .splat.muz{background:radial-gradient(ellipse at 50% 50%,transparent 55%,rgba(245,207,42,.35))}
@@ -674,6 +675,8 @@ body.touch.racing .hud .trt>div:nth-child(n+2){display:none}
   <div data-cat="arac" class="vdesc" id="gDesc"></div>
   <div data-cat="arac" class="stats" id="gStats"></div>
   <div data-cat="boya"><div class="lbl" id="gPaintLbl">Renk</div><div class="sw" id="gPaint"></div></div>
+  <div data-cat="boya" id="gPatBox"><div class="lbl">Desen</div><div class="chips" id="gPat"></div></div>
+  <div data-cat="boya" id="gPatColBox"><div class="lbl">Desen rengi</div><div class="sw" id="gPatCol"></div></div>
   <div data-cat="jant" id="gRimBox"><div class="lbl">Jant</div><div class="chips" id="gRim"></div></div>
   <div data-cat="jant" id="gRimStyleBox"><div class="lbl">Jant modeli</div><div class="chips" id="gRimStyle"></div></div>
   <div data-cat="cam" id="gTintBox"><div class="lbl">Cam filmi</div><div class="chips" id="gTint"></div></div>
@@ -762,7 +765,7 @@ body.touch.racing .hud .trt>div:nth-child(n+2){display:none}
     <div>Sıfırla <kbd>Backspace</kbd></div><div>Duraklat <kbd>Esc</kbd></div>
   </div>
   <div class="hint">Yoldaki <b>? kasalarından</b> sataşma eşyası çıkar (iki tane taşıyabilirsin): muz kabuğu ve zeytinyağı arkana bırakılır, karpuz ileri fırlatılır, anne terliği öndeki rakibi kovalar, limon kolonyası 8 saniye kalkan olur, düdüklü tencere çevrendekileri savurur. Nitro mavi tüplerden, drift atınca ve rüzgar arkasında dolar. Islak zeminde tutuş düşer. Rampalara hızla gir — havadayken direksiyon az döner. Telefonda ekrandaki düğmelerle oynanır.</div>
-  <div class="hint"><b>Kameralar:</b> <kbd>C</kbd> ile sırayla: takip · uzak takip · kaput · tampon · <b>kokpit</b> (eller, canlı dikiz aynası, baş G kuvvetiyle oynar) · <b>TV yayını</b>. <kbd>B</kbd> basılı (kolda sağ çubuğa bas): arkaya bak. Fare/sağ çubukla etrafa bakınabilirsin.</div>
+  <div class="hint"><b>Kameralar:</b> <kbd>C</kbd> ile sırayla: takip · uzak takip · kaput · tampon · <b>kokpit</b> (eller, canlı dikiz aynası, baş G kuvvetiyle oynar) · <b>TV yayını</b> · <b>yarı sinematik</b> (araca yakın, süzülen film açıları; oynanabilir). <kbd>B</kbd> basılı (kolda sağ çubuğa bas): arkaya bak. Fare/sağ çubukla etrafa bakınabilirsin.</div>
   <div class="hint"><b>Eğlenceli numaralar:</b> Geri sayımda <b>“2” biterken</b> gaza bas → <b>roket kalkış</b> (çok erken basarsan motor boğulur). Gaza basarak drift at: kıvılcımlar <span style="color:#6cf">mavi</span> → <span style="color:#fa3">turuncu</span> → <span style="color:#c6f">mor</span> olur, bırakınca <b>mini turbo</b>. Rampadan kalkar kalkmaz <b>el frenine</b> bas → takla at, düzgün inersen turbo. Mavi ok desenli <b>hız şeritleri</b> bedava itiş verir; rüzgâr arkasından kenara çıkınca <b>sapan çıkışı</b> yaparsın. Tek oyunculu ve aynı ekranda: <b>nitro açıkken bir bota yandan vurursan kazaya sürüp yarıştan elersin</b> (çevrim içinde gerçek oyunculara işlemez).</div>
   <div class="row"><button class="btn y" data-go="menu">TAMAM</button></div>
 </div></div>
@@ -1840,7 +1843,7 @@ const SpeedShader = {
       vec2 dir = vUv - center; float d = length(dir);
       float k = amount * smoothstep(0.2, 0.7, d) * 0.035;
       // kenarlarda hıza bağlı renk sapması (lens kromatik aberasyonu)
-      vec2 ca = dir * (0.0016 + amount * 0.0045 + tint * 0.003) * smoothstep(0.15, 0.75, d);
+      vec2 ca = dir * (0.0004 + amount * 0.0014 + tint * 0.0008) * smoothstep(0.35, 0.9, d);
       vec4 acc = vec4(0.0);
       for (int i = 0; i < 9; i++) { float t = float(i) / 8.0; vec2 uv = center + dir * (1.0 - k * t);
         acc += vec4(texture2D(tDiffuse, uv + ca).r, texture2D(tDiffuse, uv).g, texture2D(tDiffuse, uv - ca).b, 1.0); }
@@ -2109,19 +2112,30 @@ function buildTextures() {
     }
     g.putImageData(im, 0, 0);
   });
-  // duman topağı: gürültülü, yumuşak kenarlı (R kanalı yoğunluk ayrıntısı)
-  TEX.puff = canvasTex(128, 128, (g, w, h) => {
-    const img = g.createImageData(w, h), d = img.data, r = rng(71);
-    const grid = []; for (let i = 0; i < 16 * 16; i++) grid.push(r());
-    const vn = (x, y) => { const xi = Math.floor(x), yi = Math.floor(y), fx = x - xi, fy = y - yi; const G = (a, b) => grid[((b & 15) * 16) + (a & 15)]; const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy); return (G(xi, yi) * (1 - sx) + G(xi + 1, yi) * sx) * (1 - sy) + (G(xi, yi + 1) * (1 - sx) + G(xi + 1, yi + 1) * sx) * sy; };
-    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-      const u = x / w - 0.5, v = y / h - 0.5, rr = Math.sqrt(u * u + v * v) * 2;
-      const n = vn(x / 16, y / 16) * 0.55 + vn(x / 8, y / 8) * 0.3 + vn(x / 4, y / 4) * 0.15;
-      const a = Math.max(0, 1 - rr * (0.85 + (1 - n) * 0.5)); const al = Math.pow(a, 1.3) * (0.55 + n * 0.6);
-      const i = (y * w + x) * 4; d[i] = d[i + 1] = d[i + 2] = Math.round(120 + n * 135); d[i + 3] = Math.round(Math.min(1, al) * 255);
+  // duman topağı atlası (2×2): her hücre farklı karnabahar biçimli, kenarı kesin sıfır (dönünce kare görünmez);
+  // R = ayrıntı yoğunluğu, G = topak içi kalınlık (ışık için)
+  TEX.puff = canvasTex(256, 256, (g, w, h) => {
+    const img = g.createImageData(w, h), d = img.data, r = rng(71), C = 128;
+    const grid = []; for (let i = 0; i < 32 * 32; i++) grid.push(r());
+    const vn = (x, y) => { const xi = Math.floor(x), yi = Math.floor(y), fx = x - xi, fy = y - yi; const G = (a, b) => grid[((b & 31) * 32) + (a & 31)]; const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy); return (G(xi, yi) * (1 - sx) + G(xi + 1, yi) * sx) * (1 - sy) + (G(xi, yi + 1) * (1 - sx) + G(xi + 1, yi + 1) * sx) * sy; };
+    for (let cell = 0; cell < 4; cell++) {
+      const ox = (cell & 1) * C, oy = (cell >> 1) * C;
+      const lobes = []; const nl = 6 + Math.floor(r() * 4);
+      for (let i = 0; i < nl; i++) { const a = r() * 6.283, rr = 0.06 + r() * 0.17; lobes.push([Math.cos(a) * rr, Math.sin(a) * rr, 0.1 + r() * 0.1]); }
+      lobes.push([0, 0, 0.2]);
+      for (let y = 0; y < C; y++) for (let x = 0; x < C; x++) {
+        const u = (x + 0.5) / C - 0.5, v = (y + 0.5) / C - 0.5, rr = Math.hypot(u, v);
+        let den = 0; for (const [lx, ly, lr] of lobes) { const q = ((u - lx) ** 2 + (v - ly) ** 2) / (lr * lr); den += Math.exp(-q * 1.6); }
+        const n = vn((x + ox) / 14, (y + oy) / 14) * 0.5 + vn((x + ox) / 6, (y + oy) / 6) * 0.32 + vn((x + ox) / 2.6, (y + oy) / 2.6) * 0.18;
+        den *= 0.55 + n * 0.8;
+        const edge = Math.max(0, Math.min(1, (0.47 - rr) / 0.12)); // hücre kenarında kesin sıfır
+        const al = (1 - Math.exp(-den * 2.2)) * edge * edge;
+        const i = ((y + oy) * w + x + ox) * 4;
+        d[i] = Math.round(Math.min(1, 0.35 + n * 0.75) * 255); d[i + 1] = Math.round(Math.min(1, den * 0.6) * 255); d[i + 2] = 255; d[i + 3] = Math.round(al * 255);
+      }
     }
     g.putImageData(img, 0, 0);
-  });
+  }, { linear: true });
   // su damlası/sis: parlak çekirdek + yumuşak hale
   TEX.drop = canvasTex(64, 64, (g, w, h) => {
     g.clearRect(0, 0, w, h);
@@ -3793,7 +3807,31 @@ const COATS = [
   { id: 'doru', name: 'Doru', c: '#6e3d1f' }, { id: 'kir', name: 'Kır', c: '#c3c1bc' }, { id: 'yagiz', name: 'Yağız', c: '#181412' },
   { id: 'al', name: 'Al', c: '#9a4b24' }, { id: 'ak', name: 'Ak', c: '#ece8de' },
 ];
-const TINTS = [{ id: 'yok', name: 'Yok', v: 0.3 }, { id: 'acik', name: 'Açık', v: 0.58 }, { id: 'koyu', name: 'Kapkara', v: 0.92 }];
+const TINTS = [{ id: 'yok', name: 'Yok', v: 0.22 }, { id: 'acik', name: 'Açık füme', v: 0.5 }, { id: 'koyu', name: 'Kapkara', v: 0.9 },
+  { id: 'mavi', name: 'Mavi film', v: 0.62, c: 0x0b2c63 }, { id: 'yesil', name: 'Yeşil film', v: 0.6, c: 0x0c3d2a }, { id: 'bronz', name: 'Bronz', v: 0.66, c: 0x4a2a0c },
+  { id: 'ayna', name: 'Ayna', v: 0.86, mirror: true }, { id: 'bukalemun', name: 'Bukalemun', v: 0.74, irid: true }];
+// Cam: önceden çarpılmış saydamlık — film rengi saydamlıkla karışır, yansıma ise saydamlıktan bağımsız tam
+// güçte eklenir (gerçek camdaki gibi: koyu filmde bile gökyüzü ve binalar net yansır). Fresnel: yatay açıda ayna gibi.
+function glassMat(tint) {
+  const base = tint.mirror ? new THREE.Color(0x8a9096) : tint.c != null ? new THREE.Color(tint.c) : new THREE.Color(0x0e141a).lerp(new THREE.Color(0x030405), tint.v);
+  const m = new THREE.MeshPhysicalMaterial({ color: base, roughness: tint.mirror ? 0.05 : 0.02, metalness: tint.mirror ? 0.85 : 0.0, clearcoat: 1, clearcoatRoughness: 0.0,
+    transparent: true, opacity: tint.v, side: THREE.DoubleSide, depthWrite: false, envMapIntensity: tint.mirror ? 2.2 : 1.6, premultipliedAlpha: true });
+  if (tint.irid) { m.iridescence = 1; m.iridescenceIOR = 1.8; m.iridescenceThicknessRange = [180, 720]; m.color.setRGB(0.02, 0.025, 0.03); m.metalness = 0.35; }
+  const k = tint.mirror ? 1.3 : 1.0;
+  m.onBeforeCompile = (sh) => {
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <opaque_fragment>', `{
+        float gA = diffuseColor.a;
+        float fr = pow(1.0 - saturate(abs(dot(normal, normalize(vViewPosition)))), 4.0);
+        vec3 refl = max(outgoingLight - totalDiffuse, vec3(0.0));
+        gl_FragColor = vec4(totalDiffuse * gA + refl * (${k.toFixed(2)} + fr * 1.4), clamp(gA + (1.0 - gA) * fr * 0.6, 0.0, 1.0));
+      }`)
+      .replace('#include <fog_fragment>', '#include <fog_fragment>\n#ifdef USE_FOG\n gl_FragColor.rgb -= fogC * fogFactor * (1.0 - gl_FragColor.a);\n#endif')
+      .replace('#include <premultiplied_alpha_fragment>', '');
+  };
+  m.customProgramCacheKey = () => 'glassP|' + (tint.mirror ? 'm' : '') + (tint.irid ? 'i' : '') + '|' + LOOK_CUR.id;
+  return m;
+}
 const NEONS = [{ id: 'yok', name: 'Yok' }, { id: 'mavi', name: 'Mavi', c: [0.2, 0.65, 1.0] }, { id: 'pembe', name: 'Pembe', c: [1.0, 0.25, 0.7] },
   { id: 'yesil', name: 'Yeşil', c: [0.25, 1.0, 0.45] }, { id: 'mor', name: 'Mor', c: [0.6, 0.35, 1.0] }];
 const ACCS = {
@@ -3802,10 +3840,136 @@ const ACCS = {
 };
 const STICKERS = ['MAŞALLAH', 'AĞIR ABİ', 'KADER UTANSIN', 'YOLUN AÇIK OLSUN', 'HIZ TUTKUNU', 'ANAM DUA ETMİŞ', 'BEKLE BENİ'];
 const findBy = (list, id) => list.find(x => x.id === id) || list[0];
+// ── DESENLER: boya üstüne gövde uzayında çizilen hazır desenler. Her aracın kendi ölçüsüne göre
+// (gövde kutusuna normalize) yerleşir; her aracın deseni ayrı kaydedilir (vc_<araç>).
+const PATTERNS = [
+  { id: 'yok', name: 'Yok' }, { id: 'serit', name: 'Çift yarış şeridi' }, { id: 'tek', name: 'Geniş orta şerit' },
+  { id: 'yan', name: 'Yan şerit' }, { id: 'ikiton', name: 'İki renk' }, { id: 'dama', name: 'Damalı bayrak' },
+  { id: 'alev', name: 'Alev' }, { id: 'ralli', name: 'Ralli (55)' }, { id: 'kamuflaj', name: 'Kamuflaj' },
+];
+const PAT_COLS = [
+  { id: 'oto', name: 'Otomatik', c: null }, { id: 'beyaz', name: 'Beyaz', c: '#f2f2ee' }, { id: 'siyah', name: 'Siyah', c: '#121314' },
+  { id: 'sari', name: 'Sarı', c: '#ffc21a' }, { id: 'kirmizi', name: 'Kırmızı', c: '#c8141c' }, { id: 'mavi', name: 'Mavi', c: '#1f5fd6' },
+  { id: 'turuncu', name: 'Turuncu', c: '#ff6a12' }, { id: 'yesil', name: 'Yeşil', c: '#2f9e44' }, { id: 'gumus', name: 'Gümüş', c: '#a9afb8' },
+];
+function patColorFor(custom) {
+  const pc = findBy(PAT_COLS, custom.patCol || 'oto');
+  if (pc.c) return new THREE.Color(pc.c);
+  const p = findBy(PAINTS, custom.paint), c = new THREE.Color(p.c), lum = Math.max(c.r, c.g, c.b) * 0.5 + (c.r * 0.2126 + c.g * 0.7152 + c.b * 0.0722) * 0.5;
+  if ((custom.pattern || 'yok') === 'alev') return new THREE.Color('#ff5a10');
+  if (custom.pattern === 'kamuflaj') return c.clone().multiplyScalar(lum > 0.35 ? 0.45 : 2.2);
+  return lum > 0.45 ? new THREE.Color('#121314') : new THREE.Color('#f2f2ee');
+}
+let _patNumTex = null;
+function patNumTex() {
+  if (_patNumTex) return _patNumTex;
+  _patNumTex = canvasTex(128, 128, (g, w, h) => {
+    g.clearRect(0, 0, w, h); g.fillStyle = '#fff'; g.font = '900 italic 74px Arial, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText('55', w / 2 + 2, h / 2 + 4);
+  }, { linear: true });
+  return _patNumTex;
+}
+const PAT_GLSL = `
+uniform vec3 uPatCol; uniform vec3 uBoxMin; uniform vec3 uBoxMax; uniform sampler2D uPatNum;
+varying vec3 vBP; varying vec3 vBN;
+float pHash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float pNoise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(pHash(i), pHash(i + vec2(1, 0)), f.x), mix(pHash(i + vec2(0, 1)), pHash(i + vec2(1, 1)), f.x), f.y); }
+// yumuşak kenarlı aralık (kenar yumuşatma: piksel türevine göre)
+float pBand(float x, float a, float b){ float w = max(fwidth(x), 1e-4) * 0.8; return smoothstep(a - w, a + w, x) * (1.0 - smoothstep(b - w, b + w, x)); }
+float pLess(float x, float a){ float w = max(fwidth(x), 1e-4) * 0.8; return 1.0 - smoothstep(a - w, a + w, x); }
+// alev dili profili: u = önden arkaya, s = bant içi konum (0..1)
+float pFlame(float u, float s, float k){
+  if (s < 0.0 || s > 1.0) return 0.0;
+  float L = (0.16 + 0.34 * pow(abs(sin(s * 7.6 + 0.8)), 0.65) * (1.0 - abs(s - 0.5) * 1.1)) * k;
+  return pLess(u, L);
+}
+vec4 patColor(){
+  vec3 c = (uBoxMin + uBoxMax) * 0.5, hs = max((uBoxMax - uBoxMin) * 0.5, vec3(0.05));
+  float nx = (vBP.x - c.x) / hs.x, ny = (vBP.y - uBoxMin.y) / (hs.y * 2.0), nz = (vBP.z - c.z) / hs.z;
+  vec3 N = normalize(vBN); float side = smoothstep(0.42, 0.62, abs(N.x)), top = 1.0 - side;
+  vec3 col = uPatCol; float m = 0.0;
+#if PAT_ID == 1
+  m = (pBand(abs(nx), 0.075, 0.25) + pBand(abs(nx), 0.29, 0.315)) * top;
+#elif PAT_ID == 2
+  m = (pLess(abs(nx), 0.17) + pBand(abs(nx), 0.215, 0.245)) * top;
+#elif PAT_ID == 3
+  float yc = 0.4 + max(0.0, -0.42 - nz) * 0.75;
+  m = (pBand(ny, yc - 0.055, yc + 0.055) + pBand(ny, yc + 0.08, yc + 0.1)) * side * pLess(abs(nz), 0.93);
+#elif PAT_ID == 4
+  m = pLess(ny, 0.37) * (1.0 - top * step(0.6, N.y));
+  float pin = pBand(ny, 0.39, 0.405) * side; col = mix(col, vec3(0.95), pin); m = max(m, pin);
+#elif PAT_ID == 5
+  vec2 q = floor(vec2(vBP.z, vBP.y + vBP.x * step(0.6, top)) / 0.14);
+  float ck = mod(q.x + q.y, 2.0);
+  float hood = top * step(0.5, N.y) * smoothstep(0.38, 0.42, nz) * pLess(abs(nx), 0.7) * pLess(ny, 0.66);
+  float rear = side * pBand(ny, 0.28, 0.56) * smoothstep(-0.05, -0.75 + pHash(q) * 0.5, nz);
+  m = ck * max(hood, rear);
+#elif PAT_ID == 6
+  float sideF = pFlame((1.0 - nz) * 0.5, (ny - 0.16) / 0.44, 1.0) * side;
+  float hoodF = pFlame((1.0 - nz) * 0.5, abs(nx) * 0.62 + 0.18, 0.95) * top * step(0.45, N.y);
+  float inS = pFlame((1.0 - nz) * 0.5 + 0.06, (ny - 0.16) / 0.44, 0.62) * side;
+  float inH = pFlame((1.0 - nz) * 0.5 + 0.05, abs(nx) * 0.62 + 0.18, 0.6) * top * step(0.45, N.y);
+  m = max(sideF, hoodF);
+  col = mix(uPatCol, vec3(1.0, 0.86, 0.16), max(inS, inH));
+#elif PAT_ID == 7
+  vec2 rc = vec2((vBP.z - (c.z + hs.z * 0.02)) * -sign(N.x), vBP.y - (uBoxMin.y + hs.y * 0.92));
+  float R = min(0.34, hs.y * 0.36), d = length(rc);
+  float disc = pLess(d, R) * side, ring = pBand(d, R * 0.9, R * 0.96) * side;
+  float num = texture2D(uPatNum, rc / (R * 1.7) + 0.5).a * pLess(d, R * 0.86) * side;
+  m = disc; col = mix(vec3(0.96), uPatCol, max(num, ring));
+  m = max(m, pBand(nx, -0.06, 0.06) * top * step(0.5, N.y)); // ince orta çizgi
+#elif PAT_ID == 8
+  float n1 = pNoise(vBP.zy * 1.4 + vBP.x * 0.7) * 0.65 + pNoise(vBP.zy * 3.1 - vBP.x) * 0.35;
+  float n2 = pNoise(vBP.zy * 2.2 + 7.3 + vBP.x * 0.5);
+  m = smoothstep(0.52, 0.56, n1); float d2 = smoothstep(0.6, 0.64, n2);
+  col = mix(uPatCol, uPatCol * 0.45, d2); m = max(m, d2 * 0.9);
+#endif
+  return vec4(col, clamp(m, 0.0, 1.0));
+}
+`;
+const PAT_VERT = 'uniform mat4 uBodyInv; varying vec3 vBP; varying vec3 vBN;';
+const PAT_VERT_MAIN = '{ vec4 pw = modelMatrix * vec4(transformed, 1.0); vBP = (uBodyInv * pw).xyz; vBN = mat3(uBodyInv) * (mat3(modelMatrix) * objectNormal); }';
+// boya malzemesine desen ekle (vcol: model boya maskesiyle, l: gölge çarpanı ifadesi)
+function patchPattern(m, U, vcol) {
+  if (!U) return m;
+  const prev = m.onBeforeCompile, prevKey = m.customProgramCacheKey;
+  m.onBeforeCompile = (sh, r) => {
+    if (prev) prev(sh, r);
+    Object.assign(sh.uniforms, U);
+    sh.defines = Object.assign(sh.defines || {}, { PAT_ID: U.id });
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\n' + PAT_VERT).replace('#include <begin_vertex>', '#include <begin_vertex>\n' + PAT_VERT_MAIN);
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\n' + PAT_GLSL)
+      .replace('#include <alphamap_fragment>', '{ vec4 pt = patColor(); ' + (vcol ? 'float pl = clamp(dot(vColor.rgb, vec3(0.2126, 0.7152, 0.0722)) * 1.45, 0.2, 1.25); diffuseColor.rgb = mix(diffuseColor.rgb, pt.rgb * pl, pt.a * vPm); }\n#include <alphamap_fragment>' : 'diffuseColor.rgb = mix(diffuseColor.rgb, pt.rgb, pt.a); }\n#include <alphamap_fragment>'));
+  };
+  m.customProgramCacheKey = () => (prevKey ? prevKey.call(m) : 'paint') + '|pat' + U.id + '|' + LOOK_CUR.id;
+  m.userData.pat = true;
+  return m;
+}
+function patUniforms(custom) {
+  const pid = PATTERNS.findIndex(p => p.id === (custom.pattern || 'yok'));
+  if (pid <= 0) return null;
+  return { id: pid, uBodyInv: { value: new THREE.Matrix4() }, uPatCol: { value: patColorFor(custom) }, uBoxMin: { value: new THREE.Vector3(-0.9, 0.2, -2.1) }, uBoxMax: { value: new THREE.Vector3(0.9, 1.4, 2.1) }, uPatNum: { value: pid === 7 ? patNumTex() : null } };
+}
+// kurulumdan sonra: boyalı parçaların gövde-uzayı kutusu + her çizimde gövde ters matrisi
+function finishPattern(v) {
+  const U = v.mats && v.mats.patU; if (!U || !THREE.Box3) return;
+  v.root.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(v.body.matrixWorld).invert(), M = new THREE.Matrix4(), bb = new THREE.Box3(), tb = new THREE.Box3();
+  let any = false;
+  v.body.traverse(o => {
+    if (!o.isMesh || !o.material || !o.material.userData || !o.material.userData.pat) return;
+    if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+    tb.copy(o.geometry.boundingBox).applyMatrix4(M.multiplyMatrices(inv, o.matrixWorld)); bb.union(tb); any = true;
+    const body = v.body;
+    o.onBeforeRender = () => { U.uBodyInv.value.copy(body.matrixWorld).invert(); };
+  });
+  if (any && isFinite(bb.min.x)) { U.uBoxMin.value.copy(bb.min); U.uBoxMax.value.copy(bb.max); }
+}
 
 function defaultCustom(veh = 'sahin') {
   const d = VEHICLES[veh] || VEHICLES.sahin;
-  return Object.assign({ veh, paint: 'kirmizi', rim: 'krom', rimStyle: 'oz', tint: 'acik', neon: 'yok', horn: 'disk', acc: [], sticker: 'MAŞALLAH' }, d.defaults || {});
+  return Object.assign({ veh, paint: 'kirmizi', rim: 'krom', rimStyle: 'oz', tint: 'acik', neon: 'yok', horn: 'disk', acc: [], sticker: 'MAŞALLAH', pattern: 'yok', patCol: 'oto' }, d.defaults || {});
 }
 function sanitizeCustom(c) {
   c = Object.assign({}, c || {});
@@ -3817,6 +3981,8 @@ function sanitizeCustom(c) {
   if (!RIM_STYLES.some(p => p.id === c.rimStyle)) c.rimStyle = 'oz';
   if (!TINTS.some(p => p.id === c.tint)) c.tint = 'acik';
   if (!NEONS.some(p => p.id === c.neon)) c.neon = 'yok';
+  if (!PATTERNS.some(p => p.id === c.pattern) || d.kind !== 'car') c.pattern = 'yok';
+  if (!PAT_COLS.some(p => p.id === c.patCol)) c.patCol = 'oto';
   if (typeof HORNS !== 'undefined' && !HORNS.some(h => h.id === c.horn)) c.horn = 'disk';
   c.acc = Array.isArray(c.acc) ? c.acc.filter(a => ACCS[a] && (d.accs || []).includes(a)).slice(0, 8) : [];
   c.sticker = String(c.sticker || '').replace(/[\u0000-\u001f​-‏‪-‮]/g, '').slice(0, 18);
@@ -3834,6 +4000,8 @@ function vehicleMats(custom, lite) {
   m.paint = new THREE.MeshPhysicalMaterial({ color: p.c, metalness: p.metal ? 0.6 : 0.06, roughness: p.metal ? 0.3 : 0.38, clearcoat: 1, clearcoatRoughness: 0.025, envMapIntensity: 1.5, specularIntensity: 0.7 });
   // metalik boyada pul (flake) parıltısı
   if (p.metal && TEX.flake && !lite) { m.paint.normalMap = TEX.flake; m.paint.normalScale = new THREE.Vector2(0.22, 0.22); }
+  m.patU = lite || p.livery ? null : patUniforms(custom);
+  patchPattern(m.paint, m.patU, false);
   m.chrome = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 1, roughness: 0.07, envMapIntensity: 1.6 });
   m.black = new THREE.MeshStandardMaterial({ color: 0x141517, roughness: 0.7 });
   m.trim = new THREE.MeshPhysicalMaterial({ color: 0x0a0b0c, roughness: 0.35, clearcoat: 0.6 });
@@ -3844,7 +4012,7 @@ function vehicleMats(custom, lite) {
   m.caliper = new THREE.MeshStandardMaterial({ color: custom.veh === 'e30' ? 0xb8121a : 0x3a3c40, roughness: 0.5, metalness: 0.3 });
   m.glass = lite
     ? new THREE.MeshPhysicalMaterial({ color: 0x141b22, roughness: 0.04, metalness: 0.1, clearcoat: 1 })
-    : new THREE.MeshPhysicalMaterial({ color: new THREE.Color(0x0e141a).lerp(new THREE.Color(0x030405), tint.v), roughness: 0.02, metalness: 0.0, clearcoat: 1, clearcoatRoughness: 0.0, transparent: true, opacity: tint.v, side: THREE.DoubleSide, depthWrite: false, envMapIntensity: 1.8 });
+    : glassMat(tint);
   m.lens = new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.02, metalness: 0, transparent: true, opacity: 0.35, clearcoat: 1, envMapIntensity: 2 });
   m.lens.userData.bk = 'skip';
   m.head = new THREE.MeshStandardMaterial({ color: 0xfffaf0, emissive: 0xfff2d6, emissiveIntensity: 1.2, roughness: 0.15, metalness: 0.4 });
@@ -4822,7 +4990,7 @@ function prepModel(scene) {
   return M;
 }
 // köşe renkli gövdeyi oyuncunun boyasına boyayan malzeme (gölge/kir/ayrıntı korunur)
-function vcolPaintMat(p) {
+function vcolPaintMat(p, U) {
   const m = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: p.metal ? 0.34 : 0.42, metalness: p.metal ? 0.45 : 0.05, clearcoat: 1, clearcoatRoughness: 0.05, envMapIntensity: 1.35 });
   const u = { value: new THREE.Color(p.c) };
   m.onBeforeCompile = (sh) => {
@@ -4833,7 +5001,7 @@ function vcolPaintMat(p) {
   };
   m.customProgramCacheKey = () => 'vcolpaint|' + LOOK_CUR.id;
   m.userData.cast = true;
-  return m;
+  return patchPattern(m, U, true);
 }
 // araç geometrisi (fizik/iz/kamera için): modelli araçta def.geo, yoksa profil
 function vehGeo(d) {
@@ -4864,7 +5032,7 @@ function buildModelCar(def, ctx, M, ML) {
     let m = src;
     if (nm === 'paint') m = pc.livery && src.map ? own(new THREE.MeshPhysicalMaterial({ map: src.map, roughness: 0.4, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.04, envMapIntensity: 1.3 })) : mats.paint;
     else if (nm === 'vcol' || nm === 'lodp') {
-      if (isBody) m = cache.get('vp') || own(vcolPaintMat(pc)); // kaplamalı boyada uzak model kaplamanın ana rengini alır
+      if (isBody) m = cache.get('vp') || own(vcolPaintMat(pc, mats.patU)); // kaplamalı boyada uzak model kaplamanın ana rengini alır
       else m = cache.get('vplain') || own(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.6, metalness: 0.15 }));
       cache.set(m.isMeshPhysicalMaterial ? 'vp' : 'vplain', m);
     }
@@ -5033,6 +5201,53 @@ registerVehicle('at', {
   build: buildHorse,
 });
 
+// ── NİTRO ALEVİ: dönen bir gövde (lathe) üstünde gürültüyle kıvranan jet. Çekirdek beyaz-camgöbeği ve
+// şok elmaslı, dış alev mavi→mor, ucu turuncu dillerle dağılır. Yanlardan bakınca kenarlar saydamlaşır (hacim hissi).
+let _flameGeo = null;
+function nitroFlameGeo() {
+  if (_flameGeo) return _flameGeo;
+  const pr = [[0.035, 0], [0.07, 0.06], [0.1, 0.2], [0.105, 0.36], [0.09, 0.55], [0.06, 0.75], [0.03, 0.9], [0.0, 1.0]].map(([r, y]) => new THREE.Vector2(r, y));
+  const g = new THREE.LatheGeometry(pr, 14); g.rotateX(-Math.PI / 2); // +y → -z (geriye)
+  return (_flameGeo = g);
+}
+function nitroFlameMat(core) {
+  const u = { uT: { value: 0 }, uK: { value: 1 }, uSeed: { value: Math.random() * 50 } };
+  return new THREE.ShaderMaterial({
+    uniforms: u, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, toneMapped: false,
+    vertexShader: `uniform float uT; uniform float uSeed; varying float vL; varying float vF; varying float vAng;
+      void main(){
+        vL = uv.y; vAng = uv.x;
+        vec3 p = position;
+        float t = uT * 1.0 + uSeed;
+        float w = sin(t * 37.0 + vL * 9.0) * 0.5 + sin(t * 23.0 - vL * 14.0) * 0.5;
+        p.xy *= 1.0 + w * 0.18 * vL;
+        p.x += sin(t * 19.0 + vL * 6.0) * 0.035 * vL * vL; p.y += cos(t * 17.0 + vL * 5.0) * 0.03 * vL * vL;
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        vec3 n = normalize(normalMatrix * normal);
+        vF = abs(dot(n, normalize(-mv.xyz)));
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: `uniform float uT; uniform float uK; uniform float uSeed; varying float vL; varying float vF; varying float vAng;
+      float h(vec2 p){ return fract(sin(dot(p, vec2(41.3, 289.1))) * 15731.7); }
+      float n2(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(h(i), h(i + vec2(1, 0)), f.x), mix(h(i + vec2(0, 1)), h(i + vec2(1, 1)), f.x), f.y); }
+      void main(){
+        float t = uT + uSeed;
+        float nz = n2(vec2(vAng * 9.0, vL * 7.0 - t * 26.0)) * 0.6 + n2(vec2(vAng * 23.0, vL * 15.0 - t * 41.0)) * 0.4;
+        float body = pow(vF, ${core ? '0.9' : '1.6'});
+        float tail = 1.0 - smoothstep(${core ? '0.35, 0.95' : '0.45, 1.0'}, vL + (nz - 0.5) * 0.5);
+        float a = body * tail * uK;
+        vec3 col;
+        ${core
+          ? `float dia = 0.3 + 1.1 * pow(abs(sin(vL * 3.14159 * 4.5 + 0.3)), 4.0) * (1.0 - vL * 0.8);
+        col = mix(vec3(1.3, 1.7, 2.5), vec3(0.3, 0.75, 2.4), smoothstep(0.05, 0.7, vL)) * dia;`
+          : `col = mix(vec3(0.12, 0.42, 2.2), vec3(0.55, 0.28, 1.5), smoothstep(0.2, 0.65, vL));
+        col = mix(col, vec3(2.2, 0.8, 0.18) * (0.5 + nz), smoothstep(0.5, 0.9, vL) * 0.9);
+        float streak = n2(vec2(vAng * 31.0, vL * 4.0 - t * 18.0));
+        a *= (0.35 + nz * 0.55) * (0.6 + streak * 0.6) * 0.7;`}
+        gl_FragColor = vec4(col * a, 1.0);
+      }`,
+  });
+}
 // Aracı kur: { root, body, wheels, brakeMats, exhausts, flames, neon, anim, def }
 function buildVehicle(custom, opts = {}) {
   custom = sanitizeCustom(custom);
@@ -5066,16 +5281,19 @@ function buildVehicle(custom, opts = {}) {
       v.neon = nm; v.neonBase = 0.9;
     }
     v.flames = [];
-    const fo = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.5, 1.4, 4.0), transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false });
-    const fi = new THREE.MeshBasicMaterial({ color: new THREE.Color(4, 3.6, 3.2), transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false });
-    const cone = new THREE.ConeGeometry(0.08, 0.9, 12, 1, true); cone.rotateX(-Math.PI / 2); cone.translate(0, 0, -0.45);
     if (def.kind !== 'horse') for (const e of v.exhausts) {
-      const g = new THREE.Group(); g.position.copy(e); g.position.z -= 0.04;
-      const a = new THREE.Mesh(cone, fo); const b = new THREE.Mesh(cone, fi); b.scale.set(0.5, 0.5, 0.6);
-      g.add(a, b); g.visible = false; (v.lean || v.body).add(g); v.flames.push(g);
+      const g = new THREE.Group(); g.position.copy(e); g.position.z -= 0.03;
+      const fm = nitroFlameMat(), core = nitroFlameMat(true);
+      const outer = new THREE.Mesh(nitroFlameGeo(), fm), inner = new THREE.Mesh(nitroFlameGeo(), core);
+      inner.scale.set(0.42, 0.42, 0.62); outer.userData.shared = inner.userData.shared = true; mats['fl' + v.flames.length] = fm; mats['flc' + v.flames.length] = core; outer.renderOrder = inner.renderOrder = 7; outer.frustumCulled = inner.frustumCulled = false;
+      const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.dot, color: new THREE.Color(0.35, 0.6, 2.2), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
+      glow.scale.set(0.55, 0.55, 1); glow.position.z = -0.04; glow.renderOrder = 7; mats['flg' + v.flames.length] = glow.material;
+      g.add(outer, inner, glow); g.visible = false; g.userData = { fm, core, glow, k: 0, seed: Math.random() * 100 };
+      (v.lean || v.body).add(g); v.flames.push(g);
     }
   }
   v.state = { roll: 0, pitch: 0, t: Math.random() * 10, lean: 0 };
+  finishPattern(v);
   return v;
 }
 
@@ -5229,8 +5447,16 @@ function updateVehicleVisual(v, ph, dt) {
   for (const m of v.brakeMats) m.emissiveIntensity = ph.braking ? 4.5 : 0.55;
   if (v.revMat) v.revMat.emissiveIntensity = (ph.vF || 0) < -0.5 ? 2.5 : 0.1;
   if (v.flames) for (const f of v.flames) {
-    f.visible = !!ph.nitroOn;
-    if (f.visible) { const s = 0.8 + Math.random() * 0.5; f.scale.set(s, s, 0.7 + Math.random() * 0.8); }
+    const U = f.userData, on = !!ph.nitroOn;
+    U.k = smooth(U.k || 0, on ? 1 : 0, on ? 22 : 9, dt);
+    f.visible = U.k > 0.02;
+    if (f.visible) {
+      U.t = (U.t || 0) + dt;
+      const fl = 0.85 + Math.random() * 0.3, len = (0.75 + clamp(spd / 50, 0, 1) * 0.65) * (0.55 + U.k * 0.45) * fl;
+      f.scale.set(0.9 + U.k * 0.25, 0.9 + U.k * 0.25, len * 1.25);
+      U.fm.uniforms.uT.value = U.t; U.core.uniforms.uT.value = U.t; U.fm.uniforms.uK.value = U.k; U.core.uniforms.uK.value = U.k * (0.85 + Math.random() * 0.3);
+      U.glow.material.opacity = U.k * (0.7 + Math.random() * 0.3); const gs = 0.45 + U.k * 0.25 + Math.random() * 0.1; U.glow.scale.set(gs, gs, 1);
+    }
   }
   if (v.neon) {
     // yerden yükseldikçe ışık havuzu söner ve dağılır
@@ -5254,43 +5480,69 @@ function disposeVehicle(v) {
 //  EFEKTLER: duman, kıvılcım, su sıçraması, nitro, fren izleri
 // ════════════════════════════════════════════════════════════════════
 class ParticlePool {
-  // kind: 'smoke' (dokulu, dönen, üstten aydınlık) | 'water' | 'add' (ışıltı)
+  // kind: 'smoke' (atlaslı, dönen, sahte hacim ışıklı) | 'water' | 'add' (ışıltı)
+  // Kameraya dönük örneklenmiş dörtgenler: nokta boyutu sınırı yok, ekran kenarında aniden kaybolmaz.
+  // Kameraya çok yaklaşan topaklar söner (ekranı kaplayan dev saydam kareler hem çirkin hem pahalıdır).
   constructor(max, additive, kind = 'smoke') {
     this.max = max; this.n = 0; this.kind = kind;
-    const g = new THREE.BufferGeometry();
-    this.pos = new Float32Array(max * 3); this.size = new Float32Array(max); this.alpha = new Float32Array(max); this.col = new Float32Array(max * 3); this.rot = new Float32Array(max);
-    g.setAttribute('position', new THREE.BufferAttribute(this.pos, 3).setUsage(THREE.DynamicDrawUsage));
-    g.setAttribute('aSize', new THREE.BufferAttribute(this.size, 1).setUsage(THREE.DynamicDrawUsage));
-    g.setAttribute('aAlpha', new THREE.BufferAttribute(this.alpha, 1).setUsage(THREE.DynamicDrawUsage));
-    g.setAttribute('aColor', new THREE.BufferAttribute(this.col, 3).setUsage(THREE.DynamicDrawUsage));
-    g.setAttribute('aRot', new THREE.BufferAttribute(this.rot, 1).setUsage(THREE.DynamicDrawUsage));
-    g.setDrawRange(0, 0);
+    const g = new THREE.InstancedBufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array([-0.5, -0.5, 0, 0.5, -0.5, 0, 0.5, 0.5, 0, -0.5, 0.5, 0]), 3));
+    g.setIndex([0, 1, 2, 0, 2, 3]);
+    this.pos = new Float32Array(max * 3); this.size = new Float32Array(max); this.alpha = new Float32Array(max); this.col = new Float32Array(max * 3); this.rot = new Float32Array(max); this.vr = new Float32Array(max);
+    const IA = (arr, k) => new THREE.InstancedBufferAttribute(arr, k).setUsage(THREE.DynamicDrawUsage);
+    g.setAttribute('iPos', IA(this.pos, 3)); g.setAttribute('iSize', IA(this.size, 1)); g.setAttribute('iAlpha', IA(this.alpha, 1));
+    g.setAttribute('iCol', IA(this.col, 3)); g.setAttribute('iRot', IA(this.rot, 1)); g.setAttribute('iVar', IA(this.vr, 1));
+    g.instanceCount = 0;
     const map = kind === 'smoke' ? TEX.puff : kind === 'water' ? TEX.drop : TEX.dot;
-    this.uni = { map: { value: map }, uScale: { value: 500 }, uSun: { value: new THREE.Color(1.0, 0.95, 0.86) }, uShade: { value: new THREE.Color(0.62, 0.66, 0.74) } };
-    const lit = kind !== 'add';
+    this.uni = { map: { value: map }, uScale: { value: 500 }, uSun: { value: new THREE.Color(1.0, 0.95, 0.86) }, uShade: { value: new THREE.Color(0.62, 0.66, 0.74) }, uLightV: { value: new THREE.Vector3(0, 1, 0) } };
+    const lit = kind !== 'add', atlas = kind === 'smoke';
     const m = new THREE.ShaderMaterial({
       uniforms: this.uni, transparent: true, depthWrite: false,
       blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending,
-      vertexShader: `attribute float aSize; attribute float aAlpha; attribute vec3 aColor; attribute float aRot; uniform float uScale; varying float vA; varying vec3 vC; varying float vR;
-        void main(){ vA = aAlpha; vC = aColor; vR = aRot; vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * mv; gl_PointSize = min(640.0, aSize * uScale / max(0.2, -mv.z)); }`,
-      fragmentShader: `uniform sampler2D map; uniform vec3 uSun; uniform vec3 uShade; varying float vA; varying vec3 vC; varying float vR;
+      vertexShader: `attribute vec3 iPos; attribute float iSize; attribute float iAlpha; attribute vec3 iCol; attribute float iRot; attribute float iVar;
+        varying float vA; varying vec3 vC; varying vec2 vUv; varying vec2 vN;
         void main(){
-          vec2 c = gl_PointCoord - 0.5; float cs = cos(vR), sn = sin(vR);
-          vec2 uv = vec2(cs * c.x - sn * c.y, sn * c.x + cs * c.y) + 0.5;
-          vec4 t = texture2D(map, uv);
-          float a = t.a * vA; if (a < 0.004) discard;
+          vec4 mv = modelViewMatrix * vec4(iPos, 1.0);
+          float d = -mv.z;
+          // kameraya yakın topak: boyuna göre söner, çok yakında hiç çizilmez
+          float nf = smoothstep(0.35, 1.25, d / max(iSize, 0.05)) * smoothstep(0.2, 0.6, d);
+          vA = iAlpha * nf; vC = iCol;
+          float cs = cos(iRot), sn = sin(iRot); vec2 c = position.xy;
+          vec2 rc = vec2(cs * c.x - sn * c.y, sn * c.x + cs * c.y);
+          vN = rc * 2.0;
+          ${atlas ? 'vUv = (c + 0.5) * 0.5 + vec2(mod(iVar, 2.0), floor(iVar * 0.5)) * 0.5;' : 'vUv = c + 0.5;'}
+          mv.xy += rc * iSize;
+          gl_Position = projectionMatrix * mv;
+          if (vA < 0.003) gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+        }`,
+      fragmentShader: `uniform sampler2D map; uniform vec3 uSun; uniform vec3 uShade; uniform vec3 uLightV; varying float vA; varying vec3 vC; varying vec2 vUv; varying vec2 vN;
+        void main(){
+          vec4 t = texture2D(map, vUv);
+          float r2 = dot(vN, vN);
+          float a = t.a * vA * smoothstep(1.0, 0.72, r2); if (a < 0.004) discard;
           vec3 col = vC;
-          ${lit ? 'float up = clamp(0.5 - c.y * 1.6, 0.0, 1.0); col *= mix(uShade, uSun, up) * (0.82 + t.r * 0.3);' : ''}
+          ${lit ? `// küre normali + topak kalınlığı: güneş yanı aydınlık, karşı yan serin gölgeli; arkadan güneşte kenarlar parlar
+          vec3 n = normalize(vec3(vN * 0.85, sqrt(max(0.0, 1.0 - r2)) + 0.35));
+          float ndl = dot(n, uLightV) * 0.5 + 0.5;
+          float thick = ${atlas ? 't.g' : '0.5'};
+          col *= mix(uShade, uSun, clamp(ndl * (1.1 - thick * 0.35), 0.0, 1.0)) * (0.78 + ${atlas ? 't.r' : '0.6'} * 0.34);
+          col += uSun * pow(max(0.0, -uLightV.z), 3.0) * (1.0 - thick) * 0.45 * vC;` : ''}
           gl_FragColor = vec4(col, a);
           #include <tonemapping_fragment>
           #include <colorspace_fragment>
         }`,
     });
-    this.points = new THREE.Points(g, m); this.points.frustumCulled = false; this.points.renderOrder = additive ? 6 : 5;
+    this.points = new THREE.Mesh(g, m); this.points.frustumCulled = false; this.points.renderOrder = additive ? 6 : 5;
+    if (lit) this.points.onBeforeRender = (rn, sc, cam) => {
+      this.uni.uLightV.value.copy(SUN_DIR).transformDirection(cam.matrixWorldInverse);
+      const k = sun.intensity / 4.6;
+      this.uni.uSun.value.copy(sun.color).multiplyScalar(Math.min(1.15, k * 1.12) + 0.04);
+      this.uni.uShade.value.copy(hemi.color).multiplyScalar(Math.min(1.0, hemi.intensity * 4.5) * (0.55 + 0.45 * Math.min(1, k))).addScalar(0.03);
+    };
     scene.add(this.points);
     const F = (k) => new Float32Array(max * k);
     this.p = F(3); this.v = F(3); this.life = F(1); this.lmax = F(1); this.s0 = F(1); this.s1 = F(1); this.a0 = F(1); this.c = F(3); this.drag = F(1); this.grav = F(1);
-    this.r0 = F(1); this.spin = F(1); this.floor = F(1);
+    this.r0 = F(1); this.spin = F(1); this.floor = F(1); this.var = F(1);
   }
   spawn(x, y, z, vx, vy, vz, life, s0, s1, a0, r, g, b, drag = 1, grav = 0) {
     if (this.n >= this.max) return;
@@ -5299,7 +5551,7 @@ class ParticlePool {
     this.v[i * 3] = vx; this.v[i * 3 + 1] = vy; this.v[i * 3 + 2] = vz;
     this.life[i] = 0; this.lmax[i] = life; this.s0[i] = s0; this.s1[i] = s1; this.a0[i] = a0;
     this.c[i * 3] = r; this.c[i * 3 + 1] = g; this.c[i * 3 + 2] = b; this.drag[i] = drag; this.grav[i] = grav;
-    this.r0[i] = Math.random() * 6.283; this.spin[i] = (Math.random() - 0.5) * 1.6;
+    this.r0[i] = Math.random() * 6.283; this.spin[i] = (Math.random() - 0.5) * 1.6; this.var[i] = Math.floor(Math.random() * 4);
     // zemin: yokuşta ve rampada parçacıklar yolun içinden geçmesin
     this.floor[i] = Math.min(y - 0.05, groundH(x, z)) + 0.03;
   }
@@ -5311,7 +5563,7 @@ class ParticlePool {
       if (j !== i) {
         for (let k = 0; k < 3; k++) { this.p[j * 3 + k] = this.p[i * 3 + k]; this.v[j * 3 + k] = this.v[i * 3 + k]; this.c[j * 3 + k] = this.c[i * 3 + k]; }
         this.lmax[j] = this.lmax[i]; this.s0[j] = this.s0[i]; this.s1[j] = this.s1[i]; this.a0[j] = this.a0[i]; this.drag[j] = this.drag[i]; this.grav[j] = this.grav[i];
-        this.r0[j] = this.r0[i]; this.spin[j] = this.spin[i]; this.floor[j] = this.floor[i];
+        this.r0[j] = this.r0[i]; this.spin[j] = this.spin[i]; this.floor[j] = this.floor[i]; this.var[j] = this.var[i];
       }
       this.life[j] = l;
       const dr = Math.exp(-this.drag[j] * dt);
@@ -5326,15 +5578,16 @@ class ParticlePool {
       const ts = this.kind === 'smoke' ? 1 - (1 - t) * (1 - t) : t;
       this.size[j] = this.s0[j] + (this.s1[j] - this.s0[j]) * ts;
       this.alpha[j] = this.a0[j] * (t < 0.12 ? t / 0.12 : Math.pow(1 - (t - 0.12) / 0.88, this.kind === 'smoke' ? 1.4 : 1));
-      this.rot[j] = this.r0[j] + this.spin[j] * l;
+      this.rot[j] = this.r0[j] + this.spin[j] * l; this.vr[j] = this.var[j];
       const fade = this.kind === 'add' ? 1 - t * 0.6 : 1; // ışıltılar soğurken kızarır
       this.col[j * 3] = this.c[j * 3]; this.col[j * 3 + 1] = this.c[j * 3 + 1] * fade; this.col[j * 3 + 2] = this.c[j * 3 + 2] * fade * fade;
       j++;
     }
     this.n = j;
     const g = this.points.geometry;
-    g.setDrawRange(0, j);
-    for (const k of ['position', 'aSize', 'aAlpha', 'aColor', 'aRot']) g.attributes[k].needsUpdate = true;
+    g.instanceCount = j;
+    if (!j && !this._had) return; this._had = j > 0;
+    for (const k of ['iPos', 'iSize', 'iAlpha', 'iCol', 'iRot', 'iVar']) { const at = g.attributes[k]; at.needsUpdate = true; if (at.clearUpdateRanges && j > 0) { at.clearUpdateRanges(); at.addUpdateRange(0, j * at.itemSize); } }
   }
 }
 
@@ -5451,8 +5704,89 @@ class SkidMarks {
   clear() { this.i = 0; this.count = 0; this.mesh.geometry.setDrawRange(0, 0); }
 }
 
+// Gökkuşağı şeridi: araç arkasında kesintisiz, kameraya dönük bant (parçacıklı eski izdeki boşluklar yok).
+// Noktalar yol boyunca bırakılır; en baştaki nokta her karede aracın arkasına yapışık kalır.
+class RibbonTrail {
+  constructor(N = 140, width = 0.95, life = 1.25) {
+    this.N = N; this.w = width; this.lifeT = life; this.n = 0; this.pts = new Float32Array(N * 4); // x,y,z,doğum
+    const g = new THREE.BufferGeometry();
+    this.pos = new Float32Array(N * 2 * 3); this.tan = new Float32Array(N * 2 * 3); this.age = new Float32Array(N * 2); const sd = new Float32Array(N * 2);
+    for (let i = 0; i < N; i++) { sd[i * 2] = -1; sd[i * 2 + 1] = 1; }
+    const idx = []; for (let i = 0; i < N - 1; i++) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+    g.setIndex(idx);
+    g.setAttribute('position', new THREE.BufferAttribute(this.pos, 3).setUsage(THREE.DynamicDrawUsage));
+    g.setAttribute('aTan', new THREE.BufferAttribute(this.tan, 3).setUsage(THREE.DynamicDrawUsage));
+    g.setAttribute('aAge', new THREE.BufferAttribute(this.age, 1).setUsage(THREE.DynamicDrawUsage));
+    g.setAttribute('aSide', new THREE.BufferAttribute(sd, 1));
+    g.setDrawRange(0, 0);
+    this.uni = { uW: { value: width }, uT: { value: 0 } };
+    const m = new THREE.ShaderMaterial({
+      uniforms: this.uni, transparent: true, depthWrite: false, side: THREE.DoubleSide, toneMapped: false,
+      vertexShader: `attribute vec3 aTan; attribute float aAge; attribute float aSide; uniform float uW; varying vec2 vUv;
+        void main(){
+          vec3 p = position; vec3 tn = normalize(aTan + vec3(1e-5));
+          vec3 toC = normalize(cameraPosition - p);
+          vec3 sd = cross(tn, toC); float l = length(sd); sd = l > 1e-4 ? sd / l : vec3(0.0, 1.0, 0.0);
+          // kameraya dönük ama dikeye yaslı: yandan bakınca da bant gibi okunur
+          sd = normalize(mix(sd * sign(sd.y + 1e-3), vec3(0.0, 1.0, 0.0), 0.35));
+          p += sd * aSide * uW * 0.5 * (1.0 - aAge * 0.35);
+          vUv = vec2(aSide * 0.5 + 0.5, aAge);
+          gl_Position = projectionMatrix * viewMatrix * vec4(p, 1.0);
+        }`,
+      fragmentShader: `uniform float uT; varying vec2 vUv;
+        void main(){
+          float b = clamp(vUv.x * 7.0, 0.0, 6.999), i = floor(b), f = fract(b);
+          vec3 c = i < 1.0 ? vec3(1.0, 0.12, 0.12) : i < 2.0 ? vec3(1.0, 0.5, 0.05) : i < 3.0 ? vec3(1.0, 0.92, 0.1) : i < 4.0 ? vec3(0.2, 0.95, 0.2) : i < 5.0 ? vec3(0.1, 0.6, 1.0) : i < 6.0 ? vec3(0.3, 0.2, 0.95) : vec3(0.75, 0.25, 1.0);
+          float edge = smoothstep(0.0, 0.08, vUv.x) * smoothstep(1.0, 0.92, vUv.x);
+          float shim = 0.88 + 0.12 * sin(vUv.y * 60.0 - uT * 14.0);
+          float a = pow(1.0 - vUv.y, 1.3) * edge * 0.92;
+          vec3 col = c * (1.25 + 0.35 * smoothstep(0.35, 0.0, abs(f - 0.5))) * shim;
+          gl_FragColor = vec4(col, a);
+          #include <colorspace_fragment>
+        }`,
+    });
+    this.mesh = new THREE.Mesh(g, m); this.mesh.frustumCulled = false; this.mesh.renderOrder = 6; scene.add(this.mesh);
+  }
+  // head: {x,y,z} ya da null (yeni nokta eklenmez, kalanlar söner)
+  update(now, head) {
+    const P = this.pts, N = this.N;
+    // eskiyenleri sondan at
+    while (this.n > 0 && now - P[(this.n - 1) * 4 + 3] > this.lifeT) this.n--;
+    if (head) {
+      if (this.n > 0) {
+        const dx = head.x - P[0], dz = head.z - P[2], d2 = dx * dx + dz * dz;
+        if (d2 > 36) this.n = 0; // ışınlanma/yeniden doğma: izi kopar
+      }
+      const need = this.n < 2 || ((head.x - P[4]) ** 2 + (head.z - P[6]) ** 2) > 0.09;
+      if (need || this.n === 0) {
+        P.copyWithin(4, 0, Math.min(this.n, N - 1) * 4); this.n = Math.min(N, this.n + 1);
+      }
+      P[0] = head.x; P[1] = head.y; P[2] = head.z; P[3] = now;
+    }
+    const n = this.n;
+    this.uni.uT.value = now;
+    if (n < 2) { this.mesh.geometry.setDrawRange(0, 0); this.mesh.visible = false; return; }
+    this.mesh.visible = true;
+    for (let i = 0; i < n; i++) {
+      const a = i * 4, j0 = Math.max(0, i - 1) * 4, j1 = Math.min(n - 1, i + 1) * 4;
+      const tx = P[j0] - P[j1], ty = P[j0 + 1] - P[j1 + 1], tz = P[j0 + 2] - P[j1 + 2];
+      const ag = Math.min(1, (now - P[a + 3]) / this.lifeT);
+      for (let s = 0; s < 2; s++) {
+        const v = i * 2 + s;
+        this.pos[v * 3] = P[a]; this.pos[v * 3 + 1] = P[a + 1]; this.pos[v * 3 + 2] = P[a + 2];
+        this.tan[v * 3] = tx; this.tan[v * 3 + 1] = ty; this.tan[v * 3 + 2] = tz; this.age[v] = ag;
+      }
+    }
+    const g = this.mesh.geometry; g.setDrawRange(0, (n - 1) * 6);
+    g.attributes.position.needsUpdate = true; g.attributes.aTan.needsUpdate = true; g.attributes.aAge.needsUpdate = true;
+  }
+  dispose() { scene.remove(this.mesh); this.mesh.geometry.dispose(); this.mesh.material.dispose(); }
+}
+
 const PARTICLES = {
-  smoke: null, add: null, water: null, skids: null, lines: null, wind: null,
+  smoke: null, add: null, water: null, skids: null, lines: null, wind: null, ribbons: new Map(),
+  ribbon(key) { let r = this.ribbons.get(key); if (!r) { r = new RibbonTrail(); this.ribbons.set(key, r); } return r; },
+  clearRibbons() { for (const r of this.ribbons.values()) r.dispose(); this.ribbons.clear(); },
   init() {
     this.smoke = new ParticlePool(2200, false, 'smoke');
     this.water = new ParticlePool(1600, false, 'water');
@@ -6720,7 +7054,9 @@ class ItemSystem {
   // vurulan için ekran efekti + vuranın lafı
   hitFx(R, ty, owner) {
     if (R.local) {
-      const sp = document.createElement('div'); sp.className = 'splat ' + ty; (R.hud ? R.hud.el : document.body).appendChild(sp); setTimeout(() => sp.remove(), 1800);
+      const host = R.hud ? R.hud.el : document.body;
+      if (ty === 'karpuz') juiceSplat(host);
+      else { const sp = document.createElement('div'); sp.className = 'splat ' + ty; host.appendChild(sp); setTimeout(() => sp.remove(), 1800); }
     }
     if (owner && owner.bot && R.local && Math.random() < 0.8) setTimeout(() => hudFlash(R, owner.name.toLocaleUpperCase('tr') + ': ' + TAUNTS[Math.floor(Math.random() * TAUNTS.length)].toLocaleUpperCase('tr'), 1600, 'purple'), 900);
     if (owner && owner.local && owner !== R) { owner.hits = (owner.hits || 0) + 1; hudFlash(owner, 'İSABET · ' + R.name.toLocaleUpperCase('tr') + (owner.hits > 1 ? ' · ' + owner.hits + '. SATAŞMA' : ''), 1400, 'gold'); }
@@ -6855,6 +7191,58 @@ class ItemSystem {
     return out;
   }
 }
+
+// ── karpuz isabeti: ekrana yapışan sulu leke (tuval üstünde çizilir): düzensiz kenarlı parçalar, parlak ıslak
+// yüzey, çekirdekler, kabuk kırıntıları; damlalar aşağı akar, sonra silinir gibi söner.
+function juiceSplat(host) {
+  const W = host.clientWidth || innerWidth, H = host.clientHeight || innerHeight;
+  const cv = document.createElement('canvas'); cv.className = 'juice'; cv.width = Math.round(W); cv.height = Math.round(H);
+  host.appendChild(cv);
+  const g = cv.getContext('2d'), R = Math.min(W, H);
+  const base = document.createElement('canvas'); base.width = cv.width; base.height = cv.height;
+  const b = base.getContext('2d');
+  const rnd = (a, c) => a + Math.random() * (c - a);
+  const blob = (x, y, r, n, jag) => { b.beginPath(); const ph = Math.random() * 9; for (let i = 0; i <= n; i++) { const a = i / n * Math.PI * 2, k = 1 + Math.sin(a * 3 + ph) * 0.18 * jag + Math.sin(a * 7 + ph * 2) * 0.1 * jag + (Math.random() - 0.5) * 0.12 * jag; const px = x + Math.cos(a) * r * k, py = y + Math.sin(a) * r * k; i ? b.lineTo(px, py) : b.moveTo(px, py); } b.closePath(); };
+  const drips = [];
+  const n = 2 + Math.floor(Math.random() * 2);
+  for (let k = 0; k < n; k++) {
+    const x = rnd(0.2, 0.8) * W, y = rnd(0.2, 0.6) * H, r = R * rnd(0.09, 0.17);
+    // ana leke: koyu kırmızı merkez → pembe-kırmızı ince kenar
+    const gr = b.createRadialGradient(x - r * 0.2, y - r * 0.25, r * 0.1, x, y, r * 1.2);
+    gr.addColorStop(0, 'rgba(214,22,48,.93)'); gr.addColorStop(0.6, 'rgba(190,14,40,.88)'); gr.addColorStop(1, 'rgba(240,70,90,.55)');
+    b.fillStyle = gr; blob(x, y, r, 48, 1); b.fill();
+    // etli parçalar (lif dokusu)
+    b.fillStyle = 'rgba(255,90,110,.35)'; for (let i = 0; i < 14; i++) { blob(x + rnd(-0.6, 0.6) * r, y + rnd(-0.6, 0.6) * r, r * rnd(0.06, 0.16), 12, 2); b.fill(); }
+    // sıçrayan damlacıklar
+    for (let i = 0; i < 26; i++) { const a = Math.random() * 6.283, d = r * rnd(1.15, 2.4), rr = r * rnd(0.02, 0.09) * (1.6 - d / (r * 2.4)); b.fillStyle = 'rgba(205,18,44,.9)'; blob(x + Math.cos(a) * d, y + Math.sin(a) * d, Math.max(1.5, rr), 10, 0.6); b.fill(); }
+    // çekirdekler
+    for (let i = 0; i < 6; i++) { const sx = x + rnd(-0.6, 0.6) * r, sy = y + rnd(-0.5, 0.5) * r, a = Math.random() * 6.28; b.save(); b.translate(sx, sy); b.rotate(a); b.fillStyle = '#16100c'; b.beginPath(); b.ellipse(0, 0, R * 0.007, R * 0.012, 0, 0, 6.283); b.fill(); b.fillStyle = 'rgba(255,255,255,.35)'; b.beginPath(); b.ellipse(-R * 0.002, -R * 0.004, R * 0.002, R * 0.004, 0, 0, 6.283); b.fill(); b.restore(); }
+    // kabuk kırıntısı
+    if (Math.random() < 0.8) { const cx = x + rnd(-1, 1) * r * 1.3, cy = y + rnd(-1, 1) * r * 1.2, a = Math.random() * 6.28, rr = r * rnd(0.22, 0.35); b.save(); b.translate(cx, cy); b.rotate(a); b.lineCap = 'round'; b.strokeStyle = '#2f6b1f'; b.lineWidth = rr * 0.28; b.beginPath(); b.arc(0, 0, rr, 0.2, 1.7); b.stroke(); b.strokeStyle = '#d9e8b8'; b.lineWidth = rr * 0.12; b.beginPath(); b.arc(0, 0, rr * 0.82, 0.25, 1.65); b.stroke(); b.restore(); }
+    // ıslak parlama
+    b.strokeStyle = 'rgba(255,235,240,.55)'; b.lineWidth = Math.max(2, r * 0.05); b.lineCap = 'round'; b.beginPath(); b.arc(x - r * 0.1, y - r * 0.05, r * 0.62, 3.6, 4.5); b.stroke();
+    b.fillStyle = 'rgba(255,255,255,.7)'; b.beginPath(); b.ellipse(x - r * 0.42, y - r * 0.4, r * 0.06, r * 0.035, -0.6, 0, 6.283); b.fill();
+    for (let i = 0; i < 3 + Math.floor(Math.random() * 3); i++) drips.push({ x: x + rnd(-0.7, 0.7) * r, y: y + r * rnd(0.3, 0.8), w: R * rnd(0.006, 0.014), len: R * rnd(0.12, 0.4), sp: rnd(0.6, 1.3) });
+  }
+  const t0 = performance.now(), T = 2300;
+  const frame = () => {
+    const t = (performance.now() - t0) / T;
+    if (t >= 1 || !cv.isConnected) { cv.remove(); return; }
+    g.clearRect(0, 0, cv.width, cv.height);
+    g.globalAlpha = t < 0.05 ? t / 0.05 : t > 0.7 ? 1 - (t - 0.7) / 0.3 : 1;
+    g.drawImage(base, 0, 0);
+    // akan damlalar: yavaşlayarak uzar, ucunda damla topağı
+    for (const d of drips) {
+      const L = d.len * (1 - Math.pow(1 - Math.min(1, t * d.sp * 1.4), 2));
+      const gr = g.createLinearGradient(0, d.y, 0, d.y + L); gr.addColorStop(0, 'rgba(200,16,42,.9)'); gr.addColorStop(1, 'rgba(225,40,60,.85)');
+      g.fillStyle = gr; g.beginPath(); g.moveTo(d.x - d.w, d.y); g.quadraticCurveTo(d.x - d.w * 0.6, d.y + L * 0.7, d.x - d.w * 0.5, d.y + L); g.lineTo(d.x + d.w * 0.5, d.y + L); g.quadraticCurveTo(d.x + d.w * 0.6, d.y + L * 0.7, d.x + d.w, d.y); g.fill();
+      g.beginPath(); g.arc(d.x, d.y + L, d.w * 1.15, 0, 6.283); g.fill();
+      g.fillStyle = 'rgba(255,230,235,.6)'; g.beginPath(); g.arc(d.x - d.w * 0.35, d.y + L - d.w * 0.3, d.w * 0.35, 0, 6.283); g.fill();
+    }
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+}
 // ---- src/50_game.js
 // ════════════════════════════════════════════════════════════════════
 //  OYUN: yarışçılar, yarış akışı, kamera, HUD (12 araca kadar)
@@ -6888,6 +7276,7 @@ function makeBots(n, taken) {
     c.neon = r() < 0.2 ? r.pick(NEONS.slice(1)).id : 'yok';
     c.sticker = r() < 0.6 ? r.pick(STICKERS) : '';
     c.acc = (d.accs || []).filter(() => r() < 0.4);
+    if (d.kind === 'car' && r() < 0.45) c.pattern = r.pick(['serit', 'yan', 'ikiton', 'alev', 'dama', 'ralli']);
     out.push({ id: 'bot' + i, name: names[i % names.length], custom: c, bot: true });
   }
   return out;
@@ -6958,7 +7347,7 @@ class Racer {
     sp.position.set(0, y, zf - 0.1); sp.target.position.set(0, -0.6, zf + 22);
     this.vis.body.add(sp); this.vis.body.add(sp.target);
   }
-  dispose() { if (this.headSpot) { this.headSpot.removeFromParent(); this.headSpot.target.removeFromParent(); this.headSpot.dispose(); this.headSpot = null; } if (this.snd) this.snd.stop(); if (this.melody) { this.melody.stop(); this.melody = null; } disposeVehicle(this.vis); if (this.hud) this.hud.el.remove(); scene.remove(this.label); this.label.material.map.dispose(); this.label.material.dispose(); }
+  dispose() { const rb = PARTICLES.ribbons.get(this); if (rb) { rb.dispose(); PARTICLES.ribbons.delete(this); } if (this.headSpot) { this.headSpot.removeFromParent(); this.headSpot.target.removeFromParent(); this.headSpot.dispose(); this.headSpot = null; } if (this.snd) this.snd.stop(); if (this.melody) { this.melody.stop(); this.melody = null; } disposeVehicle(this.vis); if (this.hud) this.hud.el.remove(); scene.remove(this.label); this.label.material.map.dispose(); this.label.material.dispose(); }
   netUpdate(dt) {
     const s = NET.snapshot(this.id);
     if (!s) return;
@@ -7000,8 +7389,26 @@ function trackMiniPath() {
 }
 const GAUGE_ARC = 'M39.2 160.8 A86 86 0 1 1 160.8 160.8', NIT_ARC = 'M49.1 150.9 A72 72 0 1 1 150.9 150.9';
 // ── KAMERALAR ──
-const CAM_NAMES = ['TAKİP KAMERASI', 'UZAK TAKİP', 'KAPUT KAMERASI', 'TAMPON KAMERASI', 'KOKPİT', 'TV YAYINI'];
+const CAM_NAMES = ['TAKİP KAMERASI', 'UZAK TAKİP', 'KAPUT KAMERASI', 'TAMPON KAMERASI', 'KOKPİT', 'TV YAYINI', 'YARI SİNEMATİK'];
 const COCKPIT = 4;
+// yarı sinematik çekim tablosu: ang (rad, burundan; π arka), dist, h, fov, look (bakış yüksekliği), dutch (yatış)
+const SEMI_SHOTS = [
+  { ang: Math.PI - 0.5, dist: 6.4, h: 0.85, fov: 50, look: 0.7, dutch: 0.02, sided: true },   // alçak arka çapraz
+  { ang: Math.PI, dist: 5.0, h: 0.5, fov: 58, look: 0.75, dutch: 0, sided: false },          // alçak sıkı arka
+  { ang: Math.PI - 0.15, dist: 12, h: 5.0, fov: 42, look: 0.4, dutch: 0, sided: true },       // helikopter
+  { ang: Math.PI - 1.0, dist: 5.6, h: 0.75, fov: 54, look: 0.75, dutch: 0.035, sided: true }, // yandan izleme (drift)
+  { ang: Math.PI - 0.22, dist: 4.4, h: 0.4, fov: 62, look: 0.7, dutch: 0.025, sided: true },  // tampon arkası (nitro)
+  { ang: Math.PI - 0.12, dist: 17, h: 2.2, fov: 27, look: 0.75, dutch: 0, sided: true },      // tele objektif
+  { ang: Math.PI - 0.7, dist: 8.5, h: 2.6, fov: 44, look: 0.6, dutch: 0.015, sided: true },   // yüksek çapraz
+];
+function semiParams(Q) {
+  const S = SEMI_SHOTS[Q.cur], sd = S.sided ? (Q.side || 1) : 1;
+  const cur = { ang: Math.PI + (S.ang - Math.PI) * sd, dist: S.dist, h: S.h, fov: S.fov, look: S.look, dutch: S.dutch };
+  if (!Q.from || Q.bt >= 1) return cur;
+  const k = Q.bt * Q.bt * (3 - 2 * Q.bt), F = Q.from, o = {};
+  for (const key in cur) o[key] = F[key] + (cur[key] - F[key]) * k;
+  return o;
+}
 function camLoad(slot) {
   const v = LS.get('camv2_' + slot, null);
   if (v !== null && v >= 0 && v < CAM_NAMES.length) return v;
@@ -7205,7 +7612,7 @@ class Race {
       updateVehicleVisual(R.vis, R.phys, 0.016);
     }
     TRACK.pickups.forEach(p => p.t = 0);
-    PARTICLES.skids.clear();
+    PARTICLES.skids.clear(); PARTICLES.clearRibbons();
     // tek/yerel yarışta geri sayımdan önce sinematik tanıtım (çevrim içinde kalan süre kadar)
     this.goAt = o.goAt ?? (performance.now() / 1000 + 3.6 + (mode === 'online' ? 0 : 4.6));
     this.introFrom = performance.now() / 1000 - this.goAt;
@@ -7649,7 +8056,7 @@ function racerFx(R, dt, running) {
     } else R.skid[i] = null;
     const rnd = () => Math.random() - 0.5;
     const rear = lz < 0;
-    if (skidding && Math.random() < dt * (launch ? 34 : 52) * (rear || p.drifting ? 1 : 0.4)) {
+    if (skidding && Math.random() < dt * (launch ? 22 : 44) * (rear || p.drifting ? 1 : 0.4)) {
       // lastik dumanı: yoğun başlar, açılıp yükselir
       const k = launch || burnout ? 1.2 : clamp(p.slip / 6, 0.6, 1.3);
       PARTICLES.smoke.spawn(x + rnd() * 0.4, gy + 0.22, z + rnd() * 0.4, p.vx * 0.18 + rnd() * 1.6, 0.4 + Math.random() * 0.9, p.vz * 0.18 + rnd() * 1.6, 1.4 + Math.random() * 1.2, 0.8, 4.6 * k, 0.4 * k, 0.9, 0.9, 0.92, 1.5, -0.35);
@@ -7665,22 +8072,19 @@ function racerFx(R, dt, running) {
       if (Math.random() < 0.5) PARTICLES.water.spawn(x, gy + 0.15, z, rnd() * 2 + p.vx * 0.25, 1.5 + Math.random() * 2, rnd() * 2 + p.vz * 0.25, 0.6, 0.06, 0.05, 0.9, 0.32, 0.27, 0.2, 0.5, 12);
     }
   });
-  // at: nitro yerine parıltılı gökkuşağı (hile açıkken herkes)
-  if ((p.nitroOn && R.def.kind === 'horse') || (R.rainbow && sp > 3)) {
-    const t = performance.now() / 1000, n = Math.random() < dt * 140 ? 2 : 0;
-    for (let k = 0; k < 7; k++) {
-      // yedi renk bandı yan yana, atın arkasından şerit gibi akar
-      const c = new THREE.Color().setHSL(k / 7, 1, 0.55), lat = (k - 3) * 0.13, [x, z] = W2(lat, R.def.kind === 'horse' ? -1.0 : -(R.vis.len || 4) / 2);
-      const y = (p.y || 0) + (R.def.kind === 'horse' ? 1.35 : 0.6) + Math.sin(t * 3) * 0.05;
-      if (Math.random() < dt * 60) PARTICLES.add.spawn(x, y, z, -fx * 2 + p.vx * 0.05, 0.15, -fz * 2 + p.vz * 0.05, 0.9, 0.34, 0.22, 0.9, c.r * 2.2, c.g * 2.2, c.b * 2.2, 3, 0);
-    }
-    // ışıltı (yıldız parçacıkları)
-    for (let i = 0; i < n + (Math.random() < dt * 40 ? 1 : 0); i++) { const [x, z] = W2((Math.random() - 0.5) * 1.2, R.def.kind === 'horse' ? -0.9 : -2); const c = new THREE.Color().setHSL(Math.random(), 1, 0.75); PARTICLES.add.spawn(x, (p.y || 0) + 0.8 + Math.random() * 1.2, z, (Math.random() - 0.5) * 2 - fx * 1.5, Math.random() * 1.5, (Math.random() - 0.5) * 2 - fz * 1.5, 0.7, 0.18, 0.02, 1, c.r * 4, c.g * 4, c.b * 4, 2, -0.5); }
+  // at: nitro yerine gökkuşağı şeridi (hile açıkken herkes) — kesintisiz bant + birkaç yıldız ışıltısı
+  const rbOn = (p.nitroOn && R.def.kind === 'horse') || (R.rainbow && sp > 3);
+  if (rbOn || PARTICLES.ribbons.has(R)) {
+    const horse = R.def.kind === 'horse', [x, z] = W2(0, horse ? -0.95 : -(R.vis.len || 4) / 2 + 0.1);
+    const now = performance.now() / 1000;
+    PARTICLES.ribbon(R).update(now, rbOn ? { x, y: (p.y || 0) + (horse ? 1.3 : 0.62) + Math.sin(now * 3) * 0.04, z } : null);
+    if (rbOn && Math.random() < dt * 30) { const [sx, sz] = W2((Math.random() - 0.5) * 1.2, horse ? -1.2 : -(R.vis.len || 4) / 2 - 0.6); const c = new THREE.Color().setHSL(Math.random(), 1, 0.75); PARTICLES.add.spawn(sx, (p.y || 0) + 0.6 + Math.random() * 1.0, sz, (Math.random() - 0.5) * 2 - fx * 1.5, Math.random() * 1.5, (Math.random() - 0.5) * 2 - fz * 1.5, 0.6, 0.16, 0.02, 1, c.r * 4, c.g * 4, c.b * 4, 2, -0.5); }
   }
   if (p.nitroOn && R.def.kind !== 'horse') for (const e of R.vis.exhausts) {
-    const [x, z] = W2(e.x, e.z - 0.3);
-    if (Math.random() < dt * 90) PARTICLES.add.spawn(x, e.y + (p.y || 0), z, -fx * 7 + p.vx * 0.7, Math.random() * 0.6, -fz * 7 + p.vz * 0.7, 0.16, 0.45, 0.08, 0.85, 0.5, 1.3, 3.6, 2, 0);
-    if (Math.random() < dt * 40) PARTICLES.add.spawn(x, e.y + (p.y || 0), z, -fx * 4 + p.vx * 0.8, Math.random() * 0.4, -fz * 4 + p.vz * 0.8, 0.22, 0.3, 0.6, 0.5, 2.4, 1.0, 0.3, 2, 0);
+    // alev gövdesi araçta (shader); burada yalnız uçtan kopan kıvılcımlar ve sıcak kor
+    const [x, z] = W2(e.x, e.z - 1.0 - Math.random() * 0.4), y = e.y + (p.y || 0);
+    if (Math.random() < dt * 28) PARTICLES.add.spawn(x, y, z, -fx * 6 + p.vx * 0.75 + (Math.random() - 0.5) * 1.5, Math.random() * 0.8, -fz * 6 + p.vz * 0.75 + (Math.random() - 0.5) * 1.5, 0.12 + Math.random() * 0.1, 0.16, 0.04, 0.9, 3.0, 1.3, 0.35, 2, 0);
+    if (Math.random() < dt * 9) PARTICLES.lines.spawn(x, y, z, -fx * 9 + p.vx * 0.8 + (Math.random() - 0.5) * 3, Math.random() * 2, -fz * 9 + p.vz * 0.8 + (Math.random() - 0.5) * 3, 0.2 + Math.random() * 0.2, 0.5);
   }
   // vites büyütürken egzozdan alev patlaması
   if (R.lastGear !== undefined && p.gear > R.lastGear && p.gear > 1 && p.throttle > 0.7 && R.def.kind !== 'horse' && Math.random() < 0.75) {
@@ -7759,6 +8163,20 @@ function updateCamera(view, R, dt, spectator) {
   C.pvx = p.vx; C.pvz = p.vz;
   C.ax = smooth(C.ax, clamp(rawAx, -40, 40), 6, dt); C.az = smooth(C.az, clamp(rawAz, -40, 40), 6, dt);
   C.t += dt;
+  // ── YOL HİSSİ: gövdenin dikey ivmesi (tepe, rampa inişi, çukur) kameraya yaylı bir sarsıntı olarak geçer;
+  // teker hareketinin yüksek frekanslı kısmı (bordür sırtı, pist dışı, asfalt pürüzü) ince titreşim verir
+  const VS = (R.vis && R.vis.state) || {};
+  let wyA = 0, nW = 0; if (R.vis && R.vis.wheels) for (const w of R.vis.wheels) if (w.wy !== undefined) { wyA += w.wy; nW++; }
+  wyA = nW ? wyA / nW : 0;
+  const bodyY = py + (VS.heave || 0);
+  if (C.pby === undefined || Math.abs(bodyY - C.pby) > 3) { C.pby = bodyY; C.pbv = 0; C.bk = 0; C.bkv = 0; C.wyS = wyA; }
+  { const bv = (bodyY - C.pby) / Math.max(dt, 1e-3), ba = clamp((bv - C.pbv) / Math.max(dt, 1e-3), -90, 90); C.pby = bodyY; C.pbv = bv;
+    const k = 95, c = 2 * 0.42 * Math.sqrt(k), n = Math.max(1, Math.ceil(dt / 0.008)), h = dt / n;
+    for (let i = 0; i < n; i++) { C.bkv += (-k * C.bk - c * C.bkv - (spectator ? 0 : ba) * 0.5) * h; C.bk += C.bkv * h; }
+    C.bk = clamp(C.bk, -0.3, 0.3); }
+  C.wyS = smooth(C.wyS ?? wyA, wyA, 4, dt);
+  const road = spectator ? 0 : clamp(wyA - C.wyS, -0.06, 0.06);
+  const bump = spectator ? 0 : C.bk;
   // bakış yönü: burun + hız vektörü karışımı (driftte hız vektörüne daha çok yaslanır)
   let dx = fx, dz = fz;
   if (sp > 4 && p.vx * fx + p.vz * fz > 0) {
@@ -7840,7 +8258,7 @@ function updateCamera(view, R, dt, spectator) {
     H.yaw = smooth(H.yaw, back ? Math.PI * 0.97 : apex + oy, back ? 9 : 5, dt);
     H.pitch = smooth(H.pitch, view.orbitPitch * 0.8 + clamp(-aLong * 0.0012, -0.03, 0.03), 6, dt);
     const lean = Math.abs(H.yaw) > 1.4 ? 0.12 : 0; // arkaya bakarken koltuk arasından bakar
-    const e = eye0.clone(); e.x += H.x - Math.sign(eye0.x) * lean; e.y += H.y + shY * 0.18 + lean * 0.05; e.z += H.z;
+    const e = eye0.clone(); e.x += H.x - Math.sign(eye0.x) * lean; e.y += H.y + shY * 0.18 + lean * 0.05 + road * 0.45; e.z += H.z;
     const dirL = new THREE.Vector3(Math.sin(H.yaw), -0.07 + H.pitch + shY * 0.2, Math.cos(H.yaw));
     const tgt = e.clone().addScaledVector(dirL, 10);
     V.body.localToWorld(e); V.body.localToWorld(tgt);
@@ -7854,7 +8272,7 @@ function updateCamera(view, R, dt, spectator) {
     // KAPUT: motor kaputunun üstünde, gövdeyle birlikte yatar/sallanır (yarı sabitlenmiş ufuk)
     const V = R.vis; V.body.updateMatrixWorld(true);
     const he = (V.hoodEye || V.eye).clone(), S = V.state || {};
-    he.y += shY * 0.3;
+    he.y += shY * 0.3 + road * 0.7;
     const tgt = he.clone().add(new THREE.Vector3(Math.sin(oy) * 20, -0.9 + view.orbitPitch * 14, Math.cos(oy) * 20));
     V.body.localToWorld(he); V.body.localToWorld(tgt);
     cam.position.copy(he);
@@ -7876,10 +8294,38 @@ function updateCamera(view, R, dt, spectator) {
     fovT = clamp(2 * Math.atan(5.5 / Math.max(dist, 1)) * 180 / Math.PI, 7, 62); // aracı kadrajda sabit boyda tut
     if (view.tvT === dt) cam.fov = fovT; // kesmede anında
     view.camInit = false;
+  } else if (mode === 6 && !spectator) {
+    // ── YARI SİNEMATİK: aracın etrafında yumuşak geçişli film açıları (alçak arka çapraz, helikopter,
+    // yandan izleme, tele objektif…). Kesme yok, kamera süzülür; açılar hep arkadan yarım daire içinde
+    // kalır (yol görünür, oynanır). Drift, nitro ve uçuşta olaya uygun açıya geçer.
+    const SH = SEMI_SHOTS, Q = view.semi || (view.semi = { cur: 0, from: null, bt: 1, t: 0, dur: 6, ox: 0, oy: 0, oz: 0, init: false, ev: '', side: 1 });
+    Q.t += dt; Q.bt = Math.min(1, Q.bt + dt / 1.6);
+    let ev = p.air ? 'air' : p.drifting && sp > 10 ? 'drift' : p.nitroOn ? 'nitro' : '';
+    const pick = (i) => { if (i === Q.cur) return; Q.from = semiParams(Q); Q.cur = i; Q.bt = 0; Q.t = 0; Q.dur = 5.5 + Math.random() * 3; Q.side = Math.random() < 0.5 ? -1 : 1; };
+    if (ev && ev !== Q.ev) { pick(ev === 'air' ? 2 : ev === 'drift' ? 3 : 4); if (ev === 'drift') Q.side = aLat > 0 ? -1 : 1; }
+    else if (!ev && Q.t > Q.dur) { let i; do i = Math.floor(Math.random() * SH.length); while (i === Q.cur); pick(i); }
+    Q.ev = ev;
+    const P = semiParams(Q);
+    const ang = P.ang + Math.sin(C.t * 0.23) * 0.1, dist = P.dist * (1 + clamp(sp / 70, 0, 1) * 0.12) + (nitroK ? 0.5 : 0);
+    // açı araç burnundan ölçülür (π = tam arka); ofset yaya bağlı gecikmeyle izlenir
+    const ux = cx * Math.cos(ang) + rX * Math.sin(ang), uz = cz * Math.cos(ang) + rZ * Math.sin(ang);
+    const tx = ux * dist, tz = uz * dist;
+    if (!Q.init || !view.camInit) { Q.ox = tx; Q.oz = tz; Q.oy = P.h; Q.init = true; }
+    Q.ox = smooth(Q.ox, tx, 3.2, dt); Q.oz = smooth(Q.oz, tz, 3.2, dt); Q.oy = smooth(Q.oy, P.h, 2.5, dt);
+    const camX = p.x + Q.ox + rX * shX * 0.6, camZ = p.z + Q.oz + rZ * shX * 0.6;
+    const gnd = Math.max(groundH(camX, camZ), trackElev(TRACK, p.s - dist));
+    cam.position.set(camX, Math.max(gnd + 0.35, by + Q.oy + shY * 0.6 + bump * 0.8 + road * 1.2), camZ);
+    // el kamerası salınımı + hızla öne bakış
+    const hw = Math.sin(C.t * 1.7) * 0.05 + Math.sin(C.t * 2.9 + 1) * 0.03;
+    const ahead = 2.5 + clamp(sp * 0.04, 0, 3);
+    cam.lookAt(p.x + cx * ahead + rX * hw, by + P.look + bump * 0.3 + hw * 0.5, p.z + cz * ahead + rZ * hw);
+    cam.rotateZ(P.dutch * Q.side * 0.6 + clamp(-aLat * 0.0018, -0.03, 0.03));
+    fovT = P.fov + clamp(sp / 58, 0, 1.2) * 6 + nitroK * 6 + C.fovK * 0.6;
+    view.camInit = true;
   } else if (mode === 3) {
     const k = R.def.kind, S = R.vis && R.vis.state || {};
     const fwdOff = k === 'car' ? vehGeo(R.def).zf + 0.2 : k === 'bike' ? 0.2 : 0.4;
-    const hh = (k === 'car' ? 0.62 : k === 'bike' ? 1.75 : 2.95) + (S.heave || 0);
+    const hh = (k === 'car' ? 0.62 : k === 'bike' ? 1.75 : 2.95) + (S.heave || 0) + road * 1.3 + bump * 0.35;
     cam.position.set(p.x + fx * fwdOff + rX * shX * 0.4, py + hh + shY * 0.5, p.z + fz * fwdOff + rZ * shX * 0.4);
     const lx = fx * Math.cos(oy) + fz * Math.sin(oy), lz = -fx * Math.sin(oy) + fz * Math.cos(oy);
     cam.lookAt(p.x + lx * 30, py + hh * 0.7 + view.orbitPitch * 12 - ((S.pitch || 0) + (S.gp || 0)) * 30, p.z + lz * 30);
@@ -7910,11 +8356,11 @@ function updateCamera(view, R, dt, spectator) {
     const camX = p.x + C.ox + rX * shX + cx * shZ, camZ = p.z + C.oz + rZ * shX + cz * shZ;
     // arazinin/yolun altına girmesin (yokuş aşağı, tepe arkası)
     const gnd = Math.max(groundH(camX, camZ), trackElev(TRACK, p.s - dist));
-    cam.position.set(camX, Math.max(gnd + 0.7, by + C.oy + shY), camZ);
+    cam.position.set(camX, Math.max(gnd + 0.7, by + C.oy + shY + bump + road * 1.6), camZ);
     // virajın içine doğru önden bakış
     C.lead = smooth(C.lead, clamp(aLat * 0.16, -2.8, 2.8), 3.5, dt);
     const ahead = 4 + clamp(sp * 0.05, 0, 3);
-    cam.lookAt(p.x + cx * ahead + rX * C.lead, by + hgt * 0.42 + (R.vis && R.vis.state ? R.vis.state.heave * 0.5 : 0) + (p.slopeH || 0) * ahead * 0.6, p.z + cz * ahead + rZ * C.lead);
+    cam.lookAt(p.x + cx * ahead + rX * C.lead, by + hgt * 0.42 + bump * 0.45 + road * 0.6 + (R.vis && R.vis.state ? R.vis.state.heave * 0.5 : 0) + (p.slopeH || 0) * ahead * 0.6, p.z + cz * ahead + rZ * C.lead);
     // yanal ivmeyle hafif yatış (virajın içine)
     C.roll = smooth(C.roll, spectator || orbiting ? 0 : clamp(-aLat * 0.0028, -0.045, 0.045), 4, dt);
     cam.rotateZ(C.roll);
@@ -8119,11 +8565,11 @@ function frame(now) {
 
     // iç kamerada kendi camların neredeyse şeffaf (cam filmi ve yansıma yolu kapatmasın)
     const gm = MODE === 'race' && v.racer && inCockpit(v.racer) && v.racer.vis && v.racer.vis.mats ? (v.racer.vis.twin ? v.racer.vis.twin.mats.glass : v.racer.vis.mats.glass) : null;
-    let go = 0, ge = 0, gc = 0;
-    if (gm) { go = gm.opacity; ge = gm.envMapIntensity; gc = gm.clearcoat || 0; gm.opacity = Math.min(go, 0.12); gm.envMapIntensity = 0.25; if (gm.clearcoat !== undefined) gm.clearcoat = 0.15; }
+    let go = 0, ge = 0, gc = 0, gmM = 0, gmI = 0;
+    if (gm) { go = gm.opacity; ge = gm.envMapIntensity; gc = gm.clearcoat || 0; gm.opacity = Math.min(go, 0.12); gm.envMapIntensity = 0.25; if (gm.clearcoat !== undefined) gm.clearcoat = 0.15; gmM = gm.metalness; gm.metalness = 0; gmI = gm.iridescence || 0; if (gmI) gm.iridescence = 0.0001; }
     if (MODE === 'race' && v.racer && inCockpit(v.racer)) renderMirror(v);
     v.render();
-    if (gm) { gm.opacity = go; gm.envMapIntensity = ge; if (gm.clearcoat !== undefined) gm.clearcoat = gc; }
+    if (gm) { gm.opacity = go; gm.envMapIntensity = ge; if (gm.clearcoat !== undefined) gm.clearcoat = gc; gm.metalness = gmM; if (gmI) gm.iridescence = gmI; }
   }
   drawOverlay(views);
   NET.tick(dt);
@@ -8752,6 +9198,18 @@ function renderGarage() {
     b.onclick = () => setGarageCustom(Object.assign({}, c, { paint: p.id }));
     pw.appendChild(b);
   }
+  const patOk = d.kind === 'car' && !findBy(PAINTS, c.paint).livery;
+  $('#gPatBox').classList.toggle('hidden', !patOk);
+  $('#gPatColBox').classList.toggle('hidden', !patOk || (c.pattern || 'yok') === 'yok');
+  chipRow($('#gPat'), PATTERNS, it => it.id === (c.pattern || 'yok'), it => setGarageCustom(Object.assign({}, c, { pattern: it.id })));
+  const pcw = $('#gPatCol'); pcw.innerHTML = '';
+  for (const it of PAT_COLS) {
+    const b = document.createElement('button'); b.title = it.name;
+    b.style.background = it.c || 'conic-gradient(#f2f2ee 0 25%,#121314 0 50%,#f2f2ee 0 75%,#121314 0)';
+    if (it.id === (c.patCol || 'oto')) b.classList.add('on');
+    b.onclick = () => setGarageCustom(Object.assign({}, c, { patCol: it.id }));
+    pcw.appendChild(b);
+  }
   $('#gRimBox .lbl').textContent = d.rimLabel || 'Jant';
   $('#gRimBox').classList.toggle('hidden', !!d.noRim);
   chipRow($('#gRim'), d.rims || RIMS, it => it.id === c.rim, it => setGarageCustom(Object.assign({}, c, { rim: it.id })));
@@ -9040,7 +9498,7 @@ async function boot() {
 }
 boot();
 // hata ayıklama kancası (konsoldan bakmak için)
-window.__gazla = { race: () => RACE, net: NET, track: TRACK, mode: () => MODE, audio: AUDIO };
+window.__gazla = { race: () => RACE, net: NET, track: TRACK, mode: () => MODE, audio: AUDIO, fx: PARTICLES, juice: (el) => juiceSplat(el), cheats: CHEATS };
 
 // ── geri bildirim kutusu (köşedeki minik balon) ─────────────────────
 (function setupFeedback() {
