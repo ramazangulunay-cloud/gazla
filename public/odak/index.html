@@ -105,6 +105,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
   <div class="modes" id="modes" role="group" aria-label="Ortam"><button type="button" data-m="bogus">Boğuk ses<small>Duvar, bölme arkası</small></button><button type="button" data-m="kalabalik">Kalabalık<small>Uğultulu salon</small></button><button type="button" data-m="normal">Normal<small>Doğal ses</small></button></div>
 
   <div class="card">
+    <div class="row"><label for="sep">Ayırma gücü</label><input id="sep" type="range" min="0" max="100" step="5" value="70"><output id="sepo"></output></div>
     <div class="row"><label for="fo">Odak gücü</label><input id="fo" type="range" min="0" max="24" step="1" value="12"><output id="foo"></output></div>
     <div class="row"><label for="cl">Netlik</label><input id="cl" type="range" min="0" max="12" step="1" value="5"><output id="clo"></output></div>
     <div class="row"><label for="v">Ses seviyesi</label><input id="v" type="range" min="0" max="6" step="0.1" value="2.5"><output id="vo"></output></div>
@@ -129,7 +130,7 @@ const NB=14,BL=150,BH=7000;
 const BE=[...Array(NB+1)].map((_,i)=>BL*(BH/BL)**(i/NB));
 const BF=[...Array(NB)].map((_,i)=>Math.sqrt(BE[i]*BE[i+1]));
 const PMIN=70,PMAX=400;
-let S={fo:12,cl:5,v:3,fx:true,ns:false,ai:true,mic:'',mode:'bogus',near:true};
+let S={fo:12,cl:5,v:3,fx:true,ns:false,ai:true,mic:'',mode:'bogus',near:true,sep:70};
 const MODE={
  bogus:{hp:220,pf:2200,pq:.7,pa:8,sh:9,ex:.55,ct:-50,cr:6},
  kalabalik:{hp:150,pf:2800,pq:.9,pa:2,sh:2,ex:.15,ct:-36,cr:4},
@@ -149,6 +150,7 @@ let bG=[],fd,td,tp,dec,dif;
 const noise=new Float32Array(NB),gains=new Float32Array(NB).fill(1);
 let frames=0,floorDb=-60,gateOpen=1,holdT=0,curC=null,curF=0;
 let voices=[],nextId=0,seg=null,lastVoiced=0,trail=[];
+let curMf=null,tgtNow=false,overlap=false,comb=null;
 let briH=[],briThr=null,nearHold=0,curBri=0,curNear=false;
 
 /* ---------- arayüz ---------- */
@@ -156,7 +158,8 @@ function ui(){
   $('foo').textContent=S.fo?'−'+S.fo+' dB':'Kapalı';
   $('clo').textContent=S.cl?'+'+S.cl+' dB':'Kapalı';
   $('vo').textContent='×'+S.v.toFixed(1).replace('.',',');
-  for(const k of['fo','cl','v'])$(k).value=S[k];
+  for(const k of['sep','fo','cl','v'])$(k).value=S[k];
+  $('sepo').textContent=S.sep?'%'+S.sep:'Kapalı';
   for(const k of['fx','ns','ai','near'])$(k).setAttribute('aria-pressed',S[k]);
   if(!MODE[S.mode])S.mode='bogus';
   document.querySelectorAll('#modes button').forEach(b=>b.classList.toggle('sel',b.dataset.m===S.mode));
@@ -172,7 +175,7 @@ function apply(){
   mk2.gain.setTargetAtTime(S.v,t,.05);
   wet.gain.setTargetAtTime(S.fx?1:0,t,.04);dry.gain.setTargetAtTime(S.fx?0:1,t,.04);
 }
-for(const k of['fo','cl','v'])$(k).oninput=e=>{S[k]=+e.target.value;ui()};
+for(const k of['sep','fo','cl','v'])$(k).oninput=e=>{S[k]=+e.target.value;ui()};
 $('fx').onclick=()=>{S.fx=!S.fx;ui()};
 $('near').onclick=()=>{S.near=!S.near;ui()};
 $('modes').onclick=e=>{const b=e.target.closest('button[data-m]');if(!b)return;S.mode=b.dataset.m;ui()};
@@ -204,7 +207,7 @@ function pitch(buf,sr){
   const D=4,n=buf.length/D|0;
   if(!dec||dec.length!==n){dec=new Float32Array(n);dif=new Float32Array(n)}
   for(let i=0;i<n;i++){const j=i*D;dec[i]=buf[j]+buf[j+1]+buf[j+2]+buf[j+3]}
-  const fs=sr/D,tmin=Math.floor(fs/PMAX),tmax=Math.min(Math.floor(fs/PMIN),n>>1),W=n-tmax-1;
+  const fs=sr/D,tmin=Math.floor(fs/PMAX),tmax=Math.min(Math.floor(fs/PMIN),n>>1),W=n-tmax-1;pFs=fs;pTmax=tmax;pTmin=tmin;
   let run=0;dif[0]=1;
   for(let t=1;t<=tmax;t++){let s=0;for(let i=0;i<W;i++){const d=dec[i]-dec[i+t];s+=d*d}run+=s;dif[t]=run?s*t/run:1}
   let best=-1;
@@ -215,31 +218,70 @@ function pitch(buf,sr){
   return fs/(best+sh);
 }
 
+let pFs=12000,pTmax=0,pTmin=0;
+// seçilen kişinin ses tonunu, başkası daha yüksek konuşsa bile kendi aralığında ara
+function pitchIn(lo,hi){
+  if(!pTmax)return null;const a=Math.max(pTmin+1,Math.floor(pFs/hi)),b=Math.min(pTmax-1,Math.ceil(pFs/lo));let m=1,bt=-1;
+  for(let t=a;t<=b;t++)if(dif[t]<m&&dif[t]<=dif[t-1]&&dif[t]<=dif[t+1]){m=dif[t];bt=t}
+  if(bt<0)return null;const x=dif[bt-1],y=dif[bt],z=dif[bt+1],dn=x+z-2*y,sh=dn?(x-z)/(2*dn):0;return{f:pFs/(bt+sh),c:m};
+}
+
+const COMB_SRC=`class Comb extends AudioWorkletProcessor{
+static get parameterDescriptors(){return[{name:'f0',defaultValue:0,automationRate:'k-rate'},{name:'amt',defaultValue:0,automationRate:'k-rate'}]}
+constructor(){super();this.N=8192;this.b=new Float32Array(this.N);this.w=0;this.T=200;this.a=0}
+process(ins,outs,p){const o=outs[0];if(!o||!o[0])return true;const i=ins[0]&&ins[0][0];const f=p.f0[0],A=p.amt[0],N=this.N,B=this.b;
+const tT=f>40?sampleRate/f:this.T,out=o[0];
+for(let n=0;n<out.length;n++){const x=i?i[n]:0;B[this.w]=x;this.T+=(tT-this.T)*.003;this.a+=(A-this.a)*.002;
+let s=x;for(let k=1;k<=3;k++){const r=this.w-this.T*k;let ri=Math.floor(r);const fr=r-ri;ri=((ri%N)+N)%N;s+=B[ri]*(1-fr)+B[(ri+1)%N]*fr}
+out[n]=x*(1-this.a)+s*.25*this.a;this.w=(this.w+1)%N}
+for(let c=1;c<o.length;c++)o[c].set(out);return true}}
+registerProcessor('odak-comb',Comb);`;
+let combMod=false;
+async function makeComb(){
+  if(!combMod){const u=URL.createObjectURL(new Blob([COMB_SRC],{type:'application/javascript'}));await ctx.audioWorklet.addModule(u);combMod=true}
+  return new AudioWorkletNode(ctx,'odak-comb',{numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[1]});
+}
+/* ---------- ses rengi (MFCC) ---------- */
+const NM=24,NC=12;let melF=null,melBin=0;const mfBuf=new Float32Array(NC),melE=new Float32Array(NM);
+const gm=new Float32Array(NC),gv=new Float32Array(NC).fill(100);let gn=0;
+function mfcc(fd,bin){
+  if(!melF||melBin!==bin){melBin=bin;const m=f=>2595*Math.log10(1+f/700),im=x=>700*(10**(x/2595)-1),m0=m(150),m1=m(5000);
+    const pts=[...Array(NM+2)].map((_,i)=>im(m0+(m1-m0)*i/(NM+1))/bin);
+    melF=[...Array(NM)].map((_,k)=>{const a=Math.floor(pts[k]),c=Math.ceil(pts[k+2]),w=new Float32Array(c-a+1);for(let j=a;j<=c;j++){w[j-a]=j<pts[k+1]?Math.max(0,(j-pts[k])/(pts[k+1]-pts[k])):Math.max(0,(pts[k+2]-j)/(pts[k+2]-pts[k+1]))}return{a,w}})}
+  for(let k=0;k<NM;k++){const F=melF[k];let e=0;for(let j=0;j<F.w.length;j++)e+=F.w[j]*10**(fd[F.a+j]/10);melE[k]=10*Math.log10(e+1e-12)}
+  for(let c=1;c<=NC;c++){let v=0;for(let k=0;k<NM;k++)v+=melE[k]*Math.cos(Math.PI*c*(k+.5)/NM);mfBuf[c-1]=v/NM*2}
+  return mfBuf;
+}
+function gUpd(x){gn++;const a=gn<50?1/gn:.01;for(let i=0;i<NC;i++){const d=x[i]-gm[i];gm[i]+=a*d;gv[i]+=a*(d*d-gv[i]);if(gv[i]<1)gv[i]=1}}
+const dm=(a,b)=>{if(!a||!b)return 0;let s=0;for(let i=0;i<NC;i++){const d=a[i]-b[i];s+=d*d/gv[i]}return Math.sqrt(s/NC)};
+const meanV=arr=>{const m=new Float32Array(NC);if(!arr.length)return m;for(const x of arr)for(let i=0;i<NC;i++)m[i]+=x[i]/arr.length;return m};
+
 /* ---------- kişi (istasyon) takibi ---------- */
 const range=v=>{const s=Math.max(.17,v.sd*2.2);return[v.f*2**-s,v.f*2**s]};
-function matchFrame(f){
+function matchFrame(f,mf){
   let bv=null,bd=1e9;
-  for(const v of voices){const[l,h]=range(v);if(f<l||f>h)continue;const d=Math.abs(Math.log2(f/v.f));if(d<bd){bd=d;bv=v}}
-  return bv;
+  for(const v of voices){const[l,h]=range(v);if(f<l||f>h)continue;const d=Math.abs(Math.log2(f/v.f))/.2+(v.mf&&gn>40?dm(mf,v.mf)/1.2:0);if(d<bd){bd=d;bv=v}}
+  return bd<3.8?bv:null;
 }
 function endSeg(){
   const s=seg;seg=null;
   if(!s||s.f.length<8)return;
   const fs=s.f.slice().sort((a,b)=>a-b),med=fs[fs.length>>1];
   const lf=s.f.map(x=>Math.log2(x/med)),sd=Math.sqrt(lf.reduce((a,x)=>a+x*x,0)/lf.length);
-  const cen=s.c.reduce((a,x)=>a+x,0)/s.c.length,lv=s.l.reduce((a,x)=>a+x,0)/s.l.length,br=s.b.reduce((a,x)=>a+x,0)/s.b.length;
+  const cen=s.c.reduce((a,x)=>a+x,0)/s.c.length,lv=s.l.reduce((a,x)=>a+x,0)/s.l.length,br=s.b.reduce((a,x)=>a+x,0)/s.b.length,mf=meanV(s.m);
   let bv=null,bd=1e9;
-  for(const v of voices){const d=Math.abs(Math.log2(med/v.f))/.2+Math.abs(Math.log2(cen/v.cen))/.7+Math.abs(br-v.br)/9;if(d<bd){bd=d;bv=v}}
-  if(bv&&bd<1.6){
+  for(const v of voices){const d=Math.abs(Math.log2(med/v.f))/.2+Math.abs(Math.log2(cen/v.cen))/1+Math.abs(br-v.br)/9+(v.mf&&gn>40?dm(mf,v.mf)/.7:0);if(d<bd){bd=d;bv=v}}
+  if(bv&&bd<2.1){
+    if(bv.mf)for(let i=0;i<NC;i++)bv.mf[i]+=(mf[i]-bv.mf[i])*.25;else bv.mf=mf;
     bv.f=bv.f*2**(Math.log2(med/bv.f)*.25);bv.sd+=(Math.min(.3,Math.max(.08,sd))-bv.sd)*.25;bv.cen+=(cen-bv.cen)*.2;bv.lv+=(lv-bv.lv)*.3;bv.br+=(br-bv.br)*.3;bv.time+=s.f.length;
   }else{
     if(voices.length>=6){voices.sort((a,b)=>(b.time+(b.st?1e6:0))-(a.time+(a.st?1e6:0)));voices.pop()}
     const used=new Set(voices.map(v=>v.col));
-    voices.push({id:nextId++,col:COL.find(c=>!used.has(c))||COL[0],f:med,sd:Math.min(.3,Math.max(.08,sd)),cen,lv,br,time:s.f.length,act:0,st:0});
+    voices.push({id:nextId++,col:COL.find(c=>!used.has(c))||COL[0],f:med,sd:Math.min(.3,Math.max(.08,sd)),cen,lv,br,mf,time:s.f.length,act:0,st:0});
     voices.sort((a,b)=>a.f-b.f);renderVoices();
   }
   for(let i=0;i<voices.length-1;i++){const a=voices[i],b=voices[i+1];
-    if(Math.abs(Math.log2(a.f/b.f))<.1&&Math.abs(Math.log2(a.cen/b.cen))<.25&&Math.abs(a.br-b.br)<5){const k=a.time>=b.time?a:b,o=k===a?b:a;k.time+=o.time;if(o.st&&!k.st)k.st=o.st;voices.splice(voices.indexOf(o),1);renderVoices();break}}
+    if(Math.abs(Math.log2(a.f/b.f))<.1&&Math.abs(Math.log2(a.cen/b.cen))<.25&&Math.abs(a.br-b.br)<5&&dm(a.mf,b.mf)<.45){const k=a.time>=b.time?a:b,o=k===a?b:a;k.time+=o.time;if(o.st&&!k.st)k.st=o.st;voices.splice(voices.indexOf(o),1);renderVoices();break}}
 }
 const desc=f=>f<165?'Kalın ses':f<255?'Orta ses':'İnce ses';
 const isNear=v=>briThr!=null?v.br>briThr:voices.length>1&&v.br>Math.min(...voices.map(x=>x.br))+8;
@@ -287,28 +329,35 @@ function analyse(){
   const voiced=f>=PMIN&&f<=PMAX;
   curF=voiced?f:0;
   if(voiced){
-    lastVoiced=now;
+    lastVoiced=now;curMf=Float32Array.from(mfcc(fd,bin));gUpd(curMf);
     if(seg&&seg.f.length>=6){
       const r=seg.f.slice(-12).sort((x,y)=>x-y),md=r[r.length>>1];
-      if(Math.abs(Math.log2(f/md))>.38){seg.j=(seg.j||0)+1;if(seg.j>=3){const k=seg.j;seg.f.length-=k-1;seg.c.length-=k-1;seg.l.length-=k-1;seg.b.length-=k-1;endSeg()}}else seg.j=0;
+      if(Math.abs(Math.log2(f/md))>.38){seg.j=(seg.j||0)+1;if(seg.j>=3){const k=seg.j;seg.f.length-=k-1;seg.c.length-=k-1;seg.l.length-=k-1;seg.b.length-=k-1;seg.m.length-=k-1;endSeg()}}else seg.j=0;
     }
-    if(!seg)seg={f:[],c:[],l:[],b:[],j:0};
-    seg.f.push(f);seg.c.push(pw?pc/pw:1000);seg.l.push(L);seg.b.push(bri);
+    if(!seg)seg={f:[],c:[],l:[],b:[],m:[],j:0};
+    seg.f.push(f);seg.c.push(pw?pc/pw:1000);seg.l.push(L);seg.b.push(bri);seg.m.push(curMf);
     briH.push(bri);if(briH.length>600)briH.shift();
     if(frames%20===0&&briH.length>80){const q=briH.slice().sort((x,y)=>x-y),p20=q[q.length*.2|0],p80=q[q.length*.8|0];briThr=p80-p20>8?(p20+p80)/2:null}
     if(seg.f.length>60)endSeg();
   }else if(seg&&now-lastVoiced>220)endSeg();
-  curC=voiced?matchFrame(f):null;
+  curC=voiced?matchFrame(f,curMf):null;
   for(const v of voices)v.act=v===curC?1:v.act*.9;
   trail.push({f:curF,c:curC?curC.col:null,v:curC,b:bri,L,t:dispNow});
   while(trail.length&&dispNow-trail[0].t>6500)trail.shift();
   const foc=voices.find(v=>v.st===1),mut=voices.some(v=>v.st===-1),fl2=10**(-S.fo/20);
   let want=1;
-  if(foc){if(curC===foc)holdT=now+450;want=now<holdT?1:fl2}
+  tgtNow=false;let tf=0;
+  if(foc&&L>floorDb+5){
+    if(curC===foc){tgtNow=true;tf=f}
+    else{const[lo,hi]=range(foc),q=pitchIn(lo,hi);if(q&&q.c<.6){tgtNow=true;tf=q.f}}
+  }
+  if(comb){const P=comb.parameters;P.get('f0').setValueAtTime(tgtNow?tf:0,t);P.get('amt').setValueAtTime(tgtNow?(S.sep/100)*(curC===foc?.6:1):0,t)}
+  overlap=tgtNow&&voiced&&curC!==foc;
+  if(foc){if(tgtNow)holdT=now+450;want=now<holdT?1:fl2}
   else if(mut){if(curC&&curC.st===-1)holdT=now+300;want=now<holdT?fl2:1}
   if(!S.fo)want=1;
   curNear=false;
-  if(S.near&&L>floorDb+6){
+  if(S.near&&L>floorDb+6&&!tgtNow){
     const cn=curC&&curC.st!==1&&isNear(curC),fn=!(curC&&curC.st===1)&&briThr!=null&&bri>briThr+2;
     if(cn||fn){nearHold=now+320;curNear=true}
   }
@@ -316,7 +365,7 @@ function analyse(){
   if(want!==gateOpen){gate.gain.setTargetAtTime(want,t,want>gateOpen?.02:.18);gateOpen=want}
   frames++;
   if(frames%8===0){live();
-    if(performance.now()>hintLock)hint(curNear?'Aynı odadan ses kısılıyor':foc?'Odak: '+String.fromCharCode(65+voices.indexOf(foc))+' sesi, diğerleri kısılıyor':mut?'Susturulan sesler kısılıyor':voices.length?'Dinlemek istediğin sese Odakla, istemediğine Sustur de':'Dinleniyor… biri konuştukça burada belirir')}
+    if(performance.now()>hintLock)hint(overlap?'Üst üste konuşma: seçtiğin ses ayrıştırılıyor':curNear?'Aynı odadan ses kısılıyor':foc?'Odak: '+String.fromCharCode(65+voices.indexOf(foc))+' sesi, diğerleri kısılıyor':mut?'Susturulan sesler kısılıyor':voices.length?'Dinlemek istediğin sese Odakla, istemediğine Sustur de':'Dinleniyor… biri konuştukça burada belirir')}
 }
 
 /* ---------- başlat / durdur ---------- */
@@ -347,6 +396,7 @@ async function start(){
   {const c=new Float32Array(1024);for(let i=0;i<1024;i++){const x=i/511.5-1;c[i]=Math.tanh(4*x)}exS.curve=c;exS.oversample='2x'}
   const exPre=ctx.createGain();exPre.gain.value=4;
   dly=ctx.createDelay(.2);dly.delayTime.value=.05;
+  try{comb=await makeComb()}catch(e){comb=null}
   gate=ctx.createGain();
   comp=ctx.createDynamicsCompressor();comp.threshold.value=-30;comp.knee.value=12;comp.ratio.value=3;comp.attack.value=.008;comp.release.value=.3;
   mk2=ctx.createGain();
@@ -355,7 +405,7 @@ async function start(){
   an=ctx.createAnalyser();an.fftSize=2048;an.smoothingTimeConstant=.4;an.minDecibels=-100;an.maxDecibels=-28;
   const lp=mk('lowpass',1000,.707);anP=ctx.createAnalyser();anP.fftSize=2048;
   head.connect(an);head.connect(lp);lp.connect(anP);
-  head.connect(hp);sum.connect(pres);pres.connect(shelf);shelf.connect(join);shelf.connect(exH);exH.connect(exPre);exPre.connect(exS);exS.connect(exH2);exH2.connect(exG);exG.connect(join);join.connect(bHP);bHP.connect(bLP);bLP.connect(dly);dly.connect(gate);gate.connect(comp);comp.connect(wet);
+  head.connect(hp);sum.connect(pres);pres.connect(shelf);shelf.connect(join);shelf.connect(exH);exH.connect(exPre);exPre.connect(exS);exS.connect(exH2);exH2.connect(exG);exG.connect(join);join.connect(bHP);bHP.connect(bLP);if(comb){bLP.connect(comb);comb.connect(dly)}else bLP.connect(dly);dly.connect(gate);gate.connect(comp);comp.connect(wet);
   src.connect(dry);wet.connect(out);dry.connect(out);out.connect(mk2);mk2.connect(lim);lim.connect(ctx.destination);
   out.gain.value=1;
   fd=null;frames=0;gateOpen=1;gains.fill(1);
@@ -369,7 +419,7 @@ async function start(){
 async function stop(keep){
   running=false;clearInterval(timer);if(seg)endSeg();
   stream?.getTracks().forEach(t=>t.stop());
-  try{src.disconnect();lim.disconnect();if(rn){rn.disconnect();rn.destroy();rn=null}}catch(e){}
+  try{src.disconnect();lim.disconnect();if(rn){rn.disconnect();rn.destroy();rn=null}if(comb){comb.disconnect();comb=null}}catch(e){}
   try{wl?.release()}catch(e){}
   $('go').textContent='Dinle';document.body.classList.remove('on-go');$('st').classList.remove('on');$('stt').textContent='Kapalı';
   if(!keep){hint('Kulaklığı tak, Dinle\'ye bas.');$('empty').hidden=!!voices.length}
