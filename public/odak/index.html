@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#120d14">
+<title>Odak — Canlı Ses</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: sakin, gece, odaklı — kalabalıkta tek bir sesi dinleyen kulak
+   IDEA: eski bir radyo kadranı; ibre yerine parmakla döndürülen halka
+   PICTURE: dairesel spektrum, seçili titreşim bandı mercan renkli yay
+   COLOUR and TYPE: mürdüm-siyah zemin, sıcak beyaz yazı, mercan vurgu; Unbounded + Inter
+   LAYOUT: tek sütun, üstte kadran, altta başparmak menzilinde kontroller */
+:root{--bg:#120d14;--panel:#1d1620;--line:#33283a;--ink:#f6efe9;--mute:#a7999f;--acc:#ff5a4e;--acc2:#ffb199}
+*{box-sizing:border-box;min-width:0;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Inter,system-ui,sans-serif;overflow-x:clip}
+body{padding:max(14px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(20px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+.wrap{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+h1{font:700 26px/1.05 Unbounded,sans-serif;margin:0;letter-spacing:-.01em}
+.st{font-size:13px;color:var(--mute);display:flex;align-items:center;gap:7px;white-space:nowrap}
+.dot{width:9px;height:9px;border-radius:50%;background:#5a4b55}
+.on .dot{background:var(--acc);box-shadow:0 0 10px var(--acc);animation:p 1.4s infinite}
+@keyframes p{50%{opacity:.4}}
+.fig{position:relative;width:100%;aspect-ratio:1;touch-action:none;user-select:none}
+.fig canvas{position:absolute;inset:0;width:100%;height:100%}
+.mid{position:absolute;inset:0;display:grid;place-content:center;text-align:center;pointer-events:none}
+.hz{font:700 clamp(26px,8.5vw,40px)/1 Unbounded,sans-serif}
+.hz small{font-size:.38em;font-weight:500;color:var(--mute);margin-left:4px}
+.rng{font-size:13px;color:var(--acc2);margin-top:6px;white-space:nowrap}
+.hint{font-size:14px;color:var(--mute);text-align:center;margin:0}
+.ctl{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:-8px}
+#go{width:100%;max-width:320px;border:0;border-radius:999px;background:var(--acc);color:#1a0d0c;font:600 16px Inter;padding:0 26px;height:52px;cursor:pointer}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.chips button{flex:none;height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:500 14px Inter;cursor:pointer}
+.chips button.sel{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:6px 16px}
+.row{display:grid;grid-template-columns:7.5em minmax(0,1fr) 3.6em;align-items:center;gap:12px;min-height:56px;border-bottom:1px solid var(--line)}
+.row:last-child{border:0}
+.row label{font-size:14px;color:var(--mute)}
+.row output{font-size:14px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:44px;background:transparent;margin:0}
+input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:var(--line)}
+input[type=range]::-moz-range-track{height:6px;border-radius:3px;background:var(--line)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--ink);margin-top:-10px;border:4px solid var(--acc)}
+input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--ink);border:4px solid var(--acc)}
+.tg{display:flex;justify-content:space-between;align-items:center;min-height:56px;border-bottom:1px solid var(--line);gap:12px}
+.tg:last-child{border:0}
+.tg span{font-size:15px}.tg em{display:block;font-style:normal;font-size:13px;color:var(--mute)}
+.sw{flex:none;width:54px;height:32px;border-radius:999px;border:0;background:var(--line);position:relative;cursor:pointer}
+.sw::after{content:"";position:absolute;top:4px;left:4px;width:24px;height:24px;border-radius:50%;background:var(--ink);transition:transform .2s}
+.sw[aria-pressed=true]{background:var(--acc)}.sw[aria-pressed=true]::after{transform:translateX(22px)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--acc2);outline-offset:3px}
+.note{font-size:13px;color:var(--mute);margin:0}
+.warn{background:#2a1517;border:1px solid #5b2a2a;border-radius:14px;padding:12px 14px;font-size:14px}
+.err{color:var(--acc2)}
+@media(prefers-reduced-motion:reduce){.on .dot{animation:none}.sw::after{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Odak</h1>
+    <div class="st" id="st"><span class="dot"></span><span id="stt">Kapalı</span></div>
+  </header>
+
+  <div class="fig" id="fig">
+    <canvas id="cv"></canvas>
+    <div class="mid">
+      <div class="hz" id="hz">1200<small>Hz</small></div>
+      <div class="rng" id="rng">300 – 3400 Hz</div>
+    </div>
+  </div>
+  <div class="ctl"><button id="go">Dinlemeyi başlat</button><p class="hint" id="hint">Halkayı çevirerek titreşimi seç</p></div>
+
+  <div class="chips" id="chips"></div>
+
+  <div class="card">
+    <div class="row"><label for="w">Bant genişliği</label><input id="w" type="range" min="0.3" max="4" step="0.05" value="2"><output id="wo"></output></div>
+    <div class="row"><label for="b">Odak gücü</label><input id="b" type="range" min="0" max="18" step="0.5" value="8"><output id="bo"></output></div>
+    <div class="row"><label for="v">Ses seviyesi</label><input id="v" type="range" min="0" max="6" step="0.1" value="2"><output id="vo"></output></div>
+    <div class="row"><label for="g">Sessizlik kapısı</label><input id="g" type="range" min="0" max="40" step="1" value="0"><output id="go2"></output></div>
+  </div>
+
+  <div class="card">
+    <div class="tg"><div><span>Filtre</span><em>Kapatıp ham sesle karşılaştır</em></div><button class="sw" id="fx" aria-pressed="true" aria-label="Filtre"></button></div>
+    <div class="tg"><div><span>Gürültü bastırma</span><em>Telefonun kendi konuşma filtresi</em></div><button class="sw" id="ns" aria-pressed="false" aria-label="Gürültü bastırma"></button></div>
+  </div>
+
+  <div class="warn">Kulaklık takmadan başlatma: hoparlörden çıkan ses mikrofona geri döner ve cızırtı yapar. Kablolu kulaklık Bluetooth'tan çok daha az gecikir.</div>
+  <p class="note" id="lat">Gecikme: —</p>
+</div>
+
+<script>
+{
+const $=id=>document.getElementById(id);
+const FMIN=80,FMAX=8000,START=Math.PI*2/3,SWEEP=Math.PI*5/3,N=96;
+const PRE=[
+ {n:'Konuşma',c:1000,w:3.5},{n:'Erkek sesi',c:450,w:2.6},{n:'Kadın sesi',c:900,w:2.4},
+ {n:'Çocuk sesi',c:1400,w:2.2},{n:'Netlik',c:2800,w:1.4},{n:'Uğultu kes',c:1700,w:2.8}];
+let S={c:1000,w:2,b:8,v:2,g:0,fx:true,ns:false,p:0};
+try{Object.assign(S,JSON.parse(localStorage.getItem('odak')||'{}'))}catch(e){}
+const save=()=>{try{localStorage.setItem('odak',JSON.stringify(S))}catch(e){}};
+
+let ctx,src,stream,an,anOut,hp1,hp2,lp1,lp2,pk,comp,gate,out,dry,wet,wl,running=false;
+const fmt=f=>f>=1000?(f/1000).toFixed(f>=10000?0:1).replace('.',',')+' kHz':Math.round(f)+' Hz';
+const band=()=>{const h=2**(S.w/2);return[Math.max(40,S.c/h),Math.min(16000,S.c*h)]};
+
+function ui(){
+  const[l,h]=band();
+  $('hz').innerHTML=(S.c>=1000?(S.c/1000).toFixed(2).replace('.',','):Math.round(S.c))+'<small>'+(S.c>=1000?'kHz':'Hz')+'</small>';
+  $('rng').textContent=fmt(l)+' – '+fmt(h);
+  $('wo').textContent=S.w.toFixed(1).replace('.',',')+' okt';
+  $('bo').textContent='+'+S.b+' dB';
+  $('vo').textContent='×'+S.v.toFixed(1).replace('.',',');
+  $('go2').textContent=S.g?S.g+'%':'Kapalı';
+  for(const k of['w','b','v','g'])$(k).value=S[k];
+  $('fx').setAttribute('aria-pressed',S.fx);$('ns').setAttribute('aria-pressed',S.ns);
+  document.querySelectorAll('#chips button').forEach((b,i)=>b.classList.toggle('sel',PRE[i].c===S.c&&PRE[i].w===S.w));
+  apply();save();
+}
+function apply(){
+  if(!ctx)return;
+  const t=ctx.currentTime,[l,h]=band(),r=x=>.03;
+  for(const f of[hp1,hp2])f.frequency.setTargetAtTime(l,t,.03);
+  for(const f of[lp1,lp2])f.frequency.setTargetAtTime(h,t,.03);
+  pk.frequency.setTargetAtTime(S.c,t,.03);
+  pk.Q.setTargetAtTime(Math.max(.3,S.c/(h-l)),t,.03);
+  pk.gain.setTargetAtTime(S.b,t,.03);
+  out.gain.setTargetAtTime(S.v,t,.05);
+  wet.gain.setTargetAtTime(S.fx?1:0,t,.04);
+  dry.gain.setTargetAtTime(S.fx?0:1,t,.04);
+}
+$('chips').innerHTML=PRE.map(p=>`<button type="button">${p.n}</button>`).join('');
+document.querySelectorAll('#chips button').forEach((b,i)=>b.onclick=()=>{S.c=PRE[i].c;S.w=PRE[i].w;ui()});
+for(const k of['w','b','v','g'])$(k).oninput=e=>{S[k]=+e.target.value;ui()};
+$('fx').onclick=()=>{S.fx=!S.fx;ui()};
+$('ns').onclick=async()=>{S.ns=!S.ns;ui();if(running){await stop();start()}};
+
+async function start(){
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:S.ns,autoGainControl:false,channelCount:1,latency:0}});
+  }catch(e){
+    $('hint').innerHTML='<span class="err">Mikrofon açılamadı. Sayfa https:// ile başlayan bir adresten açılmalı (indirilen dosya content:// ya da file:// ile açılınca telefon mikrofonu vermez).</span>';return;
+  }
+  ctx=ctx||new (window.AudioContext||window.webkitAudioContext)({latencyHint:'interactive'});
+  await ctx.resume();
+  src=ctx.createMediaStreamSource(stream);
+  const mk=(type)=>{const f=ctx.createBiquadFilter();f.type=type;f.Q.value=.707;return f};
+  hp1=mk('highpass');hp2=mk('highpass');lp1=mk('lowpass');lp2=mk('lowpass');
+  pk=ctx.createBiquadFilter();pk.type='peaking';
+  comp=ctx.createDynamicsCompressor();
+  comp.threshold.value=-28;comp.knee.value=12;comp.ratio.value=4;comp.attack.value=.004;comp.release.value=.15;
+  gate=ctx.createGain();out=ctx.createGain();dry=ctx.createGain();wet=ctx.createGain();
+  an=ctx.createAnalyser();an.fftSize=4096;an.smoothingTimeConstant=.75;
+  anOut=ctx.createAnalyser();anOut.fftSize=1024;
+  src.connect(an);
+  src.connect(hp1);hp1.connect(hp2);hp2.connect(lp1);lp1.connect(lp2);lp2.connect(pk);pk.connect(comp);comp.connect(gate);gate.connect(wet);
+  src.connect(dry);
+  wet.connect(out);dry.connect(out);out.connect(anOut);out.connect(ctx.destination);
+  running=true;apply();
+  $('go').textContent='Durdur';$('st').classList.add('on');$('stt').textContent='Canlı';
+  $('hint').textContent='Halkayı çevirerek titreşimi seç';
+  const L=(ctx.baseLatency||0)+(ctx.outputLatency||0);
+  $('lat').textContent='Gecikme: '+(L?Math.round(L*1000)+' ms (tarayıcı tahmini)':'tarayıcı bildirmiyor');
+  try{wl=await navigator.wakeLock?.request('screen')}catch(e){}
+}
+async function stop(){
+  running=false;
+  stream?.getTracks().forEach(t=>t.stop());
+  try{src.disconnect();out.disconnect()}catch(e){}
+  try{wl?.release()}catch(e){}
+  $('go').textContent='Dinlemeyi başlat';$('st').classList.remove('on');$('stt').textContent='Kapalı';
+}
+$('go').onclick=()=>running?stop():start();
+
+// Dial
+const cv=$('cv'),cx=cv.getContext('2d'),fig=$('fig');
+let W=0,R=0,lv=new Float32Array(N),pkHold=0;
+function size(){const d=devicePixelRatio||1;W=fig.clientWidth;cv.width=W*d;cv.height=W*d;cx.setTransform(d,0,0,d,0,0);R=W/2}
+new ResizeObserver(size).observe(fig);size();
+const tOf=f=>Math.log(f/FMIN)/Math.log(FMAX/FMIN);
+const fOf=t=>FMIN*(FMAX/FMIN)**t;
+const aOf=t=>START+SWEEP*Math.max(0,Math.min(1,t));
+let fb,tb;
+function draw(){
+  requestAnimationFrame(draw);
+  if(!W)return;
+  const c=R,r0=R*.6,r1=R*.86,[l,h]=band(),tl=tOf(l),th=tOf(h);
+  cx.clearRect(0,0,W,W);
+  // spectrum
+  if(running){
+    if(!fb||fb.length!==an.frequencyBinCount)fb=new Uint8Array(an.frequencyBinCount);
+    an.getByteFrequencyData(fb);
+    const ny=ctx.sampleRate/2;
+    for(let i=0;i<N;i++){
+      const f0=fOf(i/N),f1=fOf((i+1)/N);
+      let a=Math.floor(f0/ny*fb.length),b=Math.max(a+1,Math.ceil(f1/ny*fb.length)),m=0;
+      for(let j=a;j<b&&j<fb.length;j++)m=Math.max(m,fb[j]);
+      lv[i]+=(m/255-lv[i])*.35;
+    }
+    if(!tb)tb=new Float32Array(anOut.fftSize);
+    anOut.getFloatTimeDomainData(tb);
+    let s=0;for(const x of tb)s+=x*x;const rms=Math.sqrt(s/tb.length);
+    pkHold=Math.max(rms,pkHold*.94);
+    // simple gate on wet path
+    const thr=S.g/100*.08;
+    gate.gain.setTargetAtTime(S.g&&an&&lv.reduce((a,x,i)=>{const t=i/N;return t>=tl&&t<=th?Math.max(a,x):a},0)*.1<thr?0:1,ctx.currentTime,.06);
+  }else for(let i=0;i<N;i++)lv[i]*=.9;
+  // band arc
+  cx.lineCap='butt';
+  cx.beginPath();cx.arc(c,c,(r0+r1)/2,aOf(0),aOf(1));cx.strokeStyle='#211a25';cx.lineWidth=r1-r0+8;cx.stroke();
+  cx.beginPath();cx.arc(c,c,(r0+r1)/2,aOf(tl),aOf(th));cx.strokeStyle=S.fx?'rgba(255,90,78,.16)':'rgba(255,255,255,.06)';cx.stroke();
+  // bars
+  const bw=Math.max(1.5,(SWEEP*r0/N)*.55);
+  for(let i=0;i<N;i++){
+    const t=(i+.5)/N,a=aOf(t),inb=t>=tl&&t<=th,len=4+lv[i]*(r1-r0-6);
+    cx.beginPath();cx.moveTo(c+Math.cos(a)*r0,c+Math.sin(a)*r0);cx.lineTo(c+Math.cos(a)*(r0+len),c+Math.sin(a)*(r0+len));
+    cx.strokeStyle=inb&&S.fx?(i%2?'#ff5a4e':'#ff7a64'):'#5d4e5a';cx.lineWidth=bw;cx.stroke();
+  }
+  cx.lineCap='round';
+  // edges + knob
+  for(const t of[tl,th]){const a=aOf(t);cx.beginPath();cx.moveTo(c+Math.cos(a)*(r0-6),c+Math.sin(a)*(r0-6));cx.lineTo(c+Math.cos(a)*(r1+4),c+Math.sin(a)*(r1+4));cx.strokeStyle='#ffb199';cx.lineWidth=2;cx.stroke()}
+  const ka=aOf(tOf(S.c)),kr=r1+R*.06;
+  cx.beginPath();cx.arc(c+Math.cos(ka)*kr,c+Math.sin(ka)*kr,R*.042,0,7);cx.fillStyle='#f6efe9';cx.fill();
+  cx.lineWidth=4;cx.strokeStyle='#ff5a4e';cx.stroke();
+  // output glow
+  const g=Math.min(1,pkHold*6);
+  cx.beginPath();cx.arc(c,c,r1+R*.06,aOf(0),aOf(1));cx.strokeStyle='#33283a';cx.lineWidth=2;cx.stroke();
+  cx.beginPath();cx.arc(c,c,r0-10,0,7);cx.strokeStyle=`rgba(255,177,153,${.08+g*.6})`;cx.lineWidth=2+g*5;cx.stroke();
+  // scale labels
+  cx.fillStyle='#a7999f';cx.font=`500 ${Math.max(11,R*.05)}px Inter`;cx.textAlign='center';cx.textBaseline='middle';
+  for(const f of[100,250,500,1000,2000,4000,8000]){const a=aOf(tOf(f)),rr=R*.965;if(Math.abs(tOf(f)-tOf(S.c))<.07)continue;
+    cx.fillText(f>=1000?f/1000+'k':f,c+Math.cos(a)*rr,c+Math.sin(a)*rr)}
+}
+draw();
+function pick(e){
+  const b=fig.getBoundingClientRect(),x=e.clientX-b.left-R,y=e.clientY-b.top-R;
+  if(Math.hypot(x,y)<R*.5)return false;
+  let a=Math.atan2(y,x);let d=(a-START)%(Math.PI*2);if(d<0)d+=Math.PI*2;
+  let t=d/SWEEP;if(t>1)t=d-SWEEP<(Math.PI*2-SWEEP)/2?1:0;
+  S.c=Math.round(fOf(t));ui();return true;
+}
+let drag=false;
+fig.addEventListener('pointerdown',e=>{if(e.target.id==='go')return;if(pick(e)){drag=true;fig.setPointerCapture(e.pointerId)}});
+fig.addEventListener('pointermove',e=>{if(drag)pick(e)});
+fig.addEventListener('pointerup',()=>drag=false);fig.addEventListener('pointercancel',()=>drag=false);
+document.addEventListener('visibilitychange',async()=>{if(running&&document.visibilityState==='visible'){try{wl=await navigator.wakeLock?.request('screen')}catch(e){}}});
+ui();
+}
+</script>
+</body>
+</html>
