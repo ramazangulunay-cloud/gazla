@@ -106,6 +106,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
   </div>
 
   <div class="card">
+    <div class="tg"><div><span>Aynı odadaki sesleri kıs</span><em id="nst">Tizi bol, yakından gelen sesleri kısar; bölme arkasındaki boğuk sesi bırakır</em></div><button class="sw" id="near" aria-pressed="true" aria-label="Aynı odadaki sesleri kıs"></button></div>
     <div class="tg"><div><span>Yapay zekâ gürültü temizleme</span><em id="aist">Konuşma dışındaki sesleri siler (RNNoise)</em></div><button class="sw" id="ai" aria-pressed="true" aria-label="Yapay zekâ gürültü temizleme"></button></div>
     <div class="tg"><div><span>Filtre</span><em>Kapatıp ham sesle karşılaştır</em></div><button class="sw" id="fx" aria-pressed="true" aria-label="Filtre"></button></div>
     <div class="tg"><div><span>Telefonun gürültü bastırması</span><em>Bazı telefonlarda uzak sesi de kısar, dene ve karar ver</em></div><button class="sw" id="ns" aria-pressed="false" aria-label="Telefonun gürültü bastırması"></button></div>
@@ -123,7 +124,7 @@ const NB=14,BL=150,BH=7000;
 const BE=[...Array(NB+1)].map((_,i)=>BL*(BH/BL)**(i/NB));
 const BF=[...Array(NB)].map((_,i)=>Math.sqrt(BE[i]*BE[i+1]));
 const PMIN=70,PMAX=400;
-let S={fo:12,cl:5,v:3,fx:true,ns:false,ai:true,mic:'',mode:'bogus'};
+let S={fo:12,cl:5,v:3,fx:true,ns:false,ai:true,mic:'',mode:'bogus',near:true};
 const MODE={
  bogus:{hp:220,pf:2200,pq:.7,pa:8,sh:9,ex:.55,ct:-50,cr:6},
  kalabalik:{hp:150,pf:2800,pq:.9,pa:2,sh:2,ex:.15,ct:-36,cr:4},
@@ -143,6 +144,7 @@ let bG=[],fd,td,tp,dec,dif;
 const noise=new Float32Array(NB),gains=new Float32Array(NB).fill(1);
 let frames=0,floorDb=-60,gateOpen=1,holdT=0,curC=null,curF=0;
 let voices=[],nextId=0,seg=null,lastVoiced=0,trail=[];
+let briH=[],briThr=null,nearHold=0,curBri=0,curNear=false;
 
 /* ---------- arayüz ---------- */
 function ui(){
@@ -150,7 +152,7 @@ function ui(){
   $('clo').textContent=S.cl?'+'+S.cl+' dB':'Kapalı';
   $('vo').textContent='×'+S.v.toFixed(1).replace('.',',');
   for(const k of['fo','cl','v'])$(k).value=S[k];
-  for(const k of['fx','ns','ai'])$(k).setAttribute('aria-pressed',S[k]);
+  for(const k of['fx','ns','ai','near'])$(k).setAttribute('aria-pressed',S[k]);
   if(!MODE[S.mode])S.mode='bogus';
   document.querySelectorAll('#modes button').forEach(b=>b.classList.toggle('sel',b.dataset.m===S.mode));
   apply();save();
@@ -167,6 +169,7 @@ function apply(){
 }
 for(const k of['fo','cl','v'])$(k).oninput=e=>{S[k]=+e.target.value;ui()};
 $('fx').onclick=()=>{S.fx=!S.fx;ui()};
+$('near').onclick=()=>{S.near=!S.near;ui()};
 $('modes').onclick=e=>{const b=e.target.closest('button[data-m]');if(!b)return;S.mode=b.dataset.m;ui()};
 $('ai').onclick=async()=>{S.ai=!S.ai;ui();if(running){await stop(true);start()}};
 $('ns').onclick=async()=>{S.ns=!S.ns;ui();if(running){await stop(true);start()}};
@@ -219,21 +222,22 @@ function endSeg(){
   if(!s||s.f.length<8)return;
   const fs=s.f.slice().sort((a,b)=>a-b),med=fs[fs.length>>1];
   const lf=s.f.map(x=>Math.log2(x/med)),sd=Math.sqrt(lf.reduce((a,x)=>a+x*x,0)/lf.length);
-  const cen=s.c.reduce((a,x)=>a+x,0)/s.c.length,lv=s.l.reduce((a,x)=>a+x,0)/s.l.length;
+  const cen=s.c.reduce((a,x)=>a+x,0)/s.c.length,lv=s.l.reduce((a,x)=>a+x,0)/s.l.length,br=s.b.reduce((a,x)=>a+x,0)/s.b.length;
   let bv=null,bd=1e9;
-  for(const v of voices){const d=Math.abs(Math.log2(med/v.f))/.2+Math.abs(Math.log2(cen/v.cen))/.7;if(d<bd){bd=d;bv=v}}
+  for(const v of voices){const d=Math.abs(Math.log2(med/v.f))/.2+Math.abs(Math.log2(cen/v.cen))/.7+Math.abs(br-v.br)/9;if(d<bd){bd=d;bv=v}}
   if(bv&&bd<1.6){
-    bv.f=bv.f*2**(Math.log2(med/bv.f)*.25);bv.sd+=(Math.min(.3,Math.max(.08,sd))-bv.sd)*.25;bv.cen+=(cen-bv.cen)*.2;bv.lv+=(lv-bv.lv)*.3;bv.time+=s.f.length;
+    bv.f=bv.f*2**(Math.log2(med/bv.f)*.25);bv.sd+=(Math.min(.3,Math.max(.08,sd))-bv.sd)*.25;bv.cen+=(cen-bv.cen)*.2;bv.lv+=(lv-bv.lv)*.3;bv.br+=(br-bv.br)*.3;bv.time+=s.f.length;
   }else{
     if(voices.length>=6){voices.sort((a,b)=>(b.time+(b.st?1e6:0))-(a.time+(a.st?1e6:0)));voices.pop()}
     const used=new Set(voices.map(v=>v.col));
-    voices.push({id:nextId++,col:COL.find(c=>!used.has(c))||COL[0],f:med,sd:Math.min(.3,Math.max(.08,sd)),cen,lv,time:s.f.length,act:0,st:0});
+    voices.push({id:nextId++,col:COL.find(c=>!used.has(c))||COL[0],f:med,sd:Math.min(.3,Math.max(.08,sd)),cen,lv,br,time:s.f.length,act:0,st:0});
     voices.sort((a,b)=>a.f-b.f);renderVoices();
   }
   for(let i=0;i<voices.length-1;i++){const a=voices[i],b=voices[i+1];
-    if(Math.abs(Math.log2(a.f/b.f))<.1&&Math.abs(Math.log2(a.cen/b.cen))<.25){const k=a.time>=b.time?a:b,o=k===a?b:a;k.time+=o.time;if(o.st&&!k.st)k.st=o.st;voices.splice(voices.indexOf(o),1);renderVoices();break}}
+    if(Math.abs(Math.log2(a.f/b.f))<.1&&Math.abs(Math.log2(a.cen/b.cen))<.25&&Math.abs(a.br-b.br)<5){const k=a.time>=b.time?a:b,o=k===a?b:a;k.time+=o.time;if(o.st&&!k.st)k.st=o.st;voices.splice(voices.indexOf(o),1);renderVoices();break}}
 }
 const desc=f=>f<165?'Kalın ses':f<255?'Orta ses':'İnce ses';
+const isNear=v=>briThr!=null?v.br>briThr:voices.length>1&&v.br>Math.min(...voices.map(x=>x.br))+8;
 function loudLabel(v){const mx=Math.max(...voices.map(x=>x.lv));return v.lv>mx-4?'yüksek':v.lv<mx-10?'kısık':'orta'}
 function renderVoices(){
   $('voices').innerHTML=voices.map((v,i)=>`<div class="v${v.st===1?' f':v.st===-1?' m':''}" style="--c:${v.col}" data-id="${v.id}">
@@ -249,7 +253,7 @@ $('voices').onclick=e=>{const b=e.target.closest('button[data-s]');if(!b)return;
 function live(){
   for(const el of document.querySelectorAll('.v')){const v=voices.find(x=>x.id==+el.dataset.id);if(!v)continue;
     el.querySelector('[data-k=m]').style.width=Math.round(v.act*100)+'%';
-    el.querySelector('[data-k=lb]').textContent=Math.round(v.f)+' Hz · '+loudLabel(v)+(v.act>.5?' · konuşuyor':'')}
+    el.querySelector('[data-k=lb]').textContent=(isNear(v)?'aynı oda':'boğuk / bölme arkası')+' · '+loudLabel(v)+(v.act>.5?' · konuşuyor':'')}
 }
 
 /* ---------- analiz döngüsü ---------- */
@@ -272,6 +276,8 @@ function analyse(){
     if(Math.abs(tg-gains[i])>.02){bG[i].gain.setTargetAtTime(tg,t,tg>gains[i]?.04:.25);gains[i]=tg}
     if(BF[i]>200&&BF[i]<4000){pw+=p;pc+=p*BF[i]}
   }
+  const eb=(lo,hi)=>{let p=0;const a=Math.floor(lo/bin),b=Math.ceil(hi/bin);for(let j=a;j<b;j++)p+=10**(fd[j]/10);return p/(b-a)+1e-14};
+  const bri=10*Math.log10(eb(2500,6000)/eb(250,1000));curBri=bri;
   const f=L>floorDb+5?pitch(tp,sr):0;
   const voiced=f>=PMIN&&f<=PMAX;
   curF=voiced?f:0;
@@ -279,10 +285,12 @@ function analyse(){
     lastVoiced=now;
     if(seg&&seg.f.length>=6){
       const r=seg.f.slice(-12).sort((x,y)=>x-y),md=r[r.length>>1];
-      if(Math.abs(Math.log2(f/md))>.38){seg.j=(seg.j||0)+1;if(seg.j>=3){const k=seg.j;seg.f.length-=k-1;seg.c.length-=k-1;seg.l.length-=k-1;endSeg()}}else seg.j=0;
+      if(Math.abs(Math.log2(f/md))>.38){seg.j=(seg.j||0)+1;if(seg.j>=3){const k=seg.j;seg.f.length-=k-1;seg.c.length-=k-1;seg.l.length-=k-1;seg.b.length-=k-1;endSeg()}}else seg.j=0;
     }
-    if(!seg)seg={f:[],c:[],l:[],j:0};
-    seg.f.push(f);seg.c.push(pw?pc/pw:1000);seg.l.push(L);
+    if(!seg)seg={f:[],c:[],l:[],b:[],j:0};
+    seg.f.push(f);seg.c.push(pw?pc/pw:1000);seg.l.push(L);seg.b.push(bri);
+    briH.push(bri);if(briH.length>600)briH.shift();
+    if(frames%20===0&&briH.length>80){const q=briH.slice().sort((x,y)=>x-y),p20=q[q.length*.2|0],p80=q[q.length*.8|0];briThr=p80-p20>8?(p20+p80)/2:null}
     if(seg.f.length>60)endSeg();
   }else if(seg&&now-lastVoiced>220)endSeg();
   curC=voiced?matchFrame(f):null;
@@ -294,10 +302,16 @@ function analyse(){
   if(foc){if(curC===foc)holdT=now+450;want=now<holdT?1:fl2}
   else if(mut){if(curC&&curC.st===-1)holdT=now+300;want=now<holdT?fl2:1}
   if(!S.fo)want=1;
+  curNear=false;
+  if(S.near&&L>floorDb+6){
+    const cn=curC&&curC.st!==1&&isNear(curC),fn=!(curC&&curC.st===1)&&briThr!=null&&bri>briThr+2;
+    if(cn||fn){nearHold=now+320;curNear=true}
+  }
+  if(S.near&&now<nearHold){const fl3=10**(-Math.max(S.fo,14)/20);want=Math.min(want,fl3)}
   if(want!==gateOpen){gate.gain.setTargetAtTime(want,t,want>gateOpen?.02:.18);gateOpen=want}
   frames++;
   if(frames%8===0){live();
-    hint(foc?'Odak: '+String.fromCharCode(65+voices.indexOf(foc))+' sesi, diğerleri kısılıyor':mut?'Susturulan sesler kısılıyor':voices.length?'Dinlemek istediğin sese Odakla, istemediğine Sustur de':'Dinleniyor… biri konuştukça burada belirir')}
+    hint(curNear?'Aynı odadan ses kısılıyor':foc?'Odak: '+String.fromCharCode(65+voices.indexOf(foc))+' sesi, diğerleri kısılıyor':mut?'Susturulan sesler kısılıyor':voices.length?'Dinlemek istediğin sese Odakla, istemediğine Sustur de':'Dinleniyor… biri konuştukça burada belirir')}
 }
 
 /* ---------- başlat / durdur ---------- */
