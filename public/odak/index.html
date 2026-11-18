@@ -51,6 +51,10 @@ select option{background:var(--panel)}
 .seg button.sel.mu{background:#4a3a44;color:var(--ink);border-color:#4a3a44}
 .rst{align-self:center;height:44px;padding:0 18px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--mute);font:500 14px Inter;cursor:pointer}
 .rst[hidden]{display:none}
+.modes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.modes button{min-height:64px;border-radius:16px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:600 15px Inter;cursor:pointer;padding:8px 6px;line-height:1.2}
+.modes small{display:block;font-weight:400;font-size:12px;color:var(--mute);margin-top:3px}
+.modes button.sel{background:var(--ink);color:var(--bg);border-color:var(--ink)}.modes button.sel small{color:#5a4b55}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:4px 16px}
 .row{display:grid;grid-template-columns:7.8em minmax(0,1fr) 3.6em;align-items:center;gap:12px;min-height:56px;border-bottom:1px solid var(--line)}
 .row:last-child{border:0}
@@ -93,6 +97,8 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
   <div class="voices" id="voices"></div>
   <button class="rst" id="rst" type="button" hidden>Sesleri sıfırla</button>
 
+  <div class="modes" id="modes" role="group" aria-label="Ortam"><button type="button" data-m="bogus">Boğuk ses<small>Duvar, bölme arkası</small></button><button type="button" data-m="kalabalik">Kalabalık<small>Uğultulu salon</small></button><button type="button" data-m="normal">Normal<small>Doğal ses</small></button></div>
+
   <div class="card">
     <div class="row"><label for="fo">Odak gücü</label><input id="fo" type="range" min="0" max="24" step="1" value="12"><output id="foo"></output></div>
     <div class="row"><label for="cl">Netlik</label><input id="cl" type="range" min="0" max="12" step="1" value="5"><output id="clo"></output></div>
@@ -117,11 +123,15 @@ const NB=14,BL=150,BH=7000;
 const BE=[...Array(NB+1)].map((_,i)=>BL*(BH/BL)**(i/NB));
 const BF=[...Array(NB)].map((_,i)=>Math.sqrt(BE[i]*BE[i+1]));
 const PMIN=70,PMAX=400;
-let S={fo:12,cl:5,v:2.5,fx:true,ns:false,ai:true,mic:''};
-try{const o=JSON.parse(localStorage.getItem('odak3')||'{}');Object.assign(S,o)}catch(e){}
-let sT=0;const save=()=>{clearTimeout(sT);sT=setTimeout(()=>{try{localStorage.setItem('odak3',JSON.stringify(S))}catch(e){}},400)};
+let S={fo:12,cl:5,v:3,fx:true,ns:false,ai:true,mic:'',mode:'bogus'};
+const MODE={
+ bogus:{hp:220,pf:2200,pq:.7,pa:8,sh:9,ex:.55,ct:-50,cr:6},
+ kalabalik:{hp:150,pf:2800,pq:.9,pa:2,sh:2,ex:.15,ct:-36,cr:4},
+ normal:{hp:90,pf:2800,pq:.9,pa:0,sh:0,ex:0,ct:-30,cr:3}};
+try{const o=JSON.parse(localStorage.getItem('odak4')||'{}');Object.assign(S,o)}catch(e){}
+let sT=0;const save=()=>{clearTimeout(sT);sT=setTimeout(()=>{try{localStorage.setItem('odak4',JSON.stringify(S))}catch(e){}},400)};
 
-let ctx,src,stream,an,anP,hp,pres,dly,gate,comp,mk2,lim,out,dry,wet,wl,rn=null,rnOn=false,timer=0,running=false;
+let ctx,src,stream,an,anP,hp,pres,shelf,exG,dly,gate,comp,mk2,lim,out,dry,wet,wl,rn=null,rnOn=false,timer=0,running=false;
 const NSU='https://cdn.jsdelivr.net/npm/@sapphi-red/web-noise-suppressor@0.4.1/dist/';let rnLib=null,rnBin=null,rnMod=false;
 async function loadRN(){
   if(!rnLib)rnLib=await import(NSU+'index.js');
@@ -141,16 +151,23 @@ function ui(){
   $('vo').textContent='×'+S.v.toFixed(1).replace('.',',');
   for(const k of['fo','cl','v'])$(k).value=S[k];
   for(const k of['fx','ns','ai'])$(k).setAttribute('aria-pressed',S[k]);
+  if(!MODE[S.mode])S.mode='bogus';
+  document.querySelectorAll('#modes button').forEach(b=>b.classList.toggle('sel',b.dataset.m===S.mode));
   apply();save();
 }
 function apply(){
   if(!ctx||!out)return;const t=ctx.currentTime;
-  pres.gain.setTargetAtTime(S.cl,t,.05);
+  const M=MODE[S.mode];
+  hp.frequency.setTargetAtTime(M.hp,t,.05);
+  pres.frequency.setTargetAtTime(M.pf,t,.05);pres.Q.setTargetAtTime(M.pq,t,.05);pres.gain.setTargetAtTime(S.cl+M.pa,t,.05);
+  shelf.gain.setTargetAtTime(M.sh,t,.05);exG.gain.setTargetAtTime(M.ex,t,.05);
+  comp.threshold.setTargetAtTime(M.ct,t,.05);comp.ratio.setTargetAtTime(M.cr,t,.05);
   mk2.gain.setTargetAtTime(S.v,t,.05);
   wet.gain.setTargetAtTime(S.fx?1:0,t,.04);dry.gain.setTargetAtTime(S.fx?0:1,t,.04);
 }
 for(const k of['fo','cl','v'])$(k).oninput=e=>{S[k]=+e.target.value;ui()};
 $('fx').onclick=()=>{S.fx=!S.fx;ui()};
+$('modes').onclick=e=>{const b=e.target.closest('button[data-m]');if(!b)return;S.mode=b.dataset.m;ui()};
 $('ai').onclick=async()=>{S.ai=!S.ai;ui();if(running){await stop(true);start()}};
 $('ns').onclick=async()=>{S.ns=!S.ns;ui();if(running){await stop(true);start()}};
 $('mic').onchange=async e=>{S.mic=e.target.value;save();if(running){await stop(true);start()}};
@@ -304,17 +321,21 @@ async function start(){
   hp=mk('highpass',90,.707);
   const sum=ctx.createGain();sum.gain.value=.85;
   bG=BF.map(f=>{const bp=mk('bandpass',f,2.4),g=ctx.createGain();hp.connect(bp);bp.connect(g);g.connect(sum);return g});
-  pres=mk('peaking',2800,.9);
+  pres=mk('peaking',2800,.9);shelf=mk('highshelf',3500,.707);
+  // parlaklık üretici (exciter): orta frekanslardan yeni tiz harmonikler türetir
+  const exH=mk('highpass',1400,.707),exS=ctx.createWaveShaper(),exH2=mk('highpass',2800,.707),join=ctx.createGain();exG=ctx.createGain();
+  {const c=new Float32Array(1024);for(let i=0;i<1024;i++){const x=i/511.5-1;c[i]=Math.tanh(4*x)}exS.curve=c;exS.oversample='2x'}
+  const exPre=ctx.createGain();exPre.gain.value=4;
   dly=ctx.createDelay(.2);dly.delayTime.value=.05;
   gate=ctx.createGain();
-  comp=ctx.createDynamicsCompressor();comp.threshold.value=-30;comp.knee.value=12;comp.ratio.value=3;comp.attack.value=.01;comp.release.value=.25;
+  comp=ctx.createDynamicsCompressor();comp.threshold.value=-30;comp.knee.value=12;comp.ratio.value=3;comp.attack.value=.008;comp.release.value=.3;
   mk2=ctx.createGain();
   lim=ctx.createDynamicsCompressor();lim.threshold.value=-6;lim.knee.value=0;lim.ratio.value=20;lim.attack.value=.001;lim.release.value=.1;
   out=ctx.createGain();dry=ctx.createGain();wet=ctx.createGain();
   an=ctx.createAnalyser();an.fftSize=2048;an.smoothingTimeConstant=.4;
   const lp=mk('lowpass',1000,.707);anP=ctx.createAnalyser();anP.fftSize=2048;
   head.connect(an);head.connect(lp);lp.connect(anP);
-  head.connect(hp);sum.connect(pres);pres.connect(dly);dly.connect(gate);gate.connect(comp);comp.connect(wet);
+  head.connect(hp);sum.connect(pres);pres.connect(shelf);shelf.connect(join);shelf.connect(exH);exH.connect(exPre);exPre.connect(exS);exS.connect(exH2);exH2.connect(exG);exG.connect(join);join.connect(dly);dly.connect(gate);gate.connect(comp);comp.connect(wet);
   src.connect(dry);wet.connect(out);dry.connect(out);out.connect(mk2);mk2.connect(lim);lim.connect(ctx.destination);
   out.gain.value=1;
   fd=null;frames=0;gateOpen=1;gains.fill(1);
@@ -344,7 +365,7 @@ function draw(){
   requestAnimationFrame(draw);if(!W)return;
   cx.clearRect(0,0,W,H);
   cx.font='500 11px Inter';cx.textBaseline='middle';
-  for(const f of[100,150,200,300]){const y=yOf(f);cx.fillStyle='#2a2130';cx.fillRect(0,y,W,1);cx.fillStyle='#6d5e68';cx.textAlign='right';cx.fillText(f+' Hz',W-32,y-8)}
+  if(running||voices.length)for(const f of[100,150,200,300]){const y=yOf(f);cx.fillStyle='#2a2130';cx.fillRect(0,y,W,1);cx.fillStyle='#6d5e68';cx.textAlign='right';cx.fillText(f+' Hz',W-32,y-8)}
   voices.forEach((v,i)=>{const[l,h]=range(v),y0=yOf(h),y1=yOf(l);
     cx.globalAlpha=v.st===1?.28:v.st===-1?.07:.13;cx.fillStyle=v.col;cx.fillRect(0,y0,W,y1-y0);
     cx.globalAlpha=1;if(v.st===1){cx.strokeStyle=v.col;cx.lineWidth=2;cx.strokeRect(1,y0,W-2,y1-y0)}
