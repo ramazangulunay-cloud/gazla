@@ -28,11 +28,15 @@ h1{font:700 26px/1.05 Unbounded,sans-serif;margin:0}
 .mic span{font-size:13px;color:var(--mute);flex:none}
 select{flex:1;height:46px;border:0;background:transparent;color:var(--ink);font:500 16px Inter;padding:0 6px;appearance:none;-webkit-appearance:none;text-overflow:ellipsis}
 select option{background:var(--panel)}
-.map{position:relative;height:clamp(240px,46vh,380px);background:#0c080e;border:1px solid var(--line);border-radius:20px;overflow:hidden;touch-action:manipulation}
+.map{position:relative;height:clamp(260px,50vh,420px);background:#0c080e;border:1px solid var(--line);border-radius:20px;overflow:hidden;touch-action:none;cursor:crosshair}
 .map canvas{position:absolute;inset:0;width:100%;height:100%}
 .map .empty{position:absolute;inset:0;display:grid;place-content:center;text-align:center;padding:24px;color:var(--mute);font-size:15px;pointer-events:none}
 .map .empty b{display:block;font:600 18px/1.3 Unbounded,sans-serif;color:var(--ink);margin-bottom:6px}
 .map .empty[hidden]{display:none}
+.sel{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:-6px;font-size:14px}
+.sel[hidden]{display:none}
+.sel button{height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink);font:500 13px Inter;cursor:pointer;flex:none}
+.dotc{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
 #go{height:56px;border:0;border-radius:999px;background:var(--acc);color:#1a0d0c;font:600 17px Inter;cursor:pointer}
 .on-go #go{background:var(--ink);color:var(--bg)}
 .hint{font-size:14px;color:var(--mute);text-align:center;margin:-4px 0 0;min-height:21px}
@@ -88,8 +92,9 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 
   <div class="map" id="map">
     <canvas id="cv"></canvas>
-    <div class="empty" id="empty"><div><b>Ses haritası</b>Konuşan her kişi burada kendi renginde bir şerit olarak belirir. Kalın sesler aşağıda, ince sesler yukarıda.</div></div>
+    <div class="empty" id="empty"><div><b>Canlı ses dalgası</b>Dinle'ye bas. Sesler soldan sağa akar: kalın sesler aşağıda, tiz sesler yukarıda. İstediğin sese parmağınla dokun, sadece o sesi vereyim.</div></div>
   </div>
+  <div class="sel" id="sel" hidden><span id="selt"></span><button type="button" id="selx">Seçimi kaldır</button></div>
 
   <button id="go" type="button">Dinle</button>
   <p class="hint" id="hint">Kulaklığı tak, Dinle'ye bas.</p>
@@ -132,7 +137,7 @@ const MODE={
 try{const o=JSON.parse(localStorage.getItem('odak4')||'{}');Object.assign(S,o)}catch(e){}
 let sT=0;const save=()=>{clearTimeout(sT);sT=setTimeout(()=>{try{localStorage.setItem('odak4',JSON.stringify(S))}catch(e){}},400)};
 
-let ctx,src,stream,an,anP,hp,pres,shelf,exG,dly,gate,comp,mk2,lim,out,dry,wet,wl,rn=null,rnOn=false,timer=0,running=false;
+let ctx,src,stream,an,anP,hp,bHP,bLP,pres,shelf,exG,dly,gate,comp,mk2,lim,out,dry,wet,wl,rn=null,rnOn=false,timer=0,running=false;
 const NSU='https://cdn.jsdelivr.net/npm/@sapphi-red/web-noise-suppressor@0.4.1/dist/';let rnLib=null,rnBin=null,rnMod=false;
 async function loadRN(){
   if(!rnLib)rnLib=await import(NSU+'index.js');
@@ -174,8 +179,8 @@ $('modes').onclick=e=>{const b=e.target.closest('button[data-m]');if(!b)return;S
 $('ai').onclick=async()=>{S.ai=!S.ai;ui();if(running){await stop(true);start()}};
 $('ns').onclick=async()=>{S.ns=!S.ns;ui();if(running){await stop(true);start()}};
 $('mic').onchange=async e=>{S.mic=e.target.value;save();if(running){await stop(true);start()}};
-$('rst').onclick=()=>{voices=[];trail=[];seg=null;renderVoices()};
-const hint=s=>{if($('hint').textContent!==s)$('hint').textContent=s};
+$('rst').onclick=()=>{voices=[];trail=[];seg=null;selMark=null;renderVoices()};
+let hintLock=0;const hint=s=>{if($('hint').textContent!==s)$('hint').textContent=s;hintLock=performance.now()+2500};
 
 /* ---------- mikrofon seçimi ---------- */
 const BAD=/bluetooth|headset|hands.?free|kulakl|airpods|buds|wired|usb|sco|bt\b/i;
@@ -246,7 +251,7 @@ function renderVoices(){
     <div class="meter"><i data-k="m"></i></div>
     <div class="seg"><button type="button" data-s="1" class="${v.st===1?'sel':''}">Odakla</button><button type="button" data-s="0" class="${v.st===0?'sel':''}">Normal</button><button type="button" data-s="-1" class="${v.st===-1?'sel mu':''}">Sustur</button></div></div>`).join('');
   $('rst').hidden=!voices.length;$('empty').hidden=!!voices.length||running;
-  live();
+  live();showSel();
 }
 $('voices').onclick=e=>{const b=e.target.closest('button[data-s]');if(!b)return;const v=voices.find(x=>x.id==+b.closest('.v').dataset.id);if(!v)return;
   const s=+b.dataset.s;if(s===1)voices.forEach(x=>{if(x.st===1)x.st=0});v.st=s;renderVoices()};
@@ -295,8 +300,8 @@ function analyse(){
   }else if(seg&&now-lastVoiced>220)endSeg();
   curC=voiced?matchFrame(f):null;
   for(const v of voices)v.act=v===curC?1:v.act*.9;
-  trail.push({f:curF,c:curC?curC.col:null,l:L-floorDb,t:now});
-  while(trail.length&&now-trail[0].t>6000)trail.shift();
+  trail.push({f:curF,c:curC?curC.col:null,v:curC,b:bri,L,t:dispNow});
+  while(trail.length&&dispNow-trail[0].t>6500)trail.shift();
   const foc=voices.find(v=>v.st===1),mut=voices.some(v=>v.st===-1),fl2=10**(-S.fo/20);
   let want=1;
   if(foc){if(curC===foc)holdT=now+450;want=now<holdT?1:fl2}
@@ -311,7 +316,7 @@ function analyse(){
   if(want!==gateOpen){gate.gain.setTargetAtTime(want,t,want>gateOpen?.02:.18);gateOpen=want}
   frames++;
   if(frames%8===0){live();
-    hint(curNear?'Aynı odadan ses kısılıyor':foc?'Odak: '+String.fromCharCode(65+voices.indexOf(foc))+' sesi, diğerleri kısılıyor':mut?'Susturulan sesler kısılıyor':voices.length?'Dinlemek istediğin sese Odakla, istemediğine Sustur de':'Dinleniyor… biri konuştukça burada belirir')}
+    if(performance.now()>hintLock)hint(curNear?'Aynı odadan ses kısılıyor':foc?'Odak: '+String.fromCharCode(65+voices.indexOf(foc))+' sesi, diğerleri kısılıyor':mut?'Susturulan sesler kısılıyor':voices.length?'Dinlemek istediğin sese Odakla, istemediğine Sustur de':'Dinleniyor… biri konuştukça burada belirir')}
 }
 
 /* ---------- başlat / durdur ---------- */
@@ -335,6 +340,7 @@ async function start(){
   hp=mk('highpass',90,.707);
   const sum=ctx.createGain();sum.gain.value=.85;
   bG=BF.map(f=>{const bp=mk('bandpass',f,2.4),g=ctx.createGain();hp.connect(bp);bp.connect(g);g.connect(sum);return g});
+  bHP=mk('highpass',band?band[0]:20,.707);bLP=mk('lowpass',band?band[1]:20000,.707);
   pres=mk('peaking',2800,.9);shelf=mk('highshelf',3500,.707);
   // parlaklık üretici (exciter): orta frekanslardan yeni tiz harmonikler türetir
   const exH=mk('highpass',1400,.707),exS=ctx.createWaveShaper(),exH2=mk('highpass',2800,.707),join=ctx.createGain();exG=ctx.createGain();
@@ -346,10 +352,10 @@ async function start(){
   mk2=ctx.createGain();
   lim=ctx.createDynamicsCompressor();lim.threshold.value=-6;lim.knee.value=0;lim.ratio.value=20;lim.attack.value=.001;lim.release.value=.1;
   out=ctx.createGain();dry=ctx.createGain();wet=ctx.createGain();
-  an=ctx.createAnalyser();an.fftSize=2048;an.smoothingTimeConstant=.4;
+  an=ctx.createAnalyser();an.fftSize=2048;an.smoothingTimeConstant=.4;an.minDecibels=-100;an.maxDecibels=-28;
   const lp=mk('lowpass',1000,.707);anP=ctx.createAnalyser();anP.fftSize=2048;
   head.connect(an);head.connect(lp);lp.connect(anP);
-  head.connect(hp);sum.connect(pres);pres.connect(shelf);shelf.connect(join);shelf.connect(exH);exH.connect(exPre);exPre.connect(exS);exS.connect(exH2);exH2.connect(exG);exG.connect(join);join.connect(dly);dly.connect(gate);gate.connect(comp);comp.connect(wet);
+  head.connect(hp);sum.connect(pres);pres.connect(shelf);shelf.connect(join);shelf.connect(exH);exH.connect(exPre);exPre.connect(exS);exS.connect(exH2);exH2.connect(exG);exG.connect(join);join.connect(bHP);bHP.connect(bLP);bLP.connect(dly);dly.connect(gate);gate.connect(comp);comp.connect(wet);
   src.connect(dry);wet.connect(out);dry.connect(out);out.connect(mk2);mk2.connect(lim);lim.connect(ctx.destination);
   out.gain.value=1;
   fd=null;frames=0;gateOpen=1;gains.fill(1);
@@ -370,34 +376,82 @@ async function stop(keep){
 }
 $('go').onclick=()=>running?stop():start();
 
-/* ---------- ses haritası ---------- */
-const cv=$('cv'),cx=cv.getContext('2d'),map=$('map');let W=0,H=0;
-function size(){const d=devicePixelRatio||1;W=map.clientWidth;H=map.clientHeight;cv.width=W*d;cv.height=H*d;cx.setTransform(d,0,0,d,0,0)}
+/* ---------- hareketli ses dalgası (spektrogram) ---------- */
+const cv=$('cv'),cx=cv.getContext('2d'),map=$('map'),sp=document.createElement('canvas'),sx=sp.getContext('2d');
+const FLO=80,FHI=8000,WIN=6;
+let W=0,H=0,DPR=1,pps=60,acc=0,lastT=0,rowBin=null,rowHi=null,img=null,LUT=null,freeze=false,drag=null,selMark=null,band=null;
+function size(){DPR=devicePixelRatio||1;W=map.clientWidth;H=map.clientHeight;cv.width=W*DPR;cv.height=H*DPR;cx.setTransform(DPR,0,0,DPR,0,0);
+  const old=sp.width?sp:null,ow=sp.width,oh=sp.height;let keep=null;if(old&&ow&&oh){keep=document.createElement('canvas');keep.width=ow;keep.height=oh;keep.getContext('2d').drawImage(sp,0,0)}
+  sp.width=Math.round(W*DPR);sp.height=Math.round(H*DPR);sx.fillStyle='#0c080e';sx.fillRect(0,0,sp.width,sp.height);if(keep)sx.drawImage(keep,0,0,sp.width,sp.height);
+  pps=W/WIN;rowBin=null}
 new ResizeObserver(size).observe(map);size();
-const yOf=f=>H-18-(H-36)*Math.log(f/PMIN)/Math.log(PMAX/PMIN);
-function draw(){
+const yOf=f=>H*(1-Math.log(f/FLO)/Math.log(FHI/FLO));
+const fOfY=y=>FLO*(FHI/FLO)**(1-Math.max(0,Math.min(H,y))/H);
+{LUT=new Uint8ClampedArray(256*3);const st=[[0,[12,8,14]],[.35,[70,24,60]],[.6,[200,60,70]],[.8,[255,140,90]],[1,[255,240,215]]];
+ for(let i=0;i<256;i++){const v=i/255;let k=0;while(k<st.length-2&&v>st[k+1][0])k++;const[a,ca]=st[k],[b,cb]=st[k+1],u=(v-a)/(b-a);for(let c=0;c<3;c++)LUT[i*3+c]=ca[c]+(cb[c]-ca[c])*u}}
+let sbuf=null,dispNow=performance.now();
+function column(n){
+  const h=sp.height;
+  if(!rowBin||rowBin.length!==h){rowBin=new Uint16Array(h);rowHi=new Uint16Array(h);const ny=ctx.sampleRate/2,bc=an.frequencyBinCount;for(let y=0;y<h;y++){const a=Math.min(bc-1,Math.floor(fOfY((y+.5)/DPR)/ny*bc)),b=Math.min(bc-1,Math.ceil(fOfY((y-.5)/DPR)/ny*bc));rowBin[y]=Math.min(a,b);rowHi[y]=Math.max(a,b)}}
+  if(!sbuf||sbuf.length!==an.frequencyBinCount)sbuf=new Uint8Array(an.frequencyBinCount);
+  an.getByteFrequencyData(sbuf);
+  if(!img||img.width!==n||img.height!==h)img=sx.createImageData(n,h);
+  const d=img.data;
+  for(let y=0;y<h;y++){let v=0;for(let j=rowBin[y];j<=rowHi[y];j++)if(sbuf[j]>v)v=sbuf[j];v=Math.min(255,Math.max(0,(v-30)*1.4));const o=v*3;for(let x=0;x<n;x++){const p=(y*n+x)*4;d[p]=LUT[o];d[p+1]=LUT[o+1];d[p+2]=LUT[o+2];d[p+3]=255}}
+  sx.drawImage(sp,-n,0);sx.putImageData(img,sp.width-n,0);
+}
+function draw(now){
   requestAnimationFrame(draw);if(!W)return;
-  cx.clearRect(0,0,W,H);
-  cx.font='500 11px Inter';cx.textBaseline='middle';
-  if(running||voices.length)for(const f of[100,150,200,300]){const y=yOf(f);cx.fillStyle='#2a2130';cx.fillRect(0,y,W,1);cx.fillStyle='#6d5e68';cx.textAlign='right';cx.fillText(f+' Hz',W-32,y-8)}
-  voices.forEach((v,i)=>{const[l,h]=range(v),y0=yOf(h),y1=yOf(l);
-    cx.globalAlpha=v.st===1?.28:v.st===-1?.07:.13;cx.fillStyle=v.col;cx.fillRect(0,y0,W,y1-y0);
-    cx.globalAlpha=1;if(v.st===1){cx.strokeStyle=v.col;cx.lineWidth=2;cx.strokeRect(1,y0,W-2,y1-y0)}
-    const ly=(y0+y1)/2;cx.beginPath();cx.arc(20,ly,12,0,7);cx.fillStyle=v.st===-1?'#4a3a44':v.col;cx.fill();
-    cx.fillStyle=v.st===-1?'#f6efe9':'#120d14';cx.font='700 13px Inter';cx.textAlign='center';cx.fillText(String.fromCharCode(65+i),20,ly+1);
-    if(v.st===-1){cx.strokeStyle='#f6efe9';cx.lineWidth=2;cx.beginPath();cx.moveTo(10,ly+10);cx.lineTo(30,ly-10);cx.stroke()}
-    cx.font='500 11px Inter'});
-  const now=performance.now();
-  for(const p of trail){if(!p.f)continue;const age=(now-p.t)/6000,x=40+(W-64)*(1-age),r=Math.max(1.5,Math.min(5,p.l/6));
-    cx.globalAlpha=Math.max(.15,1-age);cx.fillStyle=p.c||'#8a7a84';cx.beginPath();cx.arc(x,yOf(p.f),r,0,7);cx.fill()}
-  cx.globalAlpha=1;
-  if(running){const x=W-22;cx.fillStyle='#33283a';cx.fillRect(x,14,2,H-28);
-    if(curF){cx.beginPath();cx.arc(x+1,yOf(curF),7,0,7);cx.fillStyle=curC?curC.col:'#f6efe9';cx.fill()}}
+  const dt=Math.min(100,now-(lastT||now));lastT=now;
+  if(!freeze){dispNow+=dt;if(running&&an){acc+=dt/1000*pps*DPR;const n=Math.floor(acc);if(n>0){acc-=n;column(Math.min(n,sp.width))}}}
+  cx.clearRect(0,0,W,H);cx.drawImage(sp,0,0,W,H);
+  // bölge seçimi
+  const B=drag&&drag.band?[fOfY(Math.max(drag.y0,drag.y1)),fOfY(Math.min(drag.y0,drag.y1))]:band;
+  if(B){const y0=yOf(B[1]),y1=yOf(B[0]);cx.fillStyle='rgba(12,8,14,.6)';cx.fillRect(0,0,W,y0);cx.fillRect(0,y1,W,H-y1);
+    cx.strokeStyle='#ff5a4e';cx.lineWidth=2;cx.strokeRect(1,y0,W-2,y1-y0);
+    cx.fillStyle='#ff5a4e';cx.font='600 12px Inter';cx.textAlign='right';cx.textBaseline='bottom';cx.fillText(fmt(B[0])+' – '+fmt(B[1]),W-10,y0-4>14?y0-4:y0+16)}
+  // ölçek
+  cx.font='500 11px Inter';cx.textAlign='left';cx.textBaseline='middle';
+  for(const f of[100,250,500,1000,2000,4000]){const y=yOf(f);cx.fillStyle='rgba(246,239,233,.12)';cx.fillRect(34,y,W-34,1);cx.fillStyle='rgba(246,239,233,.55)';cx.fillText(f>=1000?f/1000+'k':f,6,y)}
+  // ses tonu izi (kişi renkleri)
+  for(const p of trail){if(!p.f)continue;const x=W-(dispNow-p.t)/1000*pps;if(x<0)continue;cx.fillStyle=p.c||'rgba(246,239,233,.6)';cx.beginPath();cx.arc(x,yOf(p.f),2.4,0,7);cx.fill()}
+  // dokunma işareti
+  if(selMark){const x=W-(dispNow-selMark.t)/1000*pps;if(x>-20){cx.strokeStyle='#f6efe9';cx.lineWidth=2;cx.beginPath();cx.arc(x,selMark.y,14,0,7);cx.stroke();cx.beginPath();cx.moveTo(x,0);cx.lineTo(x,H);cx.setLineDash([4,5]);cx.stroke();cx.setLineDash([])}}
+  if(drag&&!drag.band){cx.strokeStyle='#f6efe9';cx.lineWidth=2;cx.beginPath();cx.arc(drag.x0,drag.y0,16,0,7);cx.stroke()}
+  if(freeze){cx.fillStyle='rgba(18,13,20,.75)';cx.fillRect(W/2-58,10,116,26);cx.fillStyle='#f6efe9';cx.font='600 12px Inter';cx.textAlign='center';cx.textBaseline='middle';cx.fillText('Durduruldu',W/2,23)}
 }
 requestAnimationFrame(draw);
-map.addEventListener('click',e=>{const r=map.getBoundingClientRect(),y=e.clientY-r.top;
-  const v=voices.find(v=>{const[l,h]=range(v);return y>=yOf(h)&&y<=yOf(l)});if(!v)return;
-  const was=v.st===1;voices.forEach(x=>{if(x.st===1)x.st=0});v.st=was?0:1;renderVoices()});
+function fmt(f){return f>=1000?(f/1000).toFixed(1).replace('.',',')+' kHz':Math.round(f)+' Hz'}
+function setBand(b){band=b;if(ctx&&bHP){const t=ctx.currentTime;bHP.frequency.setTargetAtTime(b?b[0]:20,t,.03);bLP.frequency.setTargetAtTime(b?b[1]:20000,t,.03)}showSel()}
+function showSel(){
+  const foc=voices.find(v=>v.st===1),parts=[];
+  if(foc)parts.push('<span class="dotc" style="background:'+foc.col+'"></span>'+String.fromCharCode(65+voices.indexOf(foc))+' sesi');
+  if(band)parts.push(fmt(band[0])+' – '+fmt(band[1]));
+  $('sel').hidden=!parts.length;$('selt').innerHTML='Seçili: '+parts.join(' · ');
+}
+$('selx').onclick=()=>{voices.forEach(v=>{if(v.st===1)v.st=0});selMark=null;setBand(null);renderVoices()};
+function pickAt(x,y){
+  const tt=dispNow-(W-x)/pps*1000;
+  const fr=trail.filter(p=>p.f&&Math.abs(p.t-tt)<400);
+  if(fr.length<3){hint('O anda net bir konuşma yok. Renkli noktaların olduğu yere dokun.');return}
+  const cnt=new Map();for(const p of fr)if(p.v&&voices.includes(p.v))cnt.set(p.v,(cnt.get(p.v)||0)+1);
+  let v=null,bn=0;for(const[k,n]of cnt)if(n>bn){bn=n;v=k}
+  if(!v||bn<fr.length*.4){
+    const fs=fr.map(p=>p.f).sort((a,b)=>a-b),med=fs[fs.length>>1],avg=a=>a.reduce((s,x)=>s+x,0)/a.length;
+    if(voices.length>=6){voices.sort((a,b)=>a.time-b.time);voices.shift()}
+    const used=new Set(voices.map(q=>q.col));
+    v={id:nextId++,col:COL.find(c=>!used.has(c))||COL[0],f:med,sd:.12,cen:1000,lv:avg(fr.map(p=>p.L)),br:avg(fr.map(p=>p.b)),time:40,act:0,st:0};
+    voices.push(v);voices.sort((a,b)=>a.f-b.f);
+  }
+  voices.forEach(q=>{if(q.st===1)q.st=0});v.st=1;selMark={t:tt,y};renderVoices();
+  hint('Seçtiğin ses: '+String.fromCharCode(65+voices.indexOf(v))+'. O konuştukça duyacaksın.');
+}
+map.addEventListener('pointerdown',e=>{if(!running)return;const r=map.getBoundingClientRect();drag={x0:e.clientX-r.left,y0:e.clientY-r.top,y1:e.clientY-r.top,band:false};freeze=true;map.setPointerCapture(e.pointerId)});
+map.addEventListener('pointermove',e=>{if(!drag)return;const r=map.getBoundingClientRect();drag.y1=e.clientY-r.top;if(Math.abs(drag.y1-drag.y0)>18)drag.band=true});
+map.addEventListener('pointerup',()=>{if(!drag)return;const d=drag;drag=null;freeze=false;
+  if(d.band){const lo=fOfY(Math.max(d.y0,d.y1)),hi=fOfY(Math.min(d.y0,d.y1));setBand([lo,hi]);hint('Sadece '+fmt(lo)+' – '+fmt(hi)+' arası geçiyor')}
+  else pickAt(d.x0,d.y0)});
+map.addEventListener('pointercancel',()=>{drag=null;freeze=false});
 document.addEventListener('visibilitychange',async()=>{if(running&&document.visibilityState==='visible'){try{wl=await navigator.wakeLock?.request('screen')}catch(e){}}});
 ui();renderVoices();
 }
