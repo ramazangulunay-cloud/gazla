@@ -94,13 +94,13 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
   <button class="rst" id="rst" type="button" hidden>Sesleri sıfırla</button>
 
   <div class="card">
-    <div class="row"><label for="fo">Odak gücü</label><input id="fo" type="range" min="0" max="30" step="1" value="20"><output id="foo"></output></div>
-    <div class="row"><label for="nr">Gürültü azaltma</label><input id="nr" type="range" min="0" max="100" step="5" value="60"><output id="nro"></output></div>
+    <div class="row"><label for="fo">Odak gücü</label><input id="fo" type="range" min="0" max="24" step="1" value="12"><output id="foo"></output></div>
     <div class="row"><label for="cl">Netlik</label><input id="cl" type="range" min="0" max="12" step="1" value="5"><output id="clo"></output></div>
     <div class="row"><label for="v">Ses seviyesi</label><input id="v" type="range" min="0" max="6" step="0.1" value="2.5"><output id="vo"></output></div>
   </div>
 
   <div class="card">
+    <div class="tg"><div><span>Yapay zekâ gürültü temizleme</span><em id="aist">Konuşma dışındaki sesleri siler (RNNoise)</em></div><button class="sw" id="ai" aria-pressed="true" aria-label="Yapay zekâ gürültü temizleme"></button></div>
     <div class="tg"><div><span>Filtre</span><em>Kapatıp ham sesle karşılaştır</em></div><button class="sw" id="fx" aria-pressed="true" aria-label="Filtre"></button></div>
     <div class="tg"><div><span>Telefonun gürültü bastırması</span><em>Bazı telefonlarda uzak sesi de kısar, dene ve karar ver</em></div><button class="sw" id="ns" aria-pressed="false" aria-label="Telefonun gürültü bastırması"></button></div>
   </div>
@@ -117,11 +117,18 @@ const NB=14,BL=150,BH=7000;
 const BE=[...Array(NB+1)].map((_,i)=>BL*(BH/BL)**(i/NB));
 const BF=[...Array(NB)].map((_,i)=>Math.sqrt(BE[i]*BE[i+1]));
 const PMIN=70,PMAX=400;
-let S={fo:20,nr:60,cl:5,v:2.5,fx:true,ns:false,mic:''};
-try{const o=JSON.parse(localStorage.getItem('odak2')||'{}');Object.assign(S,o)}catch(e){}
-let sT=0;const save=()=>{clearTimeout(sT);sT=setTimeout(()=>{try{localStorage.setItem('odak2',JSON.stringify(S))}catch(e){}},400)};
+let S={fo:12,cl:5,v:2.5,fx:true,ns:false,ai:true,mic:''};
+try{const o=JSON.parse(localStorage.getItem('odak3')||'{}');Object.assign(S,o)}catch(e){}
+let sT=0;const save=()=>{clearTimeout(sT);sT=setTimeout(()=>{try{localStorage.setItem('odak3',JSON.stringify(S))}catch(e){}},400)};
 
-let ctx,src,stream,an,anP,hp,pres,dly,gate,comp,out,dry,wet,wl,timer=0,running=false;
+let ctx,src,stream,an,anP,hp,pres,dly,gate,comp,mk2,lim,out,dry,wet,wl,rn=null,rnOn=false,timer=0,running=false;
+const NSU='https://cdn.jsdelivr.net/npm/@sapphi-red/web-noise-suppressor@0.4.1/dist/';let rnLib=null,rnBin=null,rnMod=false;
+async function loadRN(){
+  if(!rnLib)rnLib=await import(NSU+'index.js');
+  if(!rnBin)rnBin=await rnLib.loadRnnoise({url:NSU+'rnnoise.wasm',simdUrl:NSU+'rnnoise_simd.wasm'});
+  if(!rnMod){await ctx.audioWorklet.addModule(NSU+'rnnoise/workletProcessor.js');rnMod=true}
+  return new rnLib.RnnoiseWorkletNode(ctx,{maxChannels:1,wasmBinary:rnBin});
+}
 let bG=[],fd,td,tp,dec,dif;
 const noise=new Float32Array(NB),gains=new Float32Array(NB).fill(1);
 let frames=0,floorDb=-60,gateOpen=1,holdT=0,curC=null,curF=0;
@@ -130,21 +137,21 @@ let voices=[],nextId=0,seg=null,lastVoiced=0,trail=[];
 /* ---------- arayüz ---------- */
 function ui(){
   $('foo').textContent=S.fo?'−'+S.fo+' dB':'Kapalı';
-  $('nro').textContent=S.nr?'%'+S.nr:'Kapalı';
   $('clo').textContent=S.cl?'+'+S.cl+' dB':'Kapalı';
   $('vo').textContent='×'+S.v.toFixed(1).replace('.',',');
-  for(const k of['fo','nr','cl','v'])$(k).value=S[k];
-  for(const k of['fx','ns'])$(k).setAttribute('aria-pressed',S[k]);
+  for(const k of['fo','cl','v'])$(k).value=S[k];
+  for(const k of['fx','ns','ai'])$(k).setAttribute('aria-pressed',S[k]);
   apply();save();
 }
 function apply(){
   if(!ctx||!out)return;const t=ctx.currentTime;
   pres.gain.setTargetAtTime(S.cl,t,.05);
-  out.gain.setTargetAtTime(S.v,t,.05);
+  mk2.gain.setTargetAtTime(S.v,t,.05);
   wet.gain.setTargetAtTime(S.fx?1:0,t,.04);dry.gain.setTargetAtTime(S.fx?0:1,t,.04);
 }
-for(const k of['fo','nr','cl','v'])$(k).oninput=e=>{S[k]=+e.target.value;ui()};
+for(const k of['fo','cl','v'])$(k).oninput=e=>{S[k]=+e.target.value;ui()};
 $('fx').onclick=()=>{S.fx=!S.fx;ui()};
+$('ai').onclick=async()=>{S.ai=!S.ai;ui();if(running){await stop(true);start()}};
 $('ns').onclick=async()=>{S.ns=!S.ns;ui();if(running){await stop(true);start()}};
 $('mic').onchange=async e=>{S.mic=e.target.value;save();if(running){await stop(true);start()}};
 $('rst').onclick=()=>{voices=[];trail=[];seg=null;renderVoices()};
@@ -237,15 +244,15 @@ function analyse(){
   let s=0;for(let i=td.length-1024;i<td.length;i++)s+=td[i]*td[i];
   const L=10*Math.log10(s/1024+1e-12);
   if(frames<8)floorDb=frames?Math.min(floorDb,L):L;else floorDb+=(L-floorDb)*(L<floorDb?.2:.003);
-  const bin=sr/an.fftSize,fl=10**(-(S.nr/100)*30/20);
+  const bin=sr/an.fftSize,fl=10**(-15/20);
   let pw=0,pc=0;
   for(let i=0;i<NB;i++){
     const a=Math.max(1,Math.floor(BE[i]/bin)),b=Math.max(a+1,Math.ceil(BE[i+1]/bin));let p=0;
     for(let j=a;j<b;j++)p+=10**(fd[j]/10);
     const BLv=10*Math.log10(p/(b-a)+1e-12);
     if(frames<8)noise[i]=frames?Math.min(noise[i],BLv):BLv;else noise[i]+=(BLv-noise[i])*(BLv<noise[i]?.2:.004);
-    const g=Math.min(1,Math.max(0,(BLv-noise[i]-3)/10)),tg=S.nr?fl+(1-fl)*g:1;
-    bG[i].gain.setTargetAtTime(tg,t,tg>gains[i]?.012:.09);gains[i]=tg;
+    const g=Math.min(1,Math.max(0,(BLv-noise[i]-3)/10)),tg=rnOn?1:fl+(1-fl)*g;
+    if(Math.abs(tg-gains[i])>.02){bG[i].gain.setTargetAtTime(tg,t,tg>gains[i]?.04:.25);gains[i]=tg}
     if(BF[i]>200&&BF[i]<4000){pw+=p;pc+=p*BF[i]}
   }
   const f=L>floorDb+5?pitch(tp,sr):0;
@@ -267,10 +274,10 @@ function analyse(){
   while(trail.length&&now-trail[0].t>6000)trail.shift();
   const foc=voices.find(v=>v.st===1),mut=voices.some(v=>v.st===-1),fl2=10**(-S.fo/20);
   let want=1;
-  if(foc){if(curC===foc)holdT=now+220;want=now<holdT?1:fl2}
-  else if(mut){if(curC&&curC.st===-1)holdT=now+160;want=now<holdT?fl2:1}
+  if(foc){if(curC===foc)holdT=now+450;want=now<holdT?1:fl2}
+  else if(mut){if(curC&&curC.st===-1)holdT=now+300;want=now<holdT?fl2:1}
   if(!S.fo)want=1;
-  gate.gain.setTargetAtTime(want,t,want>gateOpen?.008:.05);gateOpen=want;
+  if(want!==gateOpen){gate.gain.setTargetAtTime(want,t,want>gateOpen?.02:.18);gateOpen=want}
   frames++;
   if(frames%8===0){live();
     hint(foc?'Odak: '+String.fromCharCode(65+voices.indexOf(foc))+' sesi, diğerleri kısılıyor':mut?'Susturulan sesler kısılıyor':voices.length?'Dinlemek istediğin sese Odakla, istemediğine Sustur de':'Dinleniyor… biri konuştukça burada belirir')}
@@ -284,9 +291,15 @@ async function start(){
   }
   const d=await mics();
   if(!S.mic){const id=pickPhoneMic(d);if(id){stream.getTracks().forEach(x=>x.stop());try{stream=await getStream(id);S.mic=id;save()}catch(e){stream=await getStream('')}await mics()}}
-  ctx=ctx||new (window.AudioContext||window.webkitAudioContext)({latencyHint:'interactive'});
+  if(!ctx){try{ctx=new AudioContext({latencyHint:'interactive',sampleRate:48000})}catch(e){ctx=new (window.AudioContext||window.webkitAudioContext)({latencyHint:'interactive'})}}
   await ctx.resume();
   src=ctx.createMediaStreamSource(stream);
+  let head=src;rnOn=false;
+  if(S.ai){$('aist').textContent='Yükleniyor…';
+    if(ctx.sampleRate!==48000)$('aist').textContent='Bu cihazda çalışmıyor (48 kHz gerekli)';
+    else try{rn=await loadRN();src.connect(rn);head=rn;rnOn=true;$('aist').textContent='Açık: konuşma dışındaki sesler siliniyor'}
+    catch(e){rn=null;$('aist').textContent='Yüklenemedi, internet bağlantını kontrol et'}}
+  else $('aist').textContent='Kapalı';
   const mk=(type,f,q)=>{const n=ctx.createBiquadFilter();n.type=type;n.frequency.value=f;n.Q.value=q;return n};
   hp=mk('highpass',90,.707);
   const sum=ctx.createGain();sum.gain.value=.85;
@@ -294,14 +307,17 @@ async function start(){
   pres=mk('peaking',2800,.9);
   dly=ctx.createDelay(.2);dly.delayTime.value=.05;
   gate=ctx.createGain();
-  comp=ctx.createDynamicsCompressor();comp.threshold.value=-34;comp.knee.value=10;comp.ratio.value=6;comp.attack.value=.003;comp.release.value=.2;
+  comp=ctx.createDynamicsCompressor();comp.threshold.value=-30;comp.knee.value=12;comp.ratio.value=3;comp.attack.value=.01;comp.release.value=.25;
+  mk2=ctx.createGain();
+  lim=ctx.createDynamicsCompressor();lim.threshold.value=-6;lim.knee.value=0;lim.ratio.value=20;lim.attack.value=.001;lim.release.value=.1;
   out=ctx.createGain();dry=ctx.createGain();wet=ctx.createGain();
   an=ctx.createAnalyser();an.fftSize=2048;an.smoothingTimeConstant=.4;
   const lp=mk('lowpass',1000,.707);anP=ctx.createAnalyser();anP.fftSize=2048;
-  src.connect(an);src.connect(lp);lp.connect(anP);
-  src.connect(hp);sum.connect(pres);pres.connect(dly);dly.connect(gate);gate.connect(comp);comp.connect(wet);
-  src.connect(dry);wet.connect(out);dry.connect(out);out.connect(ctx.destination);
-  fd=null;frames=0;gateOpen=1;
+  head.connect(an);head.connect(lp);lp.connect(anP);
+  head.connect(hp);sum.connect(pres);pres.connect(dly);dly.connect(gate);gate.connect(comp);comp.connect(wet);
+  src.connect(dry);wet.connect(out);dry.connect(out);out.connect(mk2);mk2.connect(lim);lim.connect(ctx.destination);
+  out.gain.value=1;
+  fd=null;frames=0;gateOpen=1;gains.fill(1);
   running=true;apply();timer=setInterval(analyse,25);
   $('go').textContent='Durdur';document.body.classList.add('on-go');$('st').classList.add('on');$('stt').textContent='Canlı';$('empty').hidden=true;
   hint('Dinleniyor… biri konuştukça burada belirir');
@@ -312,7 +328,7 @@ async function start(){
 async function stop(keep){
   running=false;clearInterval(timer);if(seg)endSeg();
   stream?.getTracks().forEach(t=>t.stop());
-  try{src.disconnect();out.disconnect()}catch(e){}
+  try{src.disconnect();lim.disconnect();if(rn){rn.disconnect();rn.destroy();rn=null}}catch(e){}
   try{wl?.release()}catch(e){}
   $('go').textContent='Dinle';document.body.classList.remove('on-go');$('st').classList.remove('on');$('stt').textContent='Kapalı';
   if(!keep){hint('Kulaklığı tak, Dinle\'ye bas.');$('empty').hidden=!!voices.length}
