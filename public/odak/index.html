@@ -77,6 +77,16 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .sw[aria-pressed=true]{background:var(--acc)}.sw[aria-pressed=true]::after{transform:translateX(22px)}
 button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--acc2);outline-offset:3px}
 .note{font-size:13px;color:var(--mute);margin:0}
+.test{background:var(--panel);border:1px dashed #5a4b55;border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.test h2{margin:0;font:600 18px Unbounded,sans-serif}.test p{margin:0;font-size:14px;color:var(--mute)}
+.tn{font-size:13px;color:var(--mute)}
+#tnote{height:48px;border-radius:12px;border:1px solid var(--line);background:#0c080e;color:var(--ink);font:16px Inter;padding:0 12px}
+#trec{height:52px;border-radius:999px;border:1.5px solid var(--acc);background:transparent;color:var(--ink);font:600 16px Inter;cursor:pointer}
+#trec:disabled{opacity:.5}
+.tbar{height:6px;border-radius:3px;background:var(--line);overflow:hidden}.tbar i{display:block;height:100%;width:0;background:var(--acc)}
+.tdone{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:8px}.tdone[hidden]{display:none}
+.tdone button{height:48px;border-radius:999px;border:0;background:var(--ink);color:var(--bg);font:600 15px Inter;cursor:pointer}
+.tdone button[hidden]{display:none}
 .warn{background:#2a1517;border:1px solid #5b2a2a;border-radius:14px;padding:12px 14px;font-size:14px}
 @media(prefers-reduced-motion:reduce){.on .dot{animation:none}.sw::after{transition:none}.meter i{transition:none}}
 </style>
@@ -120,6 +130,17 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 
   <div class="warn">Telefonun alt ucunu (mikrofonu) dinlemek istediğin kişiye çevir. Kablolu kulaklık en az gecikmeyi verir. Kulaklığın kendi mikrofonu varsa yukarıdan telefonun mikrofonunu seç.</div>
   <p class="note" id="lat">Gecikme: —</p>
+
+  <section class="test" aria-labelledby="th">
+    <h2 id="th">Test</h2>
+    <p>20 saniyelik kayıt alır: mikrofondan gelen ham ses ve senin duyduğun işlenmiş ses, yanında da uygulamanın o an ne yaptığı. Dosyayı Claude sohbetine ekle, inceleyip düzelteyim.</p>
+    <label class="tn" for="tnote">Ne duymak istiyordun? (isteğe bağlı)</label>
+    <input id="tnote" type="text" maxlength="500" placeholder="Örn. bölmenin arkasındaki hocanın sesi, B şeridi">
+    <button id="trec" type="button">Test kaydı al</button>
+    <div class="tbar"><i id="tbar"></i></div>
+    <p class="note" id="tst">Kayıt sırasında ayarları istediğin gibi bırak, ne duyuyorsan o kaydedilir.</p>
+    <div class="tdone" id="tdone" hidden><button id="tshare" type="button">Paylaş</button><button id="tdl" type="button">İndir</button></div>
+  </section>
 </div>
 
 <script>
@@ -363,6 +384,7 @@ function analyse(){
   }
   if(S.near&&now<nearHold){const fl3=10**(-Math.max(S.fo,14)/20);want=Math.min(want,fl3)}
   if(want!==gateOpen){gate.gain.setTargetAtTime(want,t,want>gateOpen?.02:.18);gateOpen=want}
+  if(rec)rec.log.push([+((now-rec.t0)/1000).toFixed(3),Math.round(curF),curC?voices.indexOf(curC):-1,Math.round(bri),Math.round(L),Math.round(floorDb),tgtNow?1:0,curNear?1:0,+gateOpen.toFixed(2)]);
   frames++;
   if(frames%8===0){live();
     if(performance.now()>hintLock)hint(overlap?'Üst üste konuşma: seçtiğin ses ayrıştırılıyor':curNear?'Aynı odadan ses kısılıyor':foc?'Odak: '+String.fromCharCode(65+voices.indexOf(foc))+' sesi, diğerleri kısılıyor':mut?'Susturulan sesler kısılıyor':voices.length?'Dinlemek istediğin sese Odakla, istemediğine Sustur de':'Dinleniyor… biri konuştukça burada belirir')}
@@ -407,6 +429,7 @@ async function start(){
   head.connect(an);head.connect(lp);lp.connect(anP);
   head.connect(hp);sum.connect(pres);pres.connect(shelf);shelf.connect(join);shelf.connect(exH);exH.connect(exPre);exPre.connect(exS);exS.connect(exH2);exH2.connect(exG);exG.connect(join);join.connect(bHP);bHP.connect(bLP);if(comb){bLP.connect(comb);comb.connect(dly)}else bLP.connect(dly);dly.connect(gate);gate.connect(comp);comp.connect(wet);
   src.connect(dry);wet.connect(out);dry.connect(out);out.connect(mk2);mk2.connect(lim);lim.connect(ctx.destination);
+  try{await makeRec()}catch(e){recNode=null}
   out.gain.value=1;
   fd=null;frames=0;gateOpen=1;gains.fill(1);
   running=true;apply();timer=setInterval(analyse,25);
@@ -419,7 +442,7 @@ async function start(){
 async function stop(keep){
   running=false;clearInterval(timer);if(seg)endSeg();
   stream?.getTracks().forEach(t=>t.stop());
-  try{src.disconnect();lim.disconnect();if(rn){rn.disconnect();rn.destroy();rn=null}if(comb){comb.disconnect();comb=null}}catch(e){}
+  try{src.disconnect();lim.disconnect();if(rn){rn.disconnect();rn.destroy();rn=null}if(comb){comb.disconnect();comb=null}if(recNode){recNode.disconnect();recMerge.disconnect();recNode=null}}catch(e){}
   try{wl?.release()}catch(e){}
   $('go').textContent='Dinle';document.body.classList.remove('on-go');$('st').classList.remove('on');$('stt').textContent='Kapalı';
   if(!keep){hint('Kulaklığı tak, Dinle\'ye bas.');$('empty').hidden=!!voices.length}
@@ -502,6 +525,59 @@ map.addEventListener('pointerup',()=>{if(!drag)return;const d=drag;drag=null;fre
   if(d.band){const lo=fOfY(Math.max(d.y0,d.y1)),hi=fOfY(Math.min(d.y0,d.y1));setBand([lo,hi]);hint('Sadece '+fmt(lo)+' – '+fmt(hi)+' arası geçiyor')}
   else pickAt(d.x0,d.y0)});
 map.addEventListener('pointercancel',()=>{drag=null;freeze=false});
+
+/* ---------- test kaydı ---------- */
+const REC_SRC=`class Rec extends AudioWorkletProcessor{constructor(){super();this.on=false;this.port.onmessage=e=>{this.on=e.data}}
+process(ins){const i=ins[0];if(this.on&&i&&i.length){const a=i[0],b=i[1]||i[0];this.port.postMessage([a.slice(0),b.slice(0)])}return true}}
+registerProcessor('odak-rec',Rec);`;
+let recMod=false,recNode=null,recMerge=null,rec=null,recBlob=null,recName='';
+const REC_SEC=20;
+async function makeRec(){
+  if(!recMod){const u=URL.createObjectURL(new Blob([REC_SRC],{type:'application/javascript'}));await ctx.audioWorklet.addModule(u);recMod=true}
+  recMerge=ctx.createChannelMerger(2);
+  recNode=new AudioWorkletNode(ctx,'odak-rec',{numberOfInputs:1,numberOfOutputs:1,channelCount:2,channelCountMode:'explicit',outputChannelCount:[1]});
+  const z=ctx.createGain();z.gain.value=0;recMerge.connect(recNode);recNode.connect(z);z.connect(ctx.destination);
+  src.connect(recMerge,0,0);lim.connect(recMerge,0,1);
+}
+function wavBlob(L,R,sr,meta){
+  const n=L.reduce((a,x)=>a+x.length,0),js=new TextEncoder().encode(JSON.stringify(meta)),jl=js.length+(js.length&1);
+  const size=44+8+jl+n*4,buf=new ArrayBuffer(size),v=new DataView(buf);let o=0;
+  const w4=s=>{for(const c of s)v.setUint8(o++,c.charCodeAt(0))},u32=x=>{v.setUint32(o,x,true);o+=4},u16=x=>{v.setUint16(o,x,true);o+=2};
+  w4('RIFF');u32(size-8);w4('WAVE');w4('fmt ');u32(16);u16(1);u16(2);u32(sr);u32(sr*4);u16(4);u16(16);
+  w4('odak');u32(js.length);new Uint8Array(buf,o,js.length).set(js);o+=jl;
+  w4('data');u32(n*4);
+  for(let k=0;k<L.length;k++){const a=L[k],b=R[k];for(let i=0;i<a.length;i++){v.setInt16(o,Math.max(-1,Math.min(1,a[i]))*32767,true);v.setInt16(o+2,Math.max(-1,Math.min(1,b[i]))*32767,true);o+=4}}
+  return new Blob([buf],{type:'audio/wav'});
+}
+async function testRec(){
+  if(rec)return;
+  if(!running){await start();if(!running)return}
+  if(!recNode){$('tst').textContent='Bu cihazda kayıt alınamıyor.';return}
+  $('tdone').hidden=true;recBlob=null;
+  rec={L:[],R:[],log:[],t0:performance.now()};
+  recNode.port.onmessage=e=>{if(rec){rec.L.push(e.data[0]);rec.R.push(e.data[1])}};
+  recNode.port.postMessage(true);
+  $('trec').disabled=true;
+  const iv=setInterval(()=>{if(!rec){clearInterval(iv);return}const el=(performance.now()-rec.t0)/1000;
+    $('tbar').style.width=Math.min(100,el/REC_SEC*100)+'%';$('tst').textContent='Kaydediliyor… '+Math.min(REC_SEC,Math.floor(el))+' / '+REC_SEC+' sn';
+    if(el>=REC_SEC||!running){clearInterval(iv);finishRec()}},200);
+}
+function finishRec(){
+  recNode&&recNode.port.postMessage(false);
+  const r=rec;rec=null;$('trec').disabled=false;
+  if(!r||!r.L.length){$('tst').textContent='Kayıt alınamadı.';return}
+  const d=new Date(),p=x=>String(x).padStart(2,'0');
+  recName='odak-test-'+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'-'+p(d.getHours())+p(d.getMinutes())+'.wav';
+  const meta={v:7,when:d.toISOString(),note:$('tnote').value.slice(0,500),sr:ctx.sampleRate,mic:stream?.getAudioTracks()[0]?.label||'',ua:navigator.userAgent,
+    S,rnOn,comb:!!comb,briThr,floorDb,voices:voices.map((v,i)=>({k:String.fromCharCode(65+i),f:Math.round(v.f),sd:+v.sd.toFixed(3),br:Math.round(v.br),lv:Math.round(v.lv),cen:Math.round(v.cen),st:v.st,near:isNear(v),time:v.time,mf:v.mf?Array.from(v.mf,x=>+x.toFixed(2)):null})),
+    band,cols:['t','F0','voice','bri','L','floor','tgt','near','gate'],log:r.log};
+  recBlob=wavBlob(r.L,r.R,ctx.sampleRate,meta);
+  $('tst').textContent='Kayıt hazır ('+(recBlob.size/1048576).toFixed(1).replace('.',',')+' MB). Paylaş ya da indir, sonra dosyayı Claude sohbetine ekle.';
+  $('tdone').hidden=false;$('tshare').hidden=!(navigator.canShare&&navigator.canShare({files:[new File([recBlob],recName,{type:'audio/wav'})]}));
+}
+$('trec').onclick=testRec;
+$('tdl').onclick=()=>{if(!recBlob)return;const a=document.createElement('a');a.href=URL.createObjectURL(recBlob);a.download=recName;document.body.appendChild(a);a.click();a.remove()};
+$('tshare').onclick=async()=>{if(!recBlob)return;try{await navigator.share({files:[new File([recBlob],recName,{type:'audio/wav'})],title:'Odak test kaydı'})}catch(e){}};
 document.addEventListener('visibilitychange',async()=>{if(running&&document.visibilityState==='visible'){try{wl=await navigator.wakeLock?.request('screen')}catch(e){}}});
 ui();renderVoices();
 }
