@@ -32,7 +32,9 @@ h1{font:700 26px/1.05 Unbounded,sans-serif;margin:0;letter-spacing:-.01em}
 .rng{font-size:13px;color:var(--acc2);margin-top:6px;white-space:nowrap}
 .hint{font-size:14px;color:var(--mute);text-align:center;margin:0}
 .ctl{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:-8px}
-#go{width:100%;max-width:320px;border:0;border-radius:999px;background:var(--acc);color:#1a0d0c;font:600 16px Inter;padding:0 26px;height:52px;cursor:pointer}
+.btns{display:flex;gap:10px;width:100%;max-width:360px}
+#scan{flex:none;height:52px;padding:0 22px;border-radius:999px;border:1.5px solid var(--acc);background:transparent;color:var(--ink);font:600 16px Inter;cursor:pointer}
+#go{flex:1;border:0;border-radius:999px;background:var(--acc);color:#1a0d0c;font:600 16px Inter;padding:0 26px;height:52px;cursor:pointer}
 .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
 .chips button{flex:none;height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:500 14px Inter;cursor:pointer}
 .chips button.sel{background:var(--ink);color:var(--bg);border-color:var(--ink)}
@@ -73,7 +75,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--acc2);outline-o
       <div class="rng" id="rng">300 – 3400 Hz</div>
     </div>
   </div>
-  <div class="ctl"><button id="go">Dinlemeyi başlat</button><p class="hint" id="hint">Halkayı çevirerek titreşimi seç</p></div>
+  <div class="ctl"><div class="btns"><button id="scan" type="button" aria-label="Konuşan sesi tara">Tara</button><button id="go">Dinlemeyi başlat</button></div><p class="hint" id="hint">Halkayı çevirerek titreşimi seç</p></div>
 
   <div class="chips" id="chips"></div>
 
@@ -81,15 +83,16 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--acc2);outline-o
     <div class="row"><label for="w">Bant genişliği</label><input id="w" type="range" min="0.3" max="4" step="0.05" value="2"><output id="wo"></output></div>
     <div class="row"><label for="b">Odak gücü</label><input id="b" type="range" min="0" max="18" step="0.5" value="8"><output id="bo"></output></div>
     <div class="row"><label for="v">Ses seviyesi</label><input id="v" type="range" min="0" max="6" step="0.1" value="2"><output id="vo"></output></div>
-    <div class="row"><label for="g">Sessizlik kapısı</label><input id="g" type="range" min="0" max="40" step="1" value="0"><output id="go2"></output></div>
+    <div class="row"><label for="nr">Gürültü azaltma</label><input id="nr" type="range" min="0" max="100" step="5" value="60"><output id="nro"></output></div>
   </div>
 
   <div class="card">
+    <div class="tg"><div><span>Otomatik takip</span><em>Konuşan sese radyo gibi kendiliğinden kilitlenir</em></div><button class="sw" id="auto" aria-pressed="true" aria-label="Otomatik takip"></button></div>
     <div class="tg"><div><span>Filtre</span><em>Kapatıp ham sesle karşılaştır</em></div><button class="sw" id="fx" aria-pressed="true" aria-label="Filtre"></button></div>
     <div class="tg"><div><span>Gürültü bastırma</span><em>Telefonun kendi konuşma filtresi</em></div><button class="sw" id="ns" aria-pressed="false" aria-label="Gürültü bastırma"></button></div>
   </div>
 
-  <div class="warn">Kulaklık takmadan başlatma: hoparlörden çıkan ses mikrofona geri döner ve cızırtı yapar. Kablolu kulaklık Bluetooth'tan çok daha az gecikir.</div>
+  <div class="warn">Kulaklık takmadan başlatma: hoparlörden çıkan ses mikrofona geri döner ve cızırtı yapar. Kablolu kulaklık Bluetooth'tan çok daha az gecikir. Telefonun alt ucunu (mikrofonu) konuşan tarafa çevir.</div>
   <p class="note" id="lat">Gecikme: —</p>
 </div>
 
@@ -97,16 +100,24 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--acc2);outline-o
 {
 const $=id=>document.getElementById(id);
 const FMIN=80,FMAX=8000,START=Math.PI*2/3,SWEEP=Math.PI*5/3,N=96;
+const NB=14,BL=150,BH=7000;
+const BE=[...Array(NB+1)].map((_,i)=>BL*(BH/BL)**(i/NB));
+const BF=[...Array(NB)].map((_,i)=>Math.sqrt(BE[i]*BE[i+1]));
+const HL=60;
 const PRE=[
- {n:'Konuşma',c:1000,w:3.5},{n:'Erkek sesi',c:450,w:2.6},{n:'Kadın sesi',c:900,w:2.4},
- {n:'Çocuk sesi',c:1400,w:2.2},{n:'Netlik',c:2800,w:1.4},{n:'Uğultu kes',c:1700,w:2.8}];
-let S={c:1000,w:2,b:8,v:2,g:0,fx:true,ns:false,p:0};
-try{Object.assign(S,JSON.parse(localStorage.getItem('odak')||'{}'))}catch(e){}
-const save=()=>{try{localStorage.setItem('odak',JSON.stringify(S))}catch(e){}};
+ {n:'Amfi / ders',c:1100,w:3.2},{n:'Toplantı',c:1000,w:3},{n:'Erkek sesi',c:450,w:2.6},
+ {n:'Kadın sesi',c:900,w:2.4},{n:'Netlik',c:2800,w:1.4},{n:'Uğultu kes',c:1700,w:2.8}];
+let S={c:1100,w:3.2,b:6,v:2,nr:60,fx:true,ns:false,auto:true};
+try{const o=JSON.parse(localStorage.getItem('odak')||'{}');delete o.g;Object.assign(S,o)}catch(e){}
+let saveT=0;const save=()=>{clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem('odak',JSON.stringify(S))}catch(e){}},400)};
 
-let ctx,src,stream,an,anOut,hp1,hp2,lp1,lp2,pk,comp,gate,out,dry,wet,wl,running=false;
-const fmt=f=>f>=1000?(f/1000).toFixed(f>=10000?0:1).replace('.',',')+' kHz':Math.round(f)+' Hz';
+let ctx,src,stream,an,anOut,hp1,hp2,lp1,lp2,pk,comp,out,dry,wet,wl,running=false;
+let bG=[],fd,noise=new Float32Array(NB),lvl=new Float32Array(NB),gains=new Float32Array(NB).fill(1),score=new Float32Array(NB);
+let hist=[...Array(NB)].map(()=>new Float32Array(HL)),hi=0,frames=0,speech=false,lockMsg=0,anim=null,lastAuto=0,timer=0;
+const fmt=f=>f>=1000?(f/1000).toFixed(1).replace('.',',')+' kHz':Math.round(f)+' Hz';
 const band=()=>{const h=2**(S.w/2);return[Math.max(40,S.c/h),Math.min(16000,S.c*h)]};
+const tOf=f=>Math.log(f/FMIN)/Math.log(FMAX/FMIN);
+const fOf=t=>FMIN*(FMAX/FMIN)**t;
 
 function ui(){
   const[l,h]=band();
@@ -115,15 +126,15 @@ function ui(){
   $('wo').textContent=S.w.toFixed(1).replace('.',',')+' okt';
   $('bo').textContent='+'+S.b+' dB';
   $('vo').textContent='×'+S.v.toFixed(1).replace('.',',');
-  $('go2').textContent=S.g?S.g+'%':'Kapalı';
-  for(const k of['w','b','v','g'])$(k).value=S[k];
-  $('fx').setAttribute('aria-pressed',S.fx);$('ns').setAttribute('aria-pressed',S.ns);
+  $('nro').textContent=S.nr?'%'+S.nr:'Kapalı';
+  for(const k of['w','b','v','nr'])$(k).value=S[k];
+  for(const k of['fx','ns','auto'])$(k).setAttribute('aria-pressed',S[k]);
   document.querySelectorAll('#chips button').forEach((b,i)=>b.classList.toggle('sel',PRE[i].c===S.c&&PRE[i].w===S.w));
   apply();save();
 }
 function apply(){
   if(!ctx)return;
-  const t=ctx.currentTime,[l,h]=band(),r=x=>.03;
+  const t=ctx.currentTime,[l,h]=band();
   for(const f of[hp1,hp2])f.frequency.setTargetAtTime(l,t,.03);
   for(const f of[lp1,lp2])f.frequency.setTargetAtTime(h,t,.03);
   pk.frequency.setTargetAtTime(S.c,t,.03);
@@ -134,63 +145,131 @@ function apply(){
   dry.gain.setTargetAtTime(S.fx?0:1,t,.04);
 }
 $('chips').innerHTML=PRE.map(p=>`<button type="button">${p.n}</button>`).join('');
-document.querySelectorAll('#chips button').forEach((b,i)=>b.onclick=()=>{S.c=PRE[i].c;S.w=PRE[i].w;ui()});
-for(const k of['w','b','v','g'])$(k).oninput=e=>{S[k]=+e.target.value;ui()};
+document.querySelectorAll('#chips button').forEach((b,i)=>b.onclick=()=>{anim=null;S.c=PRE[i].c;S.w=PRE[i].w;S.auto=false;ui()});
+for(const k of['w','b','v','nr'])$(k).oninput=e=>{S[k]=+e.target.value;if(k==='w')S.auto=false;ui()};
 $('fx').onclick=()=>{S.fx=!S.fx;ui()};
+$('auto').onclick=()=>{S.auto=!S.auto;ui();if(S.auto&&running)seek(true)};
 $('ns').onclick=async()=>{S.ns=!S.ns;ui();if(running){await stop();start()}};
+$('scan').onclick=()=>{if(!running){hint('Önce dinlemeyi başlat');return}seek(true)};
+
+function hint(s){$('hint').textContent=s}
+
+/* ---- analiz: bant seviyeleri, gürültü tabanı, konuşma ritmi ---- */
+function analyse(){
+  if(!running)return;
+  if(!fd||fd.length!==an.frequencyBinCount)fd=new Float32Array(an.frequencyBinCount);
+  an.getFloatFrequencyData(fd);
+  const bin=ctx.sampleRate/an.fftSize,t=ctx.currentTime,floor=10**(-(S.nr/100)*30/20);
+  let act=0;
+  for(let i=0;i<NB;i++){
+    let a=Math.max(1,Math.floor(BE[i]/bin)),b=Math.max(a+1,Math.ceil(BE[i+1]/bin)),p=0;
+    for(let j=a;j<b;j++)p+=10**(fd[j]/10);
+    const L=10*Math.log10(p/(b-a)+1e-12);
+    lvl[i]=L;
+    if(frames<8)noise[i]=frames?Math.min(noise[i],L):L;
+    else noise[i]+=(L-noise[i])*(L<noise[i]?.2:.004);
+    const H=hist[i];H[hi]=L;
+    let m=0;for(const x of H)m+=x;m/=HL;let v=0;for(const x of H)v+=(x-m)**2;
+    const sd=Math.sqrt(v/HL);
+    score[i]=frames>HL&&m-noise[i]>4?sd:0;
+    if(BF[i]>250&&BF[i]<3500&&score[i]>4.5&&L-noise[i]>6)act++;
+    const g=Math.min(1,Math.max(0,(L-noise[i]-3)/10));
+    const tg=S.nr?floor+(1-floor)*g:1;
+    bG[i].gain.setTargetAtTime(tg,t,tg>gains[i]?.012:.09);
+    gains[i]=tg;
+  }
+  hi=(hi+1)%HL;frames++;
+  speech=act>=2;
+  const now=performance.now();
+  if(S.auto&&!anim&&speech&&now-lastAuto>2500&&frames>HL){lastAuto=now;seek(false)}
+  if(!anim&&now>lockMsg)hint(S.auto?(speech?'Konuşmacı takip ediliyor':'Konuşma bekleniyor…'):'Halkayı çevirerek titreşimi seç');
+}
+
+/* ---- radyo gibi tarama: en güçlü konuşma bandını bul ---- */
+function best(){
+  const K=5;let bs=-1,bv=0;
+  for(let s=0;s+K<=NB;s++){if(BF[s]<160||BF[s+K-1]>4800)continue;let v=0;for(let j=s;j<s+K;j++)v+=score[j];if(v>bv){bv=v;bs=s}}
+  if(bs<0||bv<14)return null;
+  let pkI=bs;for(let j=bs;j<bs+K;j++)if(score[j]>score[pkI])pkI=j;
+  let l=bs,r=bs+K-1;const th=score[pkI]*.45;
+  while(l>0&&score[l-1]>th)l--;while(r<NB-1&&score[r+1]>th)r++;
+  const lo=BE[l],hi2=BE[r+1];
+  return{c:Math.sqrt(lo*hi2),w:Math.min(3.6,Math.max(1.4,Math.log2(hi2/lo)))};
+}
+function seek(full){
+  const b=best();
+  if(!b){if(full){hint('Net bir konuşma bulunamadı, biri konuşurken tekrar dene');lockMsg=performance.now()+2500}return}
+  const t0=tOf(S.c),t1=tOf(b.c);
+  if(!full&&Math.abs(t1-t0)<.04&&Math.abs(b.w-S.w)<.4)return;
+  anim={t0,t1,w0:S.w,w1:b.w,s:performance.now(),d:full?1300:700,full};
+  hint(full?'Taranıyor…':'Yeni konuşmacıya geçiliyor…');
+}
+function step(now){
+  if(!anim)return;
+  const k=Math.min(1,(now-anim.s)/anim.d);let t;
+  if(anim.full){
+    if(k<.35){const e=k/.35;t=anim.t0+(.04-anim.t0)*e*e}
+    else{const e=(k-.35)/.65,o=1-(1-e)**3,wob=Math.sin(e*Math.PI*3)*(1-e)*.03;t=.04+(anim.t1-.04)*o+wob}
+  }else{const o=1-(1-k)**3;t=anim.t0+(anim.t1-anim.t0)*o}
+  S.c=Math.round(fOf(Math.max(0,Math.min(1,t))));S.w=anim.w0+(anim.w1-anim.w0)*k;
+  if(k>=1){S.w=Math.round(anim.w1*20)/20;anim=null;hint('Kilitlendi: '+$('rng').textContent);lockMsg=now+2200}
+  ui();
+}
 
 async function start(){
   try{
     stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:S.ns,autoGainControl:false,channelCount:1,latency:0}});
   }catch(e){
-    $('hint').innerHTML='<span class="err">Mikrofon açılamadı. Sayfa https:// ile başlayan bir adresten açılmalı (indirilen dosya content:// ya da file:// ile açılınca telefon mikrofonu vermez).</span>';return;
+    hint('Mikrofon açılamadı. İzin verdiğinden ve sayfayı https:// adresinden açtığından emin ol.');lockMsg=performance.now()+6000;return;
   }
   ctx=ctx||new (window.AudioContext||window.webkitAudioContext)({latencyHint:'interactive'});
   await ctx.resume();
   src=ctx.createMediaStreamSource(stream);
-  const mk=(type)=>{const f=ctx.createBiquadFilter();f.type=type;f.Q.value=.707;return f};
+  const mk=(type,f,q)=>{const n=ctx.createBiquadFilter();n.type=type;n.Q.value=q||.707;if(f)n.frequency.value=f;return n};
   hp1=mk('highpass');hp2=mk('highpass');lp1=mk('lowpass');lp2=mk('lowpass');
-  pk=ctx.createBiquadFilter();pk.type='peaking';
+  pk=mk('peaking');
+  const sum=ctx.createGain();sum.gain.value=.85;
+  bG=BF.map(f=>{const bp=mk('bandpass',f,2.4),g=ctx.createGain();pk.connect(bp);bp.connect(g);g.connect(sum);return g});
   comp=ctx.createDynamicsCompressor();
-  comp.threshold.value=-28;comp.knee.value=12;comp.ratio.value=4;comp.attack.value=.004;comp.release.value=.15;
-  gate=ctx.createGain();out=ctx.createGain();dry=ctx.createGain();wet=ctx.createGain();
-  an=ctx.createAnalyser();an.fftSize=4096;an.smoothingTimeConstant=.75;
+  comp.threshold.value=-34;comp.knee.value=10;comp.ratio.value=6;comp.attack.value=.003;comp.release.value=.2;
+  out=ctx.createGain();dry=ctx.createGain();wet=ctx.createGain();
+  an=ctx.createAnalyser();an.fftSize=2048;an.smoothingTimeConstant=.5;
   anOut=ctx.createAnalyser();anOut.fftSize=1024;
   src.connect(an);
-  src.connect(hp1);hp1.connect(hp2);hp2.connect(lp1);lp1.connect(lp2);lp2.connect(pk);pk.connect(comp);comp.connect(gate);gate.connect(wet);
+  src.connect(hp1);hp1.connect(hp2);hp2.connect(lp1);lp1.connect(lp2);lp2.connect(pk);
+  sum.connect(comp);comp.connect(wet);
   src.connect(dry);
   wet.connect(out);dry.connect(out);out.connect(anOut);out.connect(ctx.destination);
+  frames=0;hi=0;gains.fill(1);
   running=true;apply();
+  timer=setInterval(analyse,25);
   $('go').textContent='Durdur';$('st').classList.add('on');$('stt').textContent='Canlı';
-  $('hint').textContent='Halkayı çevirerek titreşimi seç';
   const L=(ctx.baseLatency||0)+(ctx.outputLatency||0);
   $('lat').textContent='Gecikme: '+(L?Math.round(L*1000)+' ms (tarayıcı tahmini)':'tarayıcı bildirmiyor');
   try{wl=await navigator.wakeLock?.request('screen')}catch(e){}
 }
 async function stop(){
-  running=false;
+  running=false;clearInterval(timer);anim=null;
   stream?.getTracks().forEach(t=>t.stop());
   try{src.disconnect();out.disconnect()}catch(e){}
   try{wl?.release()}catch(e){}
   $('go').textContent='Dinlemeyi başlat';$('st').classList.remove('on');$('stt').textContent='Kapalı';
+  hint('Halkayı çevirerek titreşimi seç');
 }
 $('go').onclick=()=>running?stop():start();
 
-// Dial
+/* ---- kadran ---- */
 const cv=$('cv'),cx=cv.getContext('2d'),fig=$('fig');
-let W=0,R=0,lv=new Float32Array(N),pkHold=0;
+let W=0,R=0,lv=new Float32Array(N),pkHold=0,fb,tb;
 function size(){const d=devicePixelRatio||1;W=fig.clientWidth;cv.width=W*d;cv.height=W*d;cx.setTransform(d,0,0,d,0,0);R=W/2}
 new ResizeObserver(size).observe(fig);size();
-const tOf=f=>Math.log(f/FMIN)/Math.log(FMAX/FMIN);
-const fOf=t=>FMIN*(FMAX/FMIN)**t;
 const aOf=t=>START+SWEEP*Math.max(0,Math.min(1,t));
-let fb,tb;
-function draw(){
+function draw(now){
   requestAnimationFrame(draw);
+  step(now);
   if(!W)return;
   const c=R,r0=R*.6,r1=R*.86,[l,h]=band(),tl=tOf(l),th=tOf(h);
   cx.clearRect(0,0,W,W);
-  // spectrum
   if(running){
     if(!fb||fb.length!==an.frequencyBinCount)fb=new Uint8Array(an.frequencyBinCount);
     an.getByteFrequencyData(fb);
@@ -203,48 +282,46 @@ function draw(){
     }
     if(!tb)tb=new Float32Array(anOut.fftSize);
     anOut.getFloatTimeDomainData(tb);
-    let s=0;for(const x of tb)s+=x*x;const rms=Math.sqrt(s/tb.length);
-    pkHold=Math.max(rms,pkHold*.94);
-    // simple gate on wet path
-    const thr=S.g/100*.08;
-    gate.gain.setTargetAtTime(S.g&&an&&lv.reduce((a,x,i)=>{const t=i/N;return t>=tl&&t<=th?Math.max(a,x):a},0)*.1<thr?0:1,ctx.currentTime,.06);
-  }else for(let i=0;i<N;i++)lv[i]*=.9;
-  // band arc
+    let s=0;for(const x of tb)s+=x*x;pkHold=Math.max(Math.sqrt(s/tb.length),pkHold*.94);
+  }else{for(let i=0;i<N;i++)lv[i]*=.9;pkHold*=.9}
   cx.lineCap='butt';
   cx.beginPath();cx.arc(c,c,(r0+r1)/2,aOf(0),aOf(1));cx.strokeStyle='#211a25';cx.lineWidth=r1-r0+8;cx.stroke();
   cx.beginPath();cx.arc(c,c,(r0+r1)/2,aOf(tl),aOf(th));cx.strokeStyle=S.fx?'rgba(255,90,78,.16)':'rgba(255,255,255,.06)';cx.stroke();
-  // bars
   const bw=Math.max(1.5,(SWEEP*r0/N)*.55);
   for(let i=0;i<N;i++){
     const t=(i+.5)/N,a=aOf(t),inb=t>=tl&&t<=th,len=4+lv[i]*(r1-r0-6);
     cx.beginPath();cx.moveTo(c+Math.cos(a)*r0,c+Math.sin(a)*r0);cx.lineTo(c+Math.cos(a)*(r0+len),c+Math.sin(a)*(r0+len));
     cx.strokeStyle=inb&&S.fx?(i%2?'#ff5a4e':'#ff7a64'):'#5d4e5a';cx.lineWidth=bw;cx.stroke();
   }
+  // gürültü azaltıcı: her bandın açıklığı
+  if(running&&S.fx&&S.nr)for(let i=0;i<NB;i++){
+    const a0=aOf(tOf(BE[i]))+.01,a1=aOf(tOf(BE[i+1]))-.01,sp=score[i]>4.5;
+    cx.beginPath();cx.arc(c,c,r0-12,a0,a1);
+    cx.strokeStyle=sp?`rgba(255,177,153,${.25+gains[i]*.75})`:`rgba(167,153,159,${.12+gains[i]*.5})`;cx.lineWidth=4;cx.stroke();
+  }
   cx.lineCap='round';
-  // edges + knob
-  for(const t of[tl,th]){const a=aOf(t);cx.beginPath();cx.moveTo(c+Math.cos(a)*(r0-6),c+Math.sin(a)*(r0-6));cx.lineTo(c+Math.cos(a)*(r1+4),c+Math.sin(a)*(r1+4));cx.strokeStyle='#ffb199';cx.lineWidth=2;cx.stroke()}
+  for(const t of[tl,th]){const a=aOf(t);cx.beginPath();cx.moveTo(c+Math.cos(a)*(r0-4),c+Math.sin(a)*(r0-4));cx.lineTo(c+Math.cos(a)*(r1+4),c+Math.sin(a)*(r1+4));cx.strokeStyle='#ffb199';cx.lineWidth=2;cx.stroke()}
+  cx.beginPath();cx.arc(c,c,r1+R*.06,aOf(0),aOf(1));cx.strokeStyle='#33283a';cx.lineWidth=2;cx.stroke();
   const ka=aOf(tOf(S.c)),kr=r1+R*.06;
+  if(anim){cx.beginPath();cx.moveTo(c+Math.cos(ka)*(r0-4),c+Math.sin(ka)*(r0-4));cx.lineTo(c+Math.cos(ka)*kr,c+Math.sin(ka)*kr);cx.strokeStyle='#ff5a4e';cx.lineWidth=3;cx.stroke()}
   cx.beginPath();cx.arc(c+Math.cos(ka)*kr,c+Math.sin(ka)*kr,R*.042,0,7);cx.fillStyle='#f6efe9';cx.fill();
   cx.lineWidth=4;cx.strokeStyle='#ff5a4e';cx.stroke();
-  // output glow
   const g=Math.min(1,pkHold*6);
-  cx.beginPath();cx.arc(c,c,r1+R*.06,aOf(0),aOf(1));cx.strokeStyle='#33283a';cx.lineWidth=2;cx.stroke();
-  cx.beginPath();cx.arc(c,c,r0-10,0,7);cx.strokeStyle=`rgba(255,177,153,${.08+g*.6})`;cx.lineWidth=2+g*5;cx.stroke();
-  // scale labels
+  cx.beginPath();cx.arc(c,c,r0-24,0,7);cx.strokeStyle=speech?`rgba(255,90,78,${.3+g*.6})`:`rgba(255,177,153,${.06+g*.4})`;cx.lineWidth=2+g*4;cx.stroke();
   cx.fillStyle='#a7999f';cx.font=`500 ${Math.max(11,R*.05)}px Inter`;cx.textAlign='center';cx.textBaseline='middle';
   for(const f of[100,250,500,1000,2000,4000,8000]){const a=aOf(tOf(f)),rr=R*.965;if(Math.abs(tOf(f)-tOf(S.c))<.07)continue;
     cx.fillText(f>=1000?f/1000+'k':f,c+Math.cos(a)*rr,c+Math.sin(a)*rr)}
 }
-draw();
+requestAnimationFrame(draw);
 function pick(e){
   const b=fig.getBoundingClientRect(),x=e.clientX-b.left-R,y=e.clientY-b.top-R;
   if(Math.hypot(x,y)<R*.5)return false;
-  let a=Math.atan2(y,x);let d=(a-START)%(Math.PI*2);if(d<0)d+=Math.PI*2;
+  let d=(Math.atan2(y,x)-START)%(Math.PI*2);if(d<0)d+=Math.PI*2;
   let t=d/SWEEP;if(t>1)t=d-SWEEP<(Math.PI*2-SWEEP)/2?1:0;
-  S.c=Math.round(fOf(t));ui();return true;
+  anim=null;S.auto=false;S.c=Math.round(fOf(t));ui();return true;
 }
 let drag=false;
-fig.addEventListener('pointerdown',e=>{if(e.target.id==='go')return;if(pick(e)){drag=true;fig.setPointerCapture(e.pointerId)}});
+fig.addEventListener('pointerdown',e=>{if(pick(e)){drag=true;fig.setPointerCapture(e.pointerId)}});
 fig.addEventListener('pointermove',e=>{if(drag)pick(e)});
 fig.addEventListener('pointerup',()=>drag=false);fig.addEventListener('pointercancel',()=>drag=false);
 document.addEventListener('visibilitychange',async()=>{if(running&&document.visibilityState==='visible'){try{wl=await navigator.wakeLock?.request('screen')}catch(e){}}});
