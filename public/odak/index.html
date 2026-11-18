@@ -4,42 +4,55 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#120d14">
-<title>Odak — Canlı Ses</title>
+<title>Odak — Ses İstasyonları</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-/* VOICE: sakin, gece, odaklı — kalabalıkta tek bir sesi dinleyen kulak
-   IDEA: eski bir radyo kadranı; ibre yerine parmakla döndürülen halka
-   PICTURE: dairesel spektrum, seçili titreşim bandı mercan renkli yay
-   COLOUR and TYPE: mürdüm-siyah zemin, sıcak beyaz yazı, mercan vurgu; Unbounded + Inter
-   LAYOUT: tek sütun, üstte kadran, altta başparmak menzilinde kontroller */
+/* VOICE: sakin, gece, odaklı — gürültülü salonda tek bir kişiyi seçen kulak
+   IDEA: radyo istasyon listesi; her konuşan kişi kendi tonunda bir istasyon
+   PICTURE: canlı ses haritası — zaman soldan sağa, ses tonu aşağıdan yukarı, her kişi bir renkli şerit
+   COLOUR and TYPE: mürdüm-siyah zemin, sıcak beyaz yazı, kişi başına bir renk, mercan vurgu; Unbounded + Inter
+   LAYOUT: tek sütun; harita, büyük Dinle düğmesi, kişi kartları, ayarlar */
 :root{--bg:#120d14;--panel:#1d1620;--line:#33283a;--ink:#f6efe9;--mute:#a7999f;--acc:#ff5a4e;--acc2:#ffb199}
 *{box-sizing:border-box;min-width:0;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Inter,system-ui,sans-serif;overflow-x:clip}
-body{padding:max(14px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(20px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
-.wrap{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+body{padding:max(14px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
 header{display:flex;align-items:center;justify-content:space-between;gap:10px}
-h1{font:700 26px/1.05 Unbounded,sans-serif;margin:0;letter-spacing:-.01em}
+h1{font:700 26px/1.05 Unbounded,sans-serif;margin:0}
 .st{font-size:13px;color:var(--mute);display:flex;align-items:center;gap:7px;white-space:nowrap}
 .dot{width:9px;height:9px;border-radius:50%;background:#5a4b55}
 .on .dot{background:var(--acc);box-shadow:0 0 10px var(--acc);animation:p 1.4s infinite}
 @keyframes p{50%{opacity:.4}}
-.fig{position:relative;width:100%;aspect-ratio:1;touch-action:none;user-select:none}
-.fig canvas{position:absolute;inset:0;width:100%;height:100%}
-.mid{position:absolute;inset:0;display:grid;place-content:center;text-align:center;pointer-events:none}
-.hz{font:700 clamp(26px,8.5vw,40px)/1 Unbounded,sans-serif}
-.hz small{font-size:.38em;font-weight:500;color:var(--mute);margin-left:4px}
-.rng{font-size:13px;color:var(--acc2);margin-top:6px;white-space:nowrap}
-.hint{font-size:14px;color:var(--mute);text-align:center;margin:0}
-.ctl{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:-8px}
-.btns{display:flex;gap:10px;width:100%;max-width:360px}
-#scan{flex:none;height:52px;padding:0 22px;border-radius:999px;border:1.5px solid var(--acc);background:transparent;color:var(--ink);font:600 16px Inter;cursor:pointer}
-#go{flex:1;border:0;border-radius:999px;background:var(--acc);color:#1a0d0c;font:600 16px Inter;padding:0 26px;height:52px;cursor:pointer}
-.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
-.chips button{flex:none;height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:500 14px Inter;cursor:pointer}
-.chips button.sel{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:6px 16px}
-.row{display:grid;grid-template-columns:7.5em minmax(0,1fr) 3.6em;align-items:center;gap:12px;min-height:56px;border-bottom:1px solid var(--line)}
+.mic{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:0 6px 0 14px;min-height:48px}
+.mic span{font-size:13px;color:var(--mute);flex:none}
+select{flex:1;height:46px;border:0;background:transparent;color:var(--ink);font:500 16px Inter;padding:0 6px;appearance:none;-webkit-appearance:none;text-overflow:ellipsis}
+select option{background:var(--panel)}
+.map{position:relative;height:clamp(240px,46vh,380px);background:#0c080e;border:1px solid var(--line);border-radius:20px;overflow:hidden;touch-action:manipulation}
+.map canvas{position:absolute;inset:0;width:100%;height:100%}
+.map .empty{position:absolute;inset:0;display:grid;place-content:center;text-align:center;padding:24px;color:var(--mute);font-size:15px;pointer-events:none}
+.map .empty b{display:block;font:600 18px/1.3 Unbounded,sans-serif;color:var(--ink);margin-bottom:6px}
+.map .empty[hidden]{display:none}
+#go{height:56px;border:0;border-radius:999px;background:var(--acc);color:#1a0d0c;font:600 17px Inter;cursor:pointer}
+.on-go #go{background:var(--ink);color:var(--bg)}
+.hint{font-size:14px;color:var(--mute);text-align:center;margin:-4px 0 0;min-height:21px}
+.voices{display:flex;flex-direction:column;gap:10px}
+.v{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:12px 12px 12px 14px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;align-items:center}
+.v.f{border-color:var(--c);box-shadow:inset 0 0 0 1px var(--c)}
+.v.m{opacity:.6}
+.sw8{width:34px;height:34px;border-radius:50%;background:var(--c);display:grid;place-content:center;font:700 14px Unbounded,sans-serif;color:#120d14;grid-row:span 2}
+.vt{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.vt b{font-weight:600}.vt small{color:var(--mute);font-size:13px;white-space:nowrap}
+.meter{height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.meter i{display:block;height:100%;width:0;background:var(--c);transition:width .12s}
+.seg{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:6px}
+.seg button{height:44px;border-radius:12px;border:1px solid var(--line);background:transparent;color:var(--ink);font:500 14px Inter;cursor:pointer}
+.seg button.sel{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.seg button.sel.mu{background:#4a3a44;color:var(--ink);border-color:#4a3a44}
+.rst{align-self:center;height:44px;padding:0 18px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--mute);font:500 14px Inter;cursor:pointer}
+.rst[hidden]{display:none}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:4px 16px}
+.row{display:grid;grid-template-columns:7.8em minmax(0,1fr) 3.6em;align-items:center;gap:12px;min-height:56px;border-bottom:1px solid var(--line)}
 .row:last-child{border:0}
 .row label{font-size:14px;color:var(--mute)}
 .row output{font-size:14px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -48,17 +61,16 @@ input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:3px;ba
 input[type=range]::-moz-range-track{height:6px;border-radius:3px;background:var(--line)}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--ink);margin-top:-10px;border:4px solid var(--acc)}
 input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--ink);border:4px solid var(--acc)}
-.tg{display:flex;justify-content:space-between;align-items:center;min-height:56px;border-bottom:1px solid var(--line);gap:12px}
+.tg{display:flex;justify-content:space-between;align-items:center;min-height:60px;border-bottom:1px solid var(--line);gap:12px}
 .tg:last-child{border:0}
 .tg span{font-size:15px}.tg em{display:block;font-style:normal;font-size:13px;color:var(--mute)}
 .sw{flex:none;width:54px;height:32px;border-radius:999px;border:0;background:var(--line);position:relative;cursor:pointer}
 .sw::after{content:"";position:absolute;top:4px;left:4px;width:24px;height:24px;border-radius:50%;background:var(--ink);transition:transform .2s}
 .sw[aria-pressed=true]{background:var(--acc)}.sw[aria-pressed=true]::after{transform:translateX(22px)}
-button:focus-visible,input:focus-visible{outline:2px solid var(--acc2);outline-offset:3px}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--acc2);outline-offset:3px}
 .note{font-size:13px;color:var(--mute);margin:0}
 .warn{background:#2a1517;border:1px solid #5b2a2a;border-radius:14px;padding:12px 14px;font-size:14px}
-.err{color:var(--acc2)}
-@media(prefers-reduced-motion:reduce){.on .dot{animation:none}.sw::after{transition:none}}
+@media(prefers-reduced-motion:reduce){.on .dot{animation:none}.sw::after{transition:none}.meter i{transition:none}}
 </style>
 </head>
 <body>
@@ -68,264 +80,275 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--acc2);outline-o
     <div class="st" id="st"><span class="dot"></span><span id="stt">Kapalı</span></div>
   </header>
 
-  <div class="fig" id="fig">
+  <label class="mic"><span>Mikrofon</span><select id="mic"><option value="">Telefonun mikrofonu</option></select></label>
+
+  <div class="map" id="map">
     <canvas id="cv"></canvas>
-    <div class="mid">
-      <div class="hz" id="hz">1200<small>Hz</small></div>
-      <div class="rng" id="rng">300 – 3400 Hz</div>
-    </div>
+    <div class="empty" id="empty"><div><b>Ses haritası</b>Konuşan her kişi burada kendi renginde bir şerit olarak belirir. Kalın sesler aşağıda, ince sesler yukarıda.</div></div>
   </div>
-  <div class="ctl"><div class="btns"><button id="scan" type="button" aria-label="Konuşan sesi tara">Tara</button><button id="go">Dinlemeyi başlat</button></div><p class="hint" id="hint">Halkayı çevirerek titreşimi seç</p></div>
 
-  <div class="chips" id="chips"></div>
+  <button id="go" type="button">Dinle</button>
+  <p class="hint" id="hint">Kulaklığı tak, Dinle'ye bas.</p>
+
+  <div class="voices" id="voices"></div>
+  <button class="rst" id="rst" type="button" hidden>Sesleri sıfırla</button>
 
   <div class="card">
-    <div class="row"><label for="w">Bant genişliği</label><input id="w" type="range" min="0.3" max="4" step="0.05" value="2"><output id="wo"></output></div>
-    <div class="row"><label for="b">Odak gücü</label><input id="b" type="range" min="0" max="18" step="0.5" value="8"><output id="bo"></output></div>
-    <div class="row"><label for="v">Ses seviyesi</label><input id="v" type="range" min="0" max="6" step="0.1" value="2"><output id="vo"></output></div>
+    <div class="row"><label for="fo">Odak gücü</label><input id="fo" type="range" min="0" max="30" step="1" value="20"><output id="foo"></output></div>
     <div class="row"><label for="nr">Gürültü azaltma</label><input id="nr" type="range" min="0" max="100" step="5" value="60"><output id="nro"></output></div>
+    <div class="row"><label for="cl">Netlik</label><input id="cl" type="range" min="0" max="12" step="1" value="5"><output id="clo"></output></div>
+    <div class="row"><label for="v">Ses seviyesi</label><input id="v" type="range" min="0" max="6" step="0.1" value="2.5"><output id="vo"></output></div>
   </div>
 
   <div class="card">
-    <div class="tg"><div><span>Otomatik takip</span><em>Konuşan sese radyo gibi kendiliğinden kilitlenir</em></div><button class="sw" id="auto" aria-pressed="true" aria-label="Otomatik takip"></button></div>
     <div class="tg"><div><span>Filtre</span><em>Kapatıp ham sesle karşılaştır</em></div><button class="sw" id="fx" aria-pressed="true" aria-label="Filtre"></button></div>
-    <div class="tg"><div><span>Gürültü bastırma</span><em>Telefonun kendi konuşma filtresi</em></div><button class="sw" id="ns" aria-pressed="false" aria-label="Gürültü bastırma"></button></div>
+    <div class="tg"><div><span>Telefonun gürültü bastırması</span><em>Bazı telefonlarda uzak sesi de kısar, dene ve karar ver</em></div><button class="sw" id="ns" aria-pressed="false" aria-label="Telefonun gürültü bastırması"></button></div>
   </div>
 
-  <div class="warn">Kulaklık takmadan başlatma: hoparlörden çıkan ses mikrofona geri döner ve cızırtı yapar. Kablolu kulaklık Bluetooth'tan çok daha az gecikir. Telefonun alt ucunu (mikrofonu) konuşan tarafa çevir.</div>
+  <div class="warn">Telefonun alt ucunu (mikrofonu) dinlemek istediğin kişiye çevir. Kablolu kulaklık en az gecikmeyi verir. Kulaklığın kendi mikrofonu varsa yukarıdan telefonun mikrofonunu seç.</div>
   <p class="note" id="lat">Gecikme: —</p>
 </div>
 
 <script>
 {
 const $=id=>document.getElementById(id);
-const FMIN=80,FMAX=8000,START=Math.PI*2/3,SWEEP=Math.PI*5/3,N=96;
+const COL=['#ff5a4e','#6cc3ff','#ffc24b','#b98cff','#5ee0c8','#ff8fc7'];
 const NB=14,BL=150,BH=7000;
 const BE=[...Array(NB+1)].map((_,i)=>BL*(BH/BL)**(i/NB));
 const BF=[...Array(NB)].map((_,i)=>Math.sqrt(BE[i]*BE[i+1]));
-const HL=60;
-const PRE=[
- {n:'Amfi / ders',c:1100,w:3.2},{n:'Toplantı',c:1000,w:3},{n:'Erkek sesi',c:450,w:2.6},
- {n:'Kadın sesi',c:900,w:2.4},{n:'Netlik',c:2800,w:1.4},{n:'Uğultu kes',c:1700,w:2.8}];
-let S={c:1100,w:3.2,b:6,v:2,nr:60,fx:true,ns:false,auto:true};
-try{const o=JSON.parse(localStorage.getItem('odak')||'{}');delete o.g;Object.assign(S,o)}catch(e){}
-let saveT=0;const save=()=>{clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem('odak',JSON.stringify(S))}catch(e){}},400)};
+const PMIN=70,PMAX=400;
+let S={fo:20,nr:60,cl:5,v:2.5,fx:true,ns:false,mic:''};
+try{const o=JSON.parse(localStorage.getItem('odak2')||'{}');Object.assign(S,o)}catch(e){}
+let sT=0;const save=()=>{clearTimeout(sT);sT=setTimeout(()=>{try{localStorage.setItem('odak2',JSON.stringify(S))}catch(e){}},400)};
 
-let ctx,src,stream,an,anOut,hp1,hp2,lp1,lp2,pk,comp,out,dry,wet,wl,running=false;
-let bG=[],fd,noise=new Float32Array(NB),lvl=new Float32Array(NB),gains=new Float32Array(NB).fill(1),score=new Float32Array(NB);
-let hist=[...Array(NB)].map(()=>new Float32Array(HL)),hi=0,frames=0,speech=false,lockMsg=0,anim=null,lastAuto=0,timer=0;
-const fmt=f=>f>=1000?(f/1000).toFixed(1).replace('.',',')+' kHz':Math.round(f)+' Hz';
-const band=()=>{const h=2**(S.w/2);return[Math.max(40,S.c/h),Math.min(16000,S.c*h)]};
-const tOf=f=>Math.log(f/FMIN)/Math.log(FMAX/FMIN);
-const fOf=t=>FMIN*(FMAX/FMIN)**t;
+let ctx,src,stream,an,anP,hp,pres,dly,gate,comp,out,dry,wet,wl,timer=0,running=false;
+let bG=[],fd,td,tp,dec,dif;
+const noise=new Float32Array(NB),gains=new Float32Array(NB).fill(1);
+let frames=0,floorDb=-60,gateOpen=1,holdT=0,curC=null,curF=0;
+let voices=[],nextId=0,seg=null,lastVoiced=0,trail=[];
 
+/* ---------- arayüz ---------- */
 function ui(){
-  const[l,h]=band();
-  $('hz').innerHTML=(S.c>=1000?(S.c/1000).toFixed(2).replace('.',','):Math.round(S.c))+'<small>'+(S.c>=1000?'kHz':'Hz')+'</small>';
-  $('rng').textContent=fmt(l)+' – '+fmt(h);
-  $('wo').textContent=S.w.toFixed(1).replace('.',',')+' okt';
-  $('bo').textContent='+'+S.b+' dB';
-  $('vo').textContent='×'+S.v.toFixed(1).replace('.',',');
+  $('foo').textContent=S.fo?'−'+S.fo+' dB':'Kapalı';
   $('nro').textContent=S.nr?'%'+S.nr:'Kapalı';
-  for(const k of['w','b','v','nr'])$(k).value=S[k];
-  for(const k of['fx','ns','auto'])$(k).setAttribute('aria-pressed',S[k]);
-  document.querySelectorAll('#chips button').forEach((b,i)=>b.classList.toggle('sel',PRE[i].c===S.c&&PRE[i].w===S.w));
+  $('clo').textContent=S.cl?'+'+S.cl+' dB':'Kapalı';
+  $('vo').textContent='×'+S.v.toFixed(1).replace('.',',');
+  for(const k of['fo','nr','cl','v'])$(k).value=S[k];
+  for(const k of['fx','ns'])$(k).setAttribute('aria-pressed',S[k]);
   apply();save();
 }
 function apply(){
-  if(!ctx)return;
-  const t=ctx.currentTime,[l,h]=band();
-  for(const f of[hp1,hp2])f.frequency.setTargetAtTime(l,t,.03);
-  for(const f of[lp1,lp2])f.frequency.setTargetAtTime(h,t,.03);
-  pk.frequency.setTargetAtTime(S.c,t,.03);
-  pk.Q.setTargetAtTime(Math.max(.3,S.c/(h-l)),t,.03);
-  pk.gain.setTargetAtTime(S.b,t,.03);
+  if(!ctx||!out)return;const t=ctx.currentTime;
+  pres.gain.setTargetAtTime(S.cl,t,.05);
   out.gain.setTargetAtTime(S.v,t,.05);
-  wet.gain.setTargetAtTime(S.fx?1:0,t,.04);
-  dry.gain.setTargetAtTime(S.fx?0:1,t,.04);
+  wet.gain.setTargetAtTime(S.fx?1:0,t,.04);dry.gain.setTargetAtTime(S.fx?0:1,t,.04);
 }
-$('chips').innerHTML=PRE.map(p=>`<button type="button">${p.n}</button>`).join('');
-document.querySelectorAll('#chips button').forEach((b,i)=>b.onclick=()=>{anim=null;S.c=PRE[i].c;S.w=PRE[i].w;S.auto=false;ui()});
-for(const k of['w','b','v','nr'])$(k).oninput=e=>{S[k]=+e.target.value;if(k==='w')S.auto=false;ui()};
+for(const k of['fo','nr','cl','v'])$(k).oninput=e=>{S[k]=+e.target.value;ui()};
 $('fx').onclick=()=>{S.fx=!S.fx;ui()};
-$('auto').onclick=()=>{S.auto=!S.auto;ui();if(S.auto&&running)seek(true)};
-$('ns').onclick=async()=>{S.ns=!S.ns;ui();if(running){await stop();start()}};
-$('scan').onclick=()=>{if(!running){hint('Önce dinlemeyi başlat');return}seek(true)};
+$('ns').onclick=async()=>{S.ns=!S.ns;ui();if(running){await stop(true);start()}};
+$('mic').onchange=async e=>{S.mic=e.target.value;save();if(running){await stop(true);start()}};
+$('rst').onclick=()=>{voices=[];trail=[];seg=null;renderVoices()};
+const hint=s=>{if($('hint').textContent!==s)$('hint').textContent=s};
 
-function hint(s){$('hint').textContent=s}
+/* ---------- mikrofon seçimi ---------- */
+const BAD=/bluetooth|headset|hands.?free|kulakl|airpods|buds|wired|usb|sco|bt\b/i;
+const GOOD=/built.?in|speaker|phone|dahili|telefon|bottom|back|alt|arka|iphone/i;
+async function mics(){
+  let d=[];try{d=(await navigator.mediaDevices.enumerateDevices()).filter(x=>x.kind==='audioinput')}catch(e){}
+  const sel=$('mic'),cur=stream?.getAudioTracks()[0]?.getSettings().deviceId||'';
+  sel.innerHTML=d.length?d.map((x,i)=>`<option value="${x.deviceId}">${(x.label||('Mikrofon '+(i+1))).replace(/[<&]/g,'')}</option>`).join(''):'<option value="">Telefonun mikrofonu</option>';
+  sel.value=S.mic&&d.some(x=>x.deviceId===S.mic)?S.mic:cur;
+  return d;
+}
+function pickPhoneMic(d){
+  const lab=stream?.getAudioTracks()[0]?.label||'';
+  if(!BAD.test(lab))return null;
+  const g=d.find(x=>GOOD.test(x.label)&&!BAD.test(x.label))||d.find(x=>!BAD.test(x.label)&&x.deviceId!=='default'&&x.deviceId!=='communications');
+  return g?g.deviceId:null;
+}
 
-/* ---- analiz: bant seviyeleri, gürültü tabanı, konuşma ritmi ---- */
+/* ---------- ses tonu (perde) bulma: YIN ---------- */
+function pitch(buf,sr){
+  const D=4,n=buf.length/D|0;
+  if(!dec||dec.length!==n){dec=new Float32Array(n);dif=new Float32Array(n)}
+  for(let i=0;i<n;i++){const j=i*D;dec[i]=buf[j]+buf[j+1]+buf[j+2]+buf[j+3]}
+  const fs=sr/D,tmin=Math.floor(fs/PMAX),tmax=Math.min(Math.floor(fs/PMIN),n>>1),W=n-tmax-1;
+  let run=0;dif[0]=1;
+  for(let t=1;t<=tmax;t++){let s=0;for(let i=0;i<W;i++){const d=dec[i]-dec[i+t];s+=d*d}run+=s;dif[t]=run?s*t/run:1}
+  let best=-1;
+  for(let t=tmin;t<=tmax;t++)if(dif[t]<.15){while(t+1<=tmax&&dif[t+1]<dif[t])t++;best=t;break}
+  if(best<0){let m=1;for(let t=tmin;t<=tmax;t++)if(dif[t]<m){m=dif[t];best=t}if(m>.3)return 0}
+  if(best<=tmin||best>=tmax)return best>0?fs/best:0;
+  const a=dif[best-1],b=dif[best],c=dif[best+1],dn=a+c-2*b,sh=dn?(a-c)/(2*dn):0;
+  return fs/(best+sh);
+}
+
+/* ---------- kişi (istasyon) takibi ---------- */
+const range=v=>{const s=Math.max(.17,v.sd*2.2);return[v.f*2**-s,v.f*2**s]};
+function matchFrame(f){
+  let bv=null,bd=1e9;
+  for(const v of voices){const[l,h]=range(v);if(f<l||f>h)continue;const d=Math.abs(Math.log2(f/v.f));if(d<bd){bd=d;bv=v}}
+  return bv;
+}
+function endSeg(){
+  const s=seg;seg=null;
+  if(!s||s.f.length<8)return;
+  const fs=s.f.slice().sort((a,b)=>a-b),med=fs[fs.length>>1];
+  const lf=s.f.map(x=>Math.log2(x/med)),sd=Math.sqrt(lf.reduce((a,x)=>a+x*x,0)/lf.length);
+  const cen=s.c.reduce((a,x)=>a+x,0)/s.c.length,lv=s.l.reduce((a,x)=>a+x,0)/s.l.length;
+  let bv=null,bd=1e9;
+  for(const v of voices){const d=Math.abs(Math.log2(med/v.f))/.2+Math.abs(Math.log2(cen/v.cen))/.7;if(d<bd){bd=d;bv=v}}
+  if(bv&&bd<1.6){
+    bv.f=bv.f*2**(Math.log2(med/bv.f)*.25);bv.sd+=(Math.min(.3,Math.max(.08,sd))-bv.sd)*.25;bv.cen+=(cen-bv.cen)*.2;bv.lv+=(lv-bv.lv)*.3;bv.time+=s.f.length;
+  }else{
+    if(voices.length>=6){voices.sort((a,b)=>(b.time+(b.st?1e6:0))-(a.time+(a.st?1e6:0)));voices.pop()}
+    const used=new Set(voices.map(v=>v.col));
+    voices.push({id:nextId++,col:COL.find(c=>!used.has(c))||COL[0],f:med,sd:Math.min(.3,Math.max(.08,sd)),cen,lv,time:s.f.length,act:0,st:0});
+    voices.sort((a,b)=>a.f-b.f);renderVoices();
+  }
+  for(let i=0;i<voices.length-1;i++){const a=voices[i],b=voices[i+1];
+    if(Math.abs(Math.log2(a.f/b.f))<.1&&Math.abs(Math.log2(a.cen/b.cen))<.25){const k=a.time>=b.time?a:b,o=k===a?b:a;k.time+=o.time;if(o.st&&!k.st)k.st=o.st;voices.splice(voices.indexOf(o),1);renderVoices();break}}
+}
+const desc=f=>f<165?'Kalın ses':f<255?'Orta ses':'İnce ses';
+function loudLabel(v){const mx=Math.max(...voices.map(x=>x.lv));return v.lv>mx-4?'yüksek':v.lv<mx-10?'kısık':'orta'}
+function renderVoices(){
+  $('voices').innerHTML=voices.map((v,i)=>`<div class="v${v.st===1?' f':v.st===-1?' m':''}" style="--c:${v.col}" data-id="${v.id}">
+    <div class="sw8">${String.fromCharCode(65+i)}</div>
+    <div class="vt"><b>${desc(v.f)}</b><small data-k="lb"></small></div>
+    <div class="meter"><i data-k="m"></i></div>
+    <div class="seg"><button type="button" data-s="1" class="${v.st===1?'sel':''}">Odakla</button><button type="button" data-s="0" class="${v.st===0?'sel':''}">Normal</button><button type="button" data-s="-1" class="${v.st===-1?'sel mu':''}">Sustur</button></div></div>`).join('');
+  $('rst').hidden=!voices.length;$('empty').hidden=!!voices.length||running;
+  live();
+}
+$('voices').onclick=e=>{const b=e.target.closest('button[data-s]');if(!b)return;const v=voices.find(x=>x.id==+b.closest('.v').dataset.id);if(!v)return;
+  const s=+b.dataset.s;if(s===1)voices.forEach(x=>{if(x.st===1)x.st=0});v.st=s;renderVoices()};
+function live(){
+  for(const el of document.querySelectorAll('.v')){const v=voices.find(x=>x.id==+el.dataset.id);if(!v)continue;
+    el.querySelector('[data-k=m]').style.width=Math.round(v.act*100)+'%';
+    el.querySelector('[data-k=lb]').textContent=Math.round(v.f)+' Hz · '+loudLabel(v)+(v.act>.5?' · konuşuyor':'')}
+}
+
+/* ---------- analiz döngüsü ---------- */
 function analyse(){
   if(!running)return;
-  if(!fd||fd.length!==an.frequencyBinCount)fd=new Float32Array(an.frequencyBinCount);
-  an.getFloatFrequencyData(fd);
-  const bin=ctx.sampleRate/an.fftSize,t=ctx.currentTime,floor=10**(-(S.nr/100)*30/20);
-  let act=0;
+  const sr=ctx.sampleRate,t=ctx.currentTime,now=performance.now();
+  if(!fd){fd=new Float32Array(an.frequencyBinCount);td=new Float32Array(an.fftSize);tp=new Float32Array(anP.fftSize)}
+  an.getFloatFrequencyData(fd);an.getFloatTimeDomainData(td);anP.getFloatTimeDomainData(tp);
+  let s=0;for(let i=td.length-1024;i<td.length;i++)s+=td[i]*td[i];
+  const L=10*Math.log10(s/1024+1e-12);
+  if(frames<8)floorDb=frames?Math.min(floorDb,L):L;else floorDb+=(L-floorDb)*(L<floorDb?.2:.003);
+  const bin=sr/an.fftSize,fl=10**(-(S.nr/100)*30/20);
+  let pw=0,pc=0;
   for(let i=0;i<NB;i++){
-    let a=Math.max(1,Math.floor(BE[i]/bin)),b=Math.max(a+1,Math.ceil(BE[i+1]/bin)),p=0;
+    const a=Math.max(1,Math.floor(BE[i]/bin)),b=Math.max(a+1,Math.ceil(BE[i+1]/bin));let p=0;
     for(let j=a;j<b;j++)p+=10**(fd[j]/10);
-    const L=10*Math.log10(p/(b-a)+1e-12);
-    lvl[i]=L;
-    if(frames<8)noise[i]=frames?Math.min(noise[i],L):L;
-    else noise[i]+=(L-noise[i])*(L<noise[i]?.2:.004);
-    const H=hist[i];H[hi]=L;
-    let m=0;for(const x of H)m+=x;m/=HL;let v=0;for(const x of H)v+=(x-m)**2;
-    const sd=Math.sqrt(v/HL);
-    score[i]=frames>HL&&m-noise[i]>4?sd:0;
-    if(BF[i]>250&&BF[i]<3500&&score[i]>4.5&&L-noise[i]>6)act++;
-    const g=Math.min(1,Math.max(0,(L-noise[i]-3)/10));
-    const tg=S.nr?floor+(1-floor)*g:1;
-    bG[i].gain.setTargetAtTime(tg,t,tg>gains[i]?.012:.09);
-    gains[i]=tg;
+    const BLv=10*Math.log10(p/(b-a)+1e-12);
+    if(frames<8)noise[i]=frames?Math.min(noise[i],BLv):BLv;else noise[i]+=(BLv-noise[i])*(BLv<noise[i]?.2:.004);
+    const g=Math.min(1,Math.max(0,(BLv-noise[i]-3)/10)),tg=S.nr?fl+(1-fl)*g:1;
+    bG[i].gain.setTargetAtTime(tg,t,tg>gains[i]?.012:.09);gains[i]=tg;
+    if(BF[i]>200&&BF[i]<4000){pw+=p;pc+=p*BF[i]}
   }
-  hi=(hi+1)%HL;frames++;
-  speech=act>=2;
-  const now=performance.now();
-  if(S.auto&&!anim&&speech&&now-lastAuto>2500&&frames>HL){lastAuto=now;seek(false)}
-  if(!anim&&now>lockMsg)hint(S.auto?(speech?'Konuşmacı takip ediliyor':'Konuşma bekleniyor…'):'Halkayı çevirerek titreşimi seç');
+  const f=L>floorDb+5?pitch(tp,sr):0;
+  const voiced=f>=PMIN&&f<=PMAX;
+  curF=voiced?f:0;
+  if(voiced){
+    lastVoiced=now;
+    if(seg&&seg.f.length>=6){
+      const r=seg.f.slice(-12).sort((x,y)=>x-y),md=r[r.length>>1];
+      if(Math.abs(Math.log2(f/md))>.38){seg.j=(seg.j||0)+1;if(seg.j>=3){const k=seg.j;seg.f.length-=k-1;seg.c.length-=k-1;seg.l.length-=k-1;endSeg()}}else seg.j=0;
+    }
+    if(!seg)seg={f:[],c:[],l:[],j:0};
+    seg.f.push(f);seg.c.push(pw?pc/pw:1000);seg.l.push(L);
+    if(seg.f.length>60)endSeg();
+  }else if(seg&&now-lastVoiced>220)endSeg();
+  curC=voiced?matchFrame(f):null;
+  for(const v of voices)v.act=v===curC?1:v.act*.9;
+  trail.push({f:curF,c:curC?curC.col:null,l:L-floorDb,t:now});
+  while(trail.length&&now-trail[0].t>6000)trail.shift();
+  const foc=voices.find(v=>v.st===1),mut=voices.some(v=>v.st===-1),fl2=10**(-S.fo/20);
+  let want=1;
+  if(foc){if(curC===foc)holdT=now+220;want=now<holdT?1:fl2}
+  else if(mut){if(curC&&curC.st===-1)holdT=now+160;want=now<holdT?fl2:1}
+  if(!S.fo)want=1;
+  gate.gain.setTargetAtTime(want,t,want>gateOpen?.008:.05);gateOpen=want;
+  frames++;
+  if(frames%8===0){live();
+    hint(foc?'Odak: '+String.fromCharCode(65+voices.indexOf(foc))+' sesi, diğerleri kısılıyor':mut?'Susturulan sesler kısılıyor':voices.length?'Dinlemek istediğin sese Odakla, istemediğine Sustur de':'Dinleniyor… biri konuştukça burada belirir')}
 }
 
-/* ---- radyo gibi tarama: en güçlü konuşma bandını bul ---- */
-function best(){
-  const K=5;let bs=-1,bv=0;
-  for(let s=0;s+K<=NB;s++){if(BF[s]<160||BF[s+K-1]>4800)continue;let v=0;for(let j=s;j<s+K;j++)v+=score[j];if(v>bv){bv=v;bs=s}}
-  if(bs<0||bv<14)return null;
-  let pkI=bs;for(let j=bs;j<bs+K;j++)if(score[j]>score[pkI])pkI=j;
-  let l=bs,r=bs+K-1;const th=score[pkI]*.45;
-  while(l>0&&score[l-1]>th)l--;while(r<NB-1&&score[r+1]>th)r++;
-  const lo=BE[l],hi2=BE[r+1];
-  return{c:Math.sqrt(lo*hi2),w:Math.min(3.6,Math.max(1.4,Math.log2(hi2/lo)))};
-}
-function seek(full){
-  const b=best();
-  if(!b){if(full){hint('Net bir konuşma bulunamadı, biri konuşurken tekrar dene');lockMsg=performance.now()+2500}return}
-  const t0=tOf(S.c),t1=tOf(b.c);
-  if(!full&&Math.abs(t1-t0)<.04&&Math.abs(b.w-S.w)<.4)return;
-  anim={t0,t1,w0:S.w,w1:b.w,s:performance.now(),d:full?1300:700,full};
-  hint(full?'Taranıyor…':'Yeni konuşmacıya geçiliyor…');
-}
-function step(now){
-  if(!anim)return;
-  const k=Math.min(1,(now-anim.s)/anim.d);let t;
-  if(anim.full){
-    if(k<.35){const e=k/.35;t=anim.t0+(.04-anim.t0)*e*e}
-    else{const e=(k-.35)/.65,o=1-(1-e)**3,wob=Math.sin(e*Math.PI*3)*(1-e)*.03;t=.04+(anim.t1-.04)*o+wob}
-  }else{const o=1-(1-k)**3;t=anim.t0+(anim.t1-anim.t0)*o}
-  S.c=Math.round(fOf(Math.max(0,Math.min(1,t))));S.w=anim.w0+(anim.w1-anim.w0)*k;
-  if(k>=1){S.w=Math.round(anim.w1*20)/20;anim=null;hint('Kilitlendi: '+$('rng').textContent);lockMsg=now+2200}
-  ui();
-}
-
+/* ---------- başlat / durdur ---------- */
+const getStream=id=>navigator.mediaDevices.getUserMedia({audio:{deviceId:id?{exact:id}:undefined,echoCancellation:false,noiseSuppression:S.ns,autoGainControl:false,channelCount:1}});
 async function start(){
-  try{
-    stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:S.ns,autoGainControl:false,channelCount:1,latency:0}});
-  }catch(e){
-    hint('Mikrofon açılamadı. İzin verdiğinden ve sayfayı https:// adresinden açtığından emin ol.');lockMsg=performance.now()+6000;return;
+  try{stream=await getStream(S.mic)}catch(e){
+    try{S.mic='';stream=await getStream('')}catch(e2){hint('Mikrofon açılamadı. İzin verdiğinden emin ol.');return}
   }
+  const d=await mics();
+  if(!S.mic){const id=pickPhoneMic(d);if(id){stream.getTracks().forEach(x=>x.stop());try{stream=await getStream(id);S.mic=id;save()}catch(e){stream=await getStream('')}await mics()}}
   ctx=ctx||new (window.AudioContext||window.webkitAudioContext)({latencyHint:'interactive'});
   await ctx.resume();
   src=ctx.createMediaStreamSource(stream);
-  const mk=(type,f,q)=>{const n=ctx.createBiquadFilter();n.type=type;n.Q.value=q||.707;if(f)n.frequency.value=f;return n};
-  hp1=mk('highpass');hp2=mk('highpass');lp1=mk('lowpass');lp2=mk('lowpass');
-  pk=mk('peaking');
+  const mk=(type,f,q)=>{const n=ctx.createBiquadFilter();n.type=type;n.frequency.value=f;n.Q.value=q;return n};
+  hp=mk('highpass',90,.707);
   const sum=ctx.createGain();sum.gain.value=.85;
-  bG=BF.map(f=>{const bp=mk('bandpass',f,2.4),g=ctx.createGain();pk.connect(bp);bp.connect(g);g.connect(sum);return g});
-  comp=ctx.createDynamicsCompressor();
-  comp.threshold.value=-34;comp.knee.value=10;comp.ratio.value=6;comp.attack.value=.003;comp.release.value=.2;
+  bG=BF.map(f=>{const bp=mk('bandpass',f,2.4),g=ctx.createGain();hp.connect(bp);bp.connect(g);g.connect(sum);return g});
+  pres=mk('peaking',2800,.9);
+  dly=ctx.createDelay(.2);dly.delayTime.value=.05;
+  gate=ctx.createGain();
+  comp=ctx.createDynamicsCompressor();comp.threshold.value=-34;comp.knee.value=10;comp.ratio.value=6;comp.attack.value=.003;comp.release.value=.2;
   out=ctx.createGain();dry=ctx.createGain();wet=ctx.createGain();
-  an=ctx.createAnalyser();an.fftSize=2048;an.smoothingTimeConstant=.5;
-  anOut=ctx.createAnalyser();anOut.fftSize=1024;
-  src.connect(an);
-  src.connect(hp1);hp1.connect(hp2);hp2.connect(lp1);lp1.connect(lp2);lp2.connect(pk);
-  sum.connect(comp);comp.connect(wet);
-  src.connect(dry);
-  wet.connect(out);dry.connect(out);out.connect(anOut);out.connect(ctx.destination);
-  frames=0;hi=0;gains.fill(1);
-  running=true;apply();
-  timer=setInterval(analyse,25);
-  $('go').textContent='Durdur';$('st').classList.add('on');$('stt').textContent='Canlı';
-  const L=(ctx.baseLatency||0)+(ctx.outputLatency||0);
-  $('lat').textContent='Gecikme: '+(L?Math.round(L*1000)+' ms (tarayıcı tahmini)':'tarayıcı bildirmiyor');
+  an=ctx.createAnalyser();an.fftSize=2048;an.smoothingTimeConstant=.4;
+  const lp=mk('lowpass',1000,.707);anP=ctx.createAnalyser();anP.fftSize=2048;
+  src.connect(an);src.connect(lp);lp.connect(anP);
+  src.connect(hp);sum.connect(pres);pres.connect(dly);dly.connect(gate);gate.connect(comp);comp.connect(wet);
+  src.connect(dry);wet.connect(out);dry.connect(out);out.connect(ctx.destination);
+  fd=null;frames=0;gateOpen=1;
+  running=true;apply();timer=setInterval(analyse,25);
+  $('go').textContent='Durdur';document.body.classList.add('on-go');$('st').classList.add('on');$('stt').textContent='Canlı';$('empty').hidden=true;
+  hint('Dinleniyor… biri konuştukça burada belirir');
+  const Lt=(ctx.baseLatency||0)+(ctx.outputLatency||0)+.05;
+  $('lat').textContent='Mikrofon: '+(stream.getAudioTracks()[0]?.label||'varsayılan')+' · Gecikme: yaklaşık '+Math.round(Lt*1000)+' ms';
   try{wl=await navigator.wakeLock?.request('screen')}catch(e){}
 }
-async function stop(){
-  running=false;clearInterval(timer);anim=null;
+async function stop(keep){
+  running=false;clearInterval(timer);if(seg)endSeg();
   stream?.getTracks().forEach(t=>t.stop());
   try{src.disconnect();out.disconnect()}catch(e){}
   try{wl?.release()}catch(e){}
-  $('go').textContent='Dinlemeyi başlat';$('st').classList.remove('on');$('stt').textContent='Kapalı';
-  hint('Halkayı çevirerek titreşimi seç');
+  $('go').textContent='Dinle';document.body.classList.remove('on-go');$('st').classList.remove('on');$('stt').textContent='Kapalı';
+  if(!keep){hint('Kulaklığı tak, Dinle\'ye bas.');$('empty').hidden=!!voices.length}
 }
 $('go').onclick=()=>running?stop():start();
 
-/* ---- kadran ---- */
-const cv=$('cv'),cx=cv.getContext('2d'),fig=$('fig');
-let W=0,R=0,lv=new Float32Array(N),pkHold=0,fb,tb;
-function size(){const d=devicePixelRatio||1;W=fig.clientWidth;cv.width=W*d;cv.height=W*d;cx.setTransform(d,0,0,d,0,0);R=W/2}
-new ResizeObserver(size).observe(fig);size();
-const aOf=t=>START+SWEEP*Math.max(0,Math.min(1,t));
-function draw(now){
-  requestAnimationFrame(draw);
-  step(now);
-  if(!W)return;
-  const c=R,r0=R*.6,r1=R*.86,[l,h]=band(),tl=tOf(l),th=tOf(h);
-  cx.clearRect(0,0,W,W);
-  if(running){
-    if(!fb||fb.length!==an.frequencyBinCount)fb=new Uint8Array(an.frequencyBinCount);
-    an.getByteFrequencyData(fb);
-    const ny=ctx.sampleRate/2;
-    for(let i=0;i<N;i++){
-      const f0=fOf(i/N),f1=fOf((i+1)/N);
-      let a=Math.floor(f0/ny*fb.length),b=Math.max(a+1,Math.ceil(f1/ny*fb.length)),m=0;
-      for(let j=a;j<b&&j<fb.length;j++)m=Math.max(m,fb[j]);
-      lv[i]+=(m/255-lv[i])*.35;
-    }
-    if(!tb)tb=new Float32Array(anOut.fftSize);
-    anOut.getFloatTimeDomainData(tb);
-    let s=0;for(const x of tb)s+=x*x;pkHold=Math.max(Math.sqrt(s/tb.length),pkHold*.94);
-  }else{for(let i=0;i<N;i++)lv[i]*=.9;pkHold*=.9}
-  cx.lineCap='butt';
-  cx.beginPath();cx.arc(c,c,(r0+r1)/2,aOf(0),aOf(1));cx.strokeStyle='#211a25';cx.lineWidth=r1-r0+8;cx.stroke();
-  cx.beginPath();cx.arc(c,c,(r0+r1)/2,aOf(tl),aOf(th));cx.strokeStyle=S.fx?'rgba(255,90,78,.16)':'rgba(255,255,255,.06)';cx.stroke();
-  const bw=Math.max(1.5,(SWEEP*r0/N)*.55);
-  for(let i=0;i<N;i++){
-    const t=(i+.5)/N,a=aOf(t),inb=t>=tl&&t<=th,len=4+lv[i]*(r1-r0-6);
-    cx.beginPath();cx.moveTo(c+Math.cos(a)*r0,c+Math.sin(a)*r0);cx.lineTo(c+Math.cos(a)*(r0+len),c+Math.sin(a)*(r0+len));
-    cx.strokeStyle=inb&&S.fx?(i%2?'#ff5a4e':'#ff7a64'):'#5d4e5a';cx.lineWidth=bw;cx.stroke();
-  }
-  // gürültü azaltıcı: her bandın açıklığı
-  if(running&&S.fx&&S.nr)for(let i=0;i<NB;i++){
-    const a0=aOf(tOf(BE[i]))+.01,a1=aOf(tOf(BE[i+1]))-.01,sp=score[i]>4.5;
-    cx.beginPath();cx.arc(c,c,r0-12,a0,a1);
-    cx.strokeStyle=sp?`rgba(255,177,153,${.25+gains[i]*.75})`:`rgba(167,153,159,${.12+gains[i]*.5})`;cx.lineWidth=4;cx.stroke();
-  }
-  cx.lineCap='round';
-  for(const t of[tl,th]){const a=aOf(t);cx.beginPath();cx.moveTo(c+Math.cos(a)*(r0-4),c+Math.sin(a)*(r0-4));cx.lineTo(c+Math.cos(a)*(r1+4),c+Math.sin(a)*(r1+4));cx.strokeStyle='#ffb199';cx.lineWidth=2;cx.stroke()}
-  cx.beginPath();cx.arc(c,c,r1+R*.06,aOf(0),aOf(1));cx.strokeStyle='#33283a';cx.lineWidth=2;cx.stroke();
-  const ka=aOf(tOf(S.c)),kr=r1+R*.06;
-  if(anim){cx.beginPath();cx.moveTo(c+Math.cos(ka)*(r0-4),c+Math.sin(ka)*(r0-4));cx.lineTo(c+Math.cos(ka)*kr,c+Math.sin(ka)*kr);cx.strokeStyle='#ff5a4e';cx.lineWidth=3;cx.stroke()}
-  cx.beginPath();cx.arc(c+Math.cos(ka)*kr,c+Math.sin(ka)*kr,R*.042,0,7);cx.fillStyle='#f6efe9';cx.fill();
-  cx.lineWidth=4;cx.strokeStyle='#ff5a4e';cx.stroke();
-  const g=Math.min(1,pkHold*6);
-  cx.beginPath();cx.arc(c,c,r0-24,0,7);cx.strokeStyle=speech?`rgba(255,90,78,${.3+g*.6})`:`rgba(255,177,153,${.06+g*.4})`;cx.lineWidth=2+g*4;cx.stroke();
-  cx.fillStyle='#a7999f';cx.font=`500 ${Math.max(11,R*.05)}px Inter`;cx.textAlign='center';cx.textBaseline='middle';
-  for(const f of[100,250,500,1000,2000,4000,8000]){const a=aOf(tOf(f)),rr=R*.965;if(Math.abs(tOf(f)-tOf(S.c))<.07)continue;
-    cx.fillText(f>=1000?f/1000+'k':f,c+Math.cos(a)*rr,c+Math.sin(a)*rr)}
+/* ---------- ses haritası ---------- */
+const cv=$('cv'),cx=cv.getContext('2d'),map=$('map');let W=0,H=0;
+function size(){const d=devicePixelRatio||1;W=map.clientWidth;H=map.clientHeight;cv.width=W*d;cv.height=H*d;cx.setTransform(d,0,0,d,0,0)}
+new ResizeObserver(size).observe(map);size();
+const yOf=f=>H-18-(H-36)*Math.log(f/PMIN)/Math.log(PMAX/PMIN);
+function draw(){
+  requestAnimationFrame(draw);if(!W)return;
+  cx.clearRect(0,0,W,H);
+  cx.font='500 11px Inter';cx.textBaseline='middle';
+  for(const f of[100,150,200,300]){const y=yOf(f);cx.fillStyle='#2a2130';cx.fillRect(0,y,W,1);cx.fillStyle='#6d5e68';cx.textAlign='right';cx.fillText(f+' Hz',W-32,y-8)}
+  voices.forEach((v,i)=>{const[l,h]=range(v),y0=yOf(h),y1=yOf(l);
+    cx.globalAlpha=v.st===1?.28:v.st===-1?.07:.13;cx.fillStyle=v.col;cx.fillRect(0,y0,W,y1-y0);
+    cx.globalAlpha=1;if(v.st===1){cx.strokeStyle=v.col;cx.lineWidth=2;cx.strokeRect(1,y0,W-2,y1-y0)}
+    const ly=(y0+y1)/2;cx.beginPath();cx.arc(20,ly,12,0,7);cx.fillStyle=v.st===-1?'#4a3a44':v.col;cx.fill();
+    cx.fillStyle=v.st===-1?'#f6efe9':'#120d14';cx.font='700 13px Inter';cx.textAlign='center';cx.fillText(String.fromCharCode(65+i),20,ly+1);
+    if(v.st===-1){cx.strokeStyle='#f6efe9';cx.lineWidth=2;cx.beginPath();cx.moveTo(10,ly+10);cx.lineTo(30,ly-10);cx.stroke()}
+    cx.font='500 11px Inter'});
+  const now=performance.now();
+  for(const p of trail){if(!p.f)continue;const age=(now-p.t)/6000,x=40+(W-64)*(1-age),r=Math.max(1.5,Math.min(5,p.l/6));
+    cx.globalAlpha=Math.max(.15,1-age);cx.fillStyle=p.c||'#8a7a84';cx.beginPath();cx.arc(x,yOf(p.f),r,0,7);cx.fill()}
+  cx.globalAlpha=1;
+  if(running){const x=W-22;cx.fillStyle='#33283a';cx.fillRect(x,14,2,H-28);
+    if(curF){cx.beginPath();cx.arc(x+1,yOf(curF),7,0,7);cx.fillStyle=curC?curC.col:'#f6efe9';cx.fill()}}
 }
 requestAnimationFrame(draw);
-function pick(e){
-  const b=fig.getBoundingClientRect(),x=e.clientX-b.left-R,y=e.clientY-b.top-R;
-  if(Math.hypot(x,y)<R*.5)return false;
-  let d=(Math.atan2(y,x)-START)%(Math.PI*2);if(d<0)d+=Math.PI*2;
-  let t=d/SWEEP;if(t>1)t=d-SWEEP<(Math.PI*2-SWEEP)/2?1:0;
-  anim=null;S.auto=false;S.c=Math.round(fOf(t));ui();return true;
-}
-let drag=false;
-fig.addEventListener('pointerdown',e=>{if(pick(e)){drag=true;fig.setPointerCapture(e.pointerId)}});
-fig.addEventListener('pointermove',e=>{if(drag)pick(e)});
-fig.addEventListener('pointerup',()=>drag=false);fig.addEventListener('pointercancel',()=>drag=false);
+map.addEventListener('click',e=>{const r=map.getBoundingClientRect(),y=e.clientY-r.top;
+  const v=voices.find(v=>{const[l,h]=range(v);return y>=yOf(h)&&y<=yOf(l)});if(!v)return;
+  const was=v.st===1;voices.forEach(x=>{if(x.st===1)x.st=0});v.st=was?0:1;renderVoices()});
 document.addEventListener('visibilitychange',async()=>{if(running&&document.visibilityState==='visible'){try{wl=await navigator.wakeLock?.request('screen')}catch(e){}}});
-ui();
+ui();renderVoices();
 }
 </script>
 </body>
